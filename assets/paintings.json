@@ -1,0 +1,318 @@
+{
+  "dayMapping": {
+    "1": {"painting": "mondrian", "gameType": "sliding_puzzle"},
+    "2": {"painting": "guernica", "gameType": "default"},
+    "3": {"painting": "pearl", "gameType": "default"},
+    "4": {"painting": "starry_night", "gameType": "default"},
+    "5": {"painting": "kiss", "gameType": "default"},
+    "6": {"painting": "persistence", "gameType": "default"},
+    "7": {"painting": "mona_lisa", "gameType": "default"},
+    "8": {"painting": "impression", "gameType": "default"},
+    "9": {"painting": "water_lilies", "gameType": "default"},
+    "10": {"painting": "soup_cans", "gameType": "default"},
+    "11": {"painting": "composition_viii", "gameType": "default"},
+    "12": {"painting": "wave", "gameType": "default"},
+    "13": {"painting": "broadway", "gameType": "default"},
+    "14": {"painting": "son_of_man", "gameType": "default"},
+    "15": {"painting": "vertumnus", "gameType": "default"},
+    "16": {"painting": "girl_at_window", "gameType": "default"},
+    "17": {"painting": "three_musicians", "gameType": "default"},
+    "18": {"painting": "i_and_village", "gameType": "default"},
+    "19": {"painting": "sea_of_ice", "gameType": "default"},
+    "20": {"painting": "numbers_constellations", "gameType": "default"},
+    "21": {"painting": "card_players", "gameType": "default"},
+    "22": {"painting": "scapigliata", "gameType": "default"},
+    "23": {"painting": "frida_portrait", "gameType": "default"},
+    "24": {"painting": "tree_of_life", "gameType": "default"}
+  },
+  "paintings": [
+    {
+      "name": "wave",
+      "title": "La Grande vague de Kanagawa",
+      "artist": "Katsushika Hokusai",
+      "year": 1831,
+      "description": "La Grande Vague de Kanagawa est une estampe japonaise de l'ukiyo-e, réalisée par Katsushika Hokusai vers 1830-1831. C'est la première estampe de la série Trente-six vues du mont Fuji.",
+      "imagePath": "images/paintings/wave.png"
+    },
+    {
+      "name": "guernica",
+      "title": "Guernica",
+      "artist": "Pablo Picasso",
+      "year": 1937,
+      "description": "Guernica est une peinture murale de Pablo Picasso, réalisée en 1937. Elle a été peinte en réponse au bombardement de Guernica, une ville basque d'Espagne, par les aviateurs allemands et italiens alliés aux forces nationalistes de Franco.",
+      "imagePath": "images/paintings/guernica.png"
+    },
+    {
+      "name": "pearl",
+      "title": "La Jeune fille à la perle",
+      "artist": "Johannes Vermeer",
+      "year": 1665,
+      "description": "La Jeune Fille à la perle est une peinture à l'huile sur toile réalisée par le peintre néerlandais Johannes Vermeer vers 1665. Le tableau est conservé au Mauritshuis de La Haye.",
+      "imagePath": "images/paintings/pearl.png"
+    },
+    {
+      "name": "starry_night",
+      "title": "La Nuit Étoilée",
+      "artist": "Vincent Van Gogh",
+      "year": 1889,
+      "description": "La Nuit étoilée est une peinture de Vincent van Gogh réalisée en juin 1889. Elle représente la vue depuis la fenêtre de sa chambre à l'asile de Saint-Paul-de-Mausole à Saint-Rémy-de-Provence.",
+      "imagePath": "images/paintings/starry_night.png"
+    },
+    {
+      "name": "kiss",
+      "title": "Le Baiser",
+      "artist": "Gustav Klimt",
+      "year": 1908,
+      "description": "Le Baiser est une peinture de Gustav Klimt, réalisée entre 1907 et 1908. C'est l'une des œuvres les plus célèbres de l'artiste et du mouvement Art nouveau.",
+      "imagePath": "images/paintings/kiss.png"
+    },
+    {
+      "name": "persistence",
+      "title": "La Persistance de la Mémoire",
+      "artist": "Salvador Dalí",
+      "year": 1931,
+      "description": "La Persistance de la Mémoire est une peinture surréaliste de Salvador Dalí, réalisée en 1931. Elle est connue pour ses montres molles qui semblent fondre.",
+      "imagePath": "images/paintings/persistence.png"
+    },
+    {
+      "name": "mona_lisa",
+      "title": "La Joconde",
+      "artist": "Léonard de Vinci",
+      "year": 1503,
+      "description": "La Joconde, ou Portrait de Mona Lisa, est un tableau de Léonard de Vinci, réalisé entre 1503 et 1519. C'est l'un des portraits les plus célèbres au monde.",
+      "imagePath": "images/paintings/mona_lisa.png"
+    },
+    {
+      "name": "impression",
+      "title": "Impression, Soleil Levant",
+      "artist": "Claude Monet",
+      "year": 1872,
+      "description": "Impression, Soleil Levant est un tableau de Claude Monet, peint en 1872. Il a donné son nom au mouvement impressionniste.",
+      "imagePath": "images/paintings/impression.png"
+    },
+    {
+      "name": "water_lilies",
+      "title": "Les Nymphéas",
+      "artist": "Claude Monet",
+      "year": 1914,
+      "description": "Les Nymphéas est une série d'environ 250 peintures à l'huile de Claude Monet, réalisées entre 1914 et 1926. Ces œuvres représentent le jardin d'eau de Monet à Giverny.",
+      "imagePath": "images/paintings/water_lilies.png"
+    },
+    {
+      "name": "soup_cans",
+      "title": "Campbell's Soup Cans",
+      "artist": "Andy Warhol",
+      "year": 1962,
+      "description": "Campbell's Soup Cans est une œuvre d'Andy Warhol, réalisée en 1962. Elle consiste en 32 toiles peintes représentant chacune une boîte de soupe Campbell's.",
+      "imagePath": "images/paintings/soup_cans.png"
+    },
+    {
+      "name": "composition_viii",
+      "title": "Composition VIII",
+      "artist": "Wassily Kandinsky",
+      "year": 1923,
+      "description": "Composition VIII est une peinture de Wassily Kandinsky, réalisée en 1923. Elle est considérée comme l'une des œuvres les plus importantes de l'artiste.",
+      "imagePath": "images/paintings/composition_viii.png"
+    },
+    {
+      "name": "mondrian",
+      "title": "Composition rouge, bleue et jaune",
+      "artist": "Piet Mondrian",
+      "year": 1930,
+      "description": "Composition rouge, bleue et jaune est une peinture de Piet Mondrian, réalisée en 1930. Elle est l'une des œuvres les plus célèbres du mouvement De Stijl.",
+      "imagePath": "images/paintings/mondrian.png"
+    },
+    {
+      "name": "broadway",
+      "title": "Broadway Boogie Woogie",
+      "artist": "Piet Mondrian",
+      "year": 1943,
+      "description": "Broadway Boogie Woogie est une peinture de Piet Mondrian, réalisée en 1943. Elle représente une vue abstraite de Manhattan.",
+      "imagePath": "images/paintings/broadway.png"
+    },
+    {
+      "name": "son_of_man",
+      "title": "Le fils de l'homme",
+      "artist": "René Magritte",
+      "year": 1964,
+      "description": "Le fils de l'homme est une peinture de René Magritte, réalisée en 1964. Elle représente un homme en costume avec une pomme devant son visage.",
+      "imagePath": "images/paintings/son_of_man.png"
+    },
+    {
+      "name": "vertumnus",
+      "title": "Vertumne",
+      "artist": "Giuseppe Arcimboldo",
+      "year": 1590,
+      "description": "Vertumne est une peinture de Giuseppe Arcimboldo, réalisée en 1590. Elle représente l'empereur Rodolphe II sous la forme d'une tête composée de fruits et légumes.",
+      "imagePath": "images/paintings/vertumnus.png"
+    },
+    {
+      "name": "girl_at_window",
+      "title": "Jeune fille debout à la fenêtre",
+      "artist": "Salvador Dalí",
+      "year": 1925,
+      "description": "Jeune fille debout à la fenêtre est une peinture de Salvador Dalí, réalisée en 1925. Elle représente sa sœur Ana María regardant par la fenêtre.",
+      "imagePath": "images/paintings/girl_at_window.png"
+    },
+    {
+      "name": "three_musicians",
+      "title": "Trois musiciens",
+      "artist": "Pablo Picasso",
+      "year": 1921,
+      "description": "Trois musiciens est une peinture de Pablo Picasso, réalisée en 1921. Elle représente trois personnages jouant de la musique.",
+      "imagePath": "images/paintings/three_musicians.png"
+    },
+    {
+      "name": "i_and_village",
+      "title": "Moi et le Village",
+      "artist": "Marc Chagall",
+      "year": 1911,
+      "description": "Moi et le Village est une peinture de Marc Chagall, réalisée en 1911. Elle représente des souvenirs de son enfance en Biélorussie.",
+      "imagePath": "images/paintings/i_and_village.png"
+    },
+    {
+      "name": "sea_of_ice",
+      "title": "La mer de glace",
+      "artist": "Caspar David Friedrich",
+      "year": 1824,
+      "description": "La mer de glace est une peinture de Caspar David Friedrich, réalisée en 1824. Elle représente un navire naufragé dans un paysage arctique.",
+      "imagePath": "images/paintings/sea_of_ice.png"
+    },
+    {
+      "name": "numbers_constellations",
+      "title": "Chiffres et constellations",
+      "artist": "Joan Miró",
+      "year": 1941,
+      "description": "Chiffres et constellations est une peinture de Joan Miró, réalisée en 1941. Elle représente des formes abstraites et des symboles.",
+      "imagePath": "images/paintings/numbers_constellations.png"
+    },
+    {
+      "name": "card_players",
+      "title": "Les joueurs de cartes",
+      "artist": "Paul Cézanne",
+      "year": 1895,
+      "description": "Les joueurs de cartes est une série de peintures de Paul Cézanne, réalisées entre 1890 et 1895. Elle représente des paysans jouant aux cartes.",
+      "imagePath": "images/paintings/card_players.png"
+    },
+    {
+      "name": "scapigliata",
+      "title": "La Scapigliata",
+      "artist": "Leonardo da Vinci",
+      "year": 1508,
+      "description": "La Scapigliata est une peinture de Leonardo da Vinci, réalisée vers 1508. Elle représente une tête de jeune femme aux cheveux ébouriffés.",
+      "imagePath": "images/paintings/scapigliata.png"
+    },
+    {
+      "name": "frida_portrait",
+      "title": "Self portrait avec collier d'épine et colibri",
+      "artist": "Frida Kahlo",
+      "year": 1940,
+      "description": "Self portrait avec collier d'épine et colibri est une peinture de Frida Kahlo, réalisée en 1940. Elle représente l'artiste avec un collier d'épines et un colibri mort.",
+      "imagePath": "images/paintings/frida_portrait.png"
+    },
+    {
+      "name": "tree_of_life",
+      "title": "L'arbre de vie",
+      "artist": "Gustav Klimt",
+      "year": 1909,
+      "description": "L'arbre de vie est une peinture murale de Gustav Klimt, réalisée en 1909. Elle fait partie d'une série de trois peintures pour le palais Stoclet à Bruxelles.",
+      "imagePath": "images/paintings/tree_of_life.png"
+    },
+    {
+      "name": "mechanic",
+      "title": "Le mécanicien",
+      "artist": "Fernand Léger",
+      "year": 1920,
+      "description": "Le mécanicien est une peinture de Fernand Léger, réalisée en 1920. Elle représente un ouvrier dans un style cubiste.",
+      "imagePath": "images/paintings/mechanic.png"
+    },
+    {
+      "name": "green_violinist",
+      "title": "Le violoniste vert",
+      "artist": "Marc Chagall",
+      "year": 1924,
+      "description": "Le violoniste vert est une peinture de Marc Chagall, réalisée en 1924. Elle représente un violoniste flottant au-dessus d'un village.",
+      "imagePath": "images/paintings/green_violinist.png"
+    },
+    {
+      "name": "ancient_of_days",
+      "title": "L'Ancien des Jours",
+      "artist": "William Blake",
+      "year": 1794,
+      "description": "L'Ancien des Jours est une gravure de William Blake, réalisée en 1794. Elle représente Dieu mesurant l'univers avec un compas.",
+      "imagePath": "images/paintings/ancient_of_days.png"
+    },
+    {
+      "name": "mistress",
+      "title": "La maîtresse",
+      "artist": "Johannes Vermeer",
+      "year": 1667,
+      "description": "La maîtresse est une peinture de Johannes Vermeer, réalisée vers 1667. Elle représente une jeune femme lisant une lettre.",
+      "imagePath": "images/paintings/mistress.png"
+    },
+    {
+      "name": "city",
+      "title": "La ville",
+      "artist": "Fernand Léger",
+      "year": 1919,
+      "description": "La ville est une peinture de Fernand Léger, réalisée en 1919. Elle représente une vue urbaine abstraite.",
+      "imagePath": "images/paintings/city.png"
+    },
+    {
+      "name": "water_lily",
+      "title": "Lys d'eau",
+      "artist": "Claude Monet",
+      "year": 1916,
+      "description": "Lys d'eau est une peinture de Claude Monet, réalisée en 1916. Elle fait partie de la série des Nymphéas et représente le jardin d'eau de l'artiste à Giverny.",
+      "imagePath": "images/paintings/water_lily.png"
+    },
+    {
+      "name": "composition_vii",
+      "title": "Composition VII",
+      "artist": "Wassily Kandinsky",
+      "year": 1913,
+      "description": "Composition VII est une peinture abstraite de Wassily Kandinsky, réalisée en 1913. Considérée comme l'une de ses œuvres les plus importantes, elle représente l'apogée de sa période avant-guerre avec une explosion de couleurs et de formes géométriques.",
+      "imagePath": "images/paintings/composition_vii.png"
+    },
+    {
+      "name": "on_white_ii",
+      "title": "Sur White II",
+      "artist": "Wassily Kandinsky",
+      "year": 1923,
+      "description": "Sur White II est une peinture abstraite de Wassily Kandinsky, réalisée en 1923. Elle fait partie de la période Bauhaus de l'artiste.",
+      "imagePath": "images/paintings/on_white_ii.png"
+    },
+    {
+      "name": "composition_1916",
+      "title": "Composition (1916)",
+      "artist": "Piet Mondrian",
+      "year": 1916,
+      "description": "Composition (1916) est une peinture abstraite de Piet Mondrian, réalisée en 1916. Elle représente une étape importante dans l'évolution de son style vers le néoplasticisme.",
+      "imagePath": "images/paintings/composition_1916.png"
+    },
+    {
+      "name": "false_mirror",
+      "title": "Le faux miroir",
+      "artist": "René Magritte",
+      "year": 1928,
+      "description": "Le faux miroir est une peinture surréaliste de René Magritte, réalisée en 1928. Elle représente un œil dont l'iris est remplacé par un ciel nuageux.",
+      "imagePath": "images/paintings/false_mirror.png"
+    },
+    {
+      "name": "new_york_city",
+      "title": "New York City",
+      "artist": "Piet Mondrian",
+      "year": 1942,
+      "description": "New York City est une peinture abstraite de Piet Mondrian, réalisée en 1942. Elle représente une vue abstraite de Manhattan avec des lignes et des couleurs primaires.",
+      "imagePath": "images/paintings/new_york_city.png"
+    },
+    {
+      "name": "grey_tree",
+      "title": "Arbre argenté (grey tree)",
+      "artist": "Piet Mondrian",
+      "year": 1911,
+      "description": "Arbre argenté (grey tree) est une peinture de Piet Mondrian, réalisée en 1911. Elle représente un arbre dans un style cubiste, marquant une étape importante dans l'évolution de son style vers l'abstraction.",
+      "imagePath": "images/paintings/grey_tree.png"
+    }
+  ]
+}

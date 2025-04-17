@@ -1,0 +1,11 @@
+{
+  "test_mode": {
+    "enabled": true,
+    "day": 24,
+    "month": 12,
+    "year": 2023
+  },
+  "game": {
+    "seed": 12345
+  }
+} 
