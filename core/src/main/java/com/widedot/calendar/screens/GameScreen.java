@@ -4,7 +4,7 @@ import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.utils.viewport.Viewport;
-import com.badlogic.gdx.utils.viewport.FitViewport;
+import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -38,14 +38,13 @@ public abstract class GameScreen implements Screen {
         this.dayId = dayId;
         this.game = game;
         this.camera = new OrthographicCamera();
-        this.camera.setToOrtho(false, WORLD_WIDTH, WORLD_HEIGHT);
-        this.viewport = new FitViewport(WORLD_WIDTH, WORLD_HEIGHT, camera);
+        this.viewport = new ScreenViewport(camera);
         this.batch = new SpriteBatch();
         this.paintable = loadPaintable(dayId);
         
         // Initialiser les dimensions
-        this.currentWidth = WORLD_WIDTH;
-        this.currentHeight = WORLD_HEIGHT;
+        this.currentWidth = Gdx.graphics.getWidth();
+        this.currentHeight = Gdx.graphics.getHeight();
     }
 
     /**
