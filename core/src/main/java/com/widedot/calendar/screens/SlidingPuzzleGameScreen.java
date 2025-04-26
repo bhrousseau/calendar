@@ -13,6 +13,7 @@ import com.widedot.calendar.AdventCalendarGame;
 import com.widedot.calendar.data.Paintable;
 import com.widedot.calendar.painting.PaintingManager;
 import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
 /**
  * Écran de jeu pour le puzzle coulissant
@@ -30,12 +31,22 @@ public class SlidingPuzzleGameScreen extends GameScreen {
     private final int GRID_SIZE = 3;
     private final float GRID_MARGIN = 80; // Marge autour de la grille
     private final float SPACING_RATIO = 0.05f; // Espacement fixe de 5% de la taille des tuiles
+    private final float ANIMATION_SPEED = 10f; // Vitesse de l'animation (tuiles par seconde)
     private final int[] puzzleState; // État actuel du puzzle (index = position, valeur = numéro de tuile)
     private final Rectangle[] gridZones; // Positions des tuiles (index = position)
     private float tileSize; // Taille dynamique des tuiles
     private float tileSpacing; // Espacement dynamique entre les tuiles
     private int emptyTileIndex; // Position de la case vide
     private boolean isPuzzleSolved; // Indique si le puzzle est résolu
+    private Texture puzzleTexture; // Texture du puzzle
+    private TextureRegion[] puzzleTiles; // Régions de texture pour chaque tuile
+
+    // Variables pour l'animation
+    private boolean isAnimating = false;
+    private int animatingTileIndex;
+    private float animationProgress = 0f;
+    private Vector3 animationStart = new Vector3();
+    private Vector3 animationEnd = new Vector3();
 
     private boolean isAdjacent(int tileIndex1, int tileIndex2) {
         // Convertir les indices linéaires en coordonnées de grille
@@ -127,7 +138,42 @@ public class SlidingPuzzleGameScreen extends GameScreen {
     @Override
     protected Paintable loadPaintable(int day) {
         System.out.println("Chargement de la peinture pour le jour " + day);
-        return PaintingManager.getInstance().getPaintingByDay(day);
+        Paintable paintable = PaintingManager.getInstance().getPaintingByDay(day);
+        
+        // Charger la texture du puzzle
+        if (paintable != null) {
+            String imagePath = paintable.getImagePath();
+            if (imagePath != null && !imagePath.isEmpty()) {
+                puzzleTexture = new Texture(Gdx.files.internal(imagePath));
+                createPuzzleTiles();
+            }
+        }
+        
+        return paintable;
+    }
+
+    /**
+     * Crée les régions de texture pour chaque tuile du puzzle
+     */
+    private void createPuzzleTiles() {
+        if (puzzleTexture == null) return;
+
+        puzzleTiles = new TextureRegion[GRID_SIZE * GRID_SIZE];
+        int tileWidth = puzzleTexture.getWidth() / GRID_SIZE;
+        int tileHeight = puzzleTexture.getHeight() / GRID_SIZE;
+
+        for (int row = 0; row < GRID_SIZE; row++) {
+            for (int col = 0; col < GRID_SIZE; col++) {
+                int index = row * GRID_SIZE + col;
+                // Inverser la ligne pour correspondre à l'orientation de la grille
+                int textureRow = GRID_SIZE - 1 - row;
+                puzzleTiles[index] = new TextureRegion(puzzleTexture, 
+                    col * tileWidth, 
+                    textureRow * tileHeight, 
+                    tileWidth, 
+                    tileHeight);
+            }
+        }
     }
 
     @Override
@@ -185,7 +231,41 @@ public class SlidingPuzzleGameScreen extends GameScreen {
 
     @Override
     protected void updateGame(float delta) {
-        // Mise à jour du jeu
+        if (isAnimating) {
+            // Mettre à jour la progression de l'animation
+            animationProgress += delta * ANIMATION_SPEED;
+            
+            if (animationProgress >= 1f) {
+                // Animation terminée
+                isAnimating = false;
+                animationProgress = 0f;
+
+                // Échanger les tuiles dans l'état du puzzle
+                int temp = puzzleState[animatingTileIndex];
+                puzzleState[animatingTileIndex] = puzzleState[emptyTileIndex];
+                puzzleState[emptyTileIndex] = temp;
+                emptyTileIndex = animatingTileIndex;
+
+                // Vérifier si le puzzle est résolu
+                boolean solved = true;
+                for (int i = 0; i < puzzleState.length; i++) {
+                    if (puzzleState[i] != i) {
+                        solved = false;
+                        break;
+                    }
+                }
+
+                if (solved) {
+                    System.out.println("Puzzle résolu !");
+                    isPuzzleSolved = true;
+                    if (game instanceof AdventCalendarGame) {
+                        AdventCalendarGame adventGame = (AdventCalendarGame) game;
+                        adventGame.setScore(dayId, 100);
+                        adventGame.markPaintingAsVisited(dayId);
+                    }
+                }
+            }
+        }
     }
 
     @Override
@@ -193,93 +273,55 @@ public class SlidingPuzzleGameScreen extends GameScreen {
         // Dessiner le fond
         batch.setColor(1, 1, 1, 1);
 
+        // Dessiner les tuiles du puzzle
+        if (puzzleTiles != null) {
+            for (int i = 0; i < gridZones.length; i++) {
+                // Ne pas dessiner la case vide ni la tuile en cours d'animation
+                if (i != emptyTileIndex && (!isAnimating || i != animatingTileIndex)) {
+                    int tileNumber = puzzleState[i];
+                    batch.draw(puzzleTiles[tileNumber], 
+                        gridZones[i].x, 
+                        gridZones[i].y, 
+                        gridZones[i].width, 
+                        gridZones[i].height);
+                }
+            }
+
+            // Dessiner la tuile en cours d'animation
+            if (isAnimating) {
+                int tileNumber = puzzleState[animatingTileIndex];
+                // Calculer la position interpolée
+                float x = animationStart.x + (animationEnd.x - animationStart.x) * animationProgress;
+                float y = animationStart.y + (animationEnd.y - animationStart.y) * animationProgress;
+                batch.draw(puzzleTiles[tileNumber], x, y, tileSize, tileSize);
+            }
+        }
+
         // Si le puzzle est résolu, afficher le message de victoire
         if (isPuzzleSolved) {
-            // Dessiner un fond semi-transparent
-            batch.setColor(0, 0, 0, 0.5f);
-            batch.draw(whiteTexture, 0, 0, viewport.getWorldWidth(), viewport.getWorldHeight());
+            // Dessiner un fond semi-transparent pour le message
+            float messageWidth = viewport.getWorldWidth() * 0.6f;
+            float messageHeight = viewport.getWorldHeight() * 0.2f;
+            float messageX = (viewport.getWorldWidth() - messageWidth) / 2;
+            float messageY = (viewport.getWorldHeight() - messageHeight) / 2;
+
+            batch.setColor(0, 0, 0, 0.7f);
+            batch.draw(whiteTexture, messageX, messageY, messageWidth, messageHeight);
 
             // Afficher le message "Bravo !"
             font.setColor(1, 1, 1, 1);
             String victoryMessage = "Bravo !";
             layout.setText(font, victoryMessage);
             float textX = (viewport.getWorldWidth() - layout.width) / 2;
-            float textY = (viewport.getWorldHeight() + layout.height) / 2;
+            float textY = messageY + messageHeight * 0.7f;
             font.draw(batch, victoryMessage, textX, textY);
 
             // Afficher un message pour indiquer de cliquer
             String clickMessage = "Cliquez pour retourner au menu";
             layout.setText(font, clickMessage);
             textX = (viewport.getWorldWidth() - layout.width) / 2;
-            textY = (viewport.getWorldHeight() - layout.height) / 2;
+            textY = messageY + messageHeight * 0.3f;
             font.draw(batch, clickMessage, textX, textY);
-            return;
-        }
-
-        // Dessiner la grille de debug
-        batch.setColor(1, 0, 0, 0.2f); // Rouge plus transparent
-        for (int i = 0; i < gridZones.length; i++) {
-            if (i != emptyTileIndex) { // Ne pas dessiner la case vide
-                // Vérifier si la tuile est adjacente à la case vide
-                int row = i / GRID_SIZE;
-                int col = i % GRID_SIZE;
-                int emptyRow = emptyTileIndex / GRID_SIZE;
-                int emptyCol = emptyTileIndex % GRID_SIZE;
-                boolean isAdjacent = (Math.abs(row - emptyRow) == 1 && col == emptyCol) ||
-                                   (Math.abs(col - emptyCol) == 1 && row == emptyRow);
-
-                // Changer la couleur en vert si la tuile est adjacente
-                if (isAdjacent) {
-                    batch.setColor(0, 1, 0, 0.2f); // Vert pour les tuiles adjacentes
-                } else {
-                    batch.setColor(1, 0, 0, 0.2f); // Rouge pour les autres tuiles
-                }
-
-                batch.draw(whiteTexture,
-                    gridZones[i].x, gridZones[i].y,
-                    gridZones[i].width, gridZones[i].height);
-            }
-        }
-
-        // // Dessiner les lignes de la grille
-        // batch.setColor(1, 1, 1, 0.8f); // Blanc semi-transparent
-
-        // // Utiliser les coordonnées de la première tuile comme référence
-        // float startX = gridZones[0].x;
-        // float startY = gridZones[0].y;
-        // float gridSize = GRID_SIZE * (tileSize + tileSpacing) - tileSpacing;
-
-        // // Lignes verticales
-        // for (int i = 0; i <= GRID_SIZE; i++) {
-        //     float x = startX + i * (tileSize + tileSpacing) - tileSpacing/2;
-        //     batch.draw(whiteTexture, x, startY, 1, gridSize);
-        // }
-
-        // // Lignes horizontales
-        // for (int i = 0; i <= GRID_SIZE; i++) {
-        //     float y = startY + i * (tileSize + tileSpacing) - tileSpacing/2;
-        //     batch.draw(whiteTexture, startX, y, gridSize, 1);
-        // }
-
-        // Dessiner les numéros des tuiles
-        for (int i = 0; i < gridZones.length; i++) {
-            if (i != emptyTileIndex) {
-                // Numéro de la tuile en blanc
-                font.setColor(1, 1, 1, 1);
-                String tileNumber = String.valueOf(puzzleState[i]);
-                layout.setText(font, tileNumber);
-                float textX = gridZones[i].x + (gridZones[i].width - layout.width) / 2;
-                float textY = gridZones[i].y + (gridZones[i].height + layout.height) / 2 + 10;
-                font.draw(batch, tileNumber, textX, textY);
-
-                // ID de la case en rouge
-                font.setColor(1, 0, 0, 1);
-                String positionId = String.valueOf(i);
-                layout.setText(font, positionId);
-                textX = gridZones[i].x + (gridZones[i].width - layout.width) / 2;
-                textY = gridZones[i].y + (gridZones[i].height + layout.height) / 2 - 10;
-                font.draw(batch, positionId, textX, textY);
-            }
         }
 
         // Dessiner les boutons
@@ -337,6 +379,8 @@ public class SlidingPuzzleGameScreen extends GameScreen {
 
     @Override
     protected void handleInput() {
+        if (isAnimating) return; // Désactiver les entrées pendant l'animation
+
         if (Gdx.input.justTouched()) {
             System.out.println("Toucher détecté dans SlidingPuzzleGameScreen");
 
@@ -376,7 +420,6 @@ public class SlidingPuzzleGameScreen extends GameScreen {
             } else {
                 // Gérer le déplacement des tuiles
                 for (int positionIndex = 0; positionIndex < gridZones.length; positionIndex++) {
-                    System.out.println("Test position : " + positionIndex + " coordonnées du rectangle (x,y,x',y'): " + gridZones[positionIndex].x + ", " + gridZones[positionIndex].y + ", " + (gridZones[positionIndex].x + gridZones[positionIndex].width) + ", " + (gridZones[positionIndex].y + gridZones[positionIndex].height));
                     if (gridZones[positionIndex].contains(worldPos.x, worldPos.y)) {
                         // Ignorer le clic si c'est sur la case vide
                         if (positionIndex == emptyTileIndex) {
@@ -387,38 +430,18 @@ public class SlidingPuzzleGameScreen extends GameScreen {
                         int tileNumber = puzzleState[positionIndex];
                         System.out.println("Tuile numéro " + tileNumber + " cliquée (position " + positionIndex + ")");
                         System.out.println("Case vide actuelle: position " + emptyTileIndex);
-                        System.out.println("coordonnées du rectangle (x,y,x',y'): " + gridZones[positionIndex].x + ", " + gridZones[positionIndex].y + ", " + (gridZones[positionIndex].x + gridZones[positionIndex].width) + ", " + (gridZones[positionIndex].y + gridZones[positionIndex].height));
 
                         if (isAdjacent(positionIndex, emptyTileIndex)) {
                             System.out.println("Déplacement de la tuile " + tileNumber + " (position " + positionIndex + ") vers la case vide (position " + emptyTileIndex + ")");
 
-                            // Échanger les tuiles
-                            int temp = puzzleState[positionIndex];
-                            puzzleState[positionIndex] = puzzleState[emptyTileIndex];
-                            puzzleState[emptyTileIndex] = temp;
-                            emptyTileIndex = positionIndex;
+                            // Initialiser l'animation
+                            isAnimating = true;
+                            animationProgress = 0f;
+                            animatingTileIndex = positionIndex;
 
-                            System.out.println("Nouvelle position de la case vide: " + emptyTileIndex);
-                            System.out.println("État du puzzle après déplacement: " + java.util.Arrays.toString(puzzleState));
-
-                            // Vérifier si le puzzle est résolu
-                            boolean solved = true;
-                            for (int i = 0; i < puzzleState.length; i++) {
-                                if (puzzleState[i] != i) {
-                                    solved = false;
-                                    break;
-                                }
-                            }
-
-                            if (solved) {
-                                System.out.println("Puzzle résolu !");
-                                isPuzzleSolved = true;
-                                if (game instanceof AdventCalendarGame) {
-                                    AdventCalendarGame adventGame = (AdventCalendarGame) game;
-                                    adventGame.setScore(dayId, 100);
-                                    adventGame.markPaintingAsVisited(dayId);
-                                }
-                            }
+                            // Définir les positions de début et de fin de l'animation
+                            animationStart.set(gridZones[positionIndex].x, gridZones[positionIndex].y, 0);
+                            animationEnd.set(gridZones[emptyTileIndex].x, gridZones[emptyTileIndex].y, 0);
                         } else {
                             System.out.println("Déplacement impossible - Tuile " + tileNumber + " (position " + positionIndex + ") non adjacente à la case vide (position " + emptyTileIndex + ")");
                         }
@@ -434,6 +457,9 @@ public class SlidingPuzzleGameScreen extends GameScreen {
         super.dispose();
         font.dispose();
         whiteTexture.dispose();
+        if (puzzleTexture != null) {
+            puzzleTexture.dispose();
+        }
     }
 
     @Override
