@@ -3,9 +3,9 @@
     "SPZ": {
       "gameClass": "SlidingPuzzleGameScreen",
       "defaultParameters": {
-        "size": 3,
+        "size": 4,
         "bgColor": "0,0,0",
-        "shuffle": 5,
+        "shuffle": 200,
         "animationSpeed": 10
       },
       "parameterTypes": {
@@ -16,13 +16,13 @@
       },
       "presets": {
         "easy": {
-          "shuffle": 50
+          "shuffle": 200
         },
         "medium": {
-          "shuffle": 100
+          "shuffle": 400
         },
         "hard": {
-          "shuffle": 200
+          "shuffle": 600
         },
         "bgBlack": {
           "bgColor": "0,0,0"

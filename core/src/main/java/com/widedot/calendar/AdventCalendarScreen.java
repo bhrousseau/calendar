@@ -266,8 +266,8 @@ public class AdventCalendarScreen implements Screen {
         // Calculer les nouvelles dimensions des boîtes en conservant les proportions
         float aspectRatio = (float) GRID_COLS / GRID_ROWS;
         float gridWidth, gridHeight;
-        
-        if (width / height > aspectRatio) {
+
+        if ((float) width / height > aspectRatio) {
             // La hauteur est la contrainte
             gridHeight = height * 0.9f; // Utiliser 90% de la hauteur
             gridWidth = gridHeight * aspectRatio;

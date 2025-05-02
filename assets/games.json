@@ -37,9 +37,9 @@
       "presets": ["easy", "bgWhite"]
     },
     {
-      "reference": "SPZ_weiss_ii",
+      "reference": "SPZ_on_white_ii",
       "gameTemplate": "SPZ",
-      "theme": "weiss_ii"
+      "theme": "on_white_ii"
     },
     {
       "reference": "SPZ_mona_lisa",

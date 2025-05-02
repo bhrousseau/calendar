@@ -13,9 +13,9 @@ import com.widedot.calendar.AdventCalendarGame;
 import com.widedot.calendar.data.Theme;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.widedot.calendar.config.Config;
 
 import java.util.Map;
-import java.util.HashMap;
 
 /**
  * Écran de jeu pour le puzzle coulissant
@@ -31,6 +31,7 @@ public class SlidingPuzzleGameScreen extends GameScreen {
     private boolean showInfoPanel;
     private final Texture whiteTexture;
     private Color backgroundColor;
+    private boolean isTestMode; // Ajout d'une variable pour le mode test
     
     // Paramètres du jeu provenant de la configuration
     private int gridSize;
@@ -121,6 +122,16 @@ public class SlidingPuzzleGameScreen extends GameScreen {
     public SlidingPuzzleGameScreen(int dayId, Game game, Theme theme, Map<String, Object> parameters) {
         super(dayId, game);
         System.out.println("Constructeur de SlidingPuzzleGameScreen appelé pour le jour " + dayId + " avec paramètres");
+        
+        // Vérifier si on est en mode test
+        if (game instanceof AdventCalendarGame) {
+            AdventCalendarGame adventGame = (AdventCalendarGame) game;
+            // Accéder au mode test directement en utilisant Config.getInstance()
+            this.isTestMode = Config.getInstance().isTestModeEnabled();
+            System.out.println("Mode test: " + isTestMode);
+        } else {
+            this.isTestMode = false;
+        }
         
         // Stocker le thème, qui sera utilisé par loadTheme() plus tard lors de l'appel à show()
         this.theme = theme;
@@ -409,7 +420,10 @@ public class SlidingPuzzleGameScreen extends GameScreen {
         // Dessiner les boutons
         batch.setColor(0.5f, 0.5f, 0.5f, 1);
         batch.draw(whiteTexture, backButton.x, backButton.y, backButton.width, backButton.height);
-        batch.draw(whiteTexture, solveButton.x, solveButton.y, solveButton.width, solveButton.height);
+        // Ne dessiner le bouton Résoudre qu'en mode test
+        if (isTestMode) {
+            batch.draw(whiteTexture, solveButton.x, solveButton.y, solveButton.width, solveButton.height);
+        }
         batch.draw(whiteTexture, infoButton.x, infoButton.y, infoButton.width, infoButton.height);
 
         // Dessiner le texte des boutons
@@ -417,8 +431,11 @@ public class SlidingPuzzleGameScreen extends GameScreen {
         layout.setText(font, "Retour", new Color(1, 1, 1, 1), backButton.width, Align.center, false);
         font.draw(batch, layout, backButton.x, backButton.y + backButton.height / 2 + layout.height / 2);
 
-        layout.setText(font, "Résoudre", new Color(1, 1, 1, 1), solveButton.width, Align.center, false);
-        font.draw(batch, layout, solveButton.x, solveButton.y + solveButton.height / 2 + layout.height / 2);
+        // Ne dessiner le texte du bouton Résoudre qu'en mode test
+        if (isTestMode) {
+            layout.setText(font, "Résoudre", new Color(1, 1, 1, 1), solveButton.width, Align.center, false);
+            font.draw(batch, layout, solveButton.x, solveButton.y + solveButton.height / 2 + layout.height / 2);
+        }
 
         layout.setText(font, "Info", new Color(1, 1, 1, 1), infoButton.width, Align.center, false);
         font.draw(batch, layout, infoButton.x, infoButton.y + infoButton.height / 2 + layout.height / 2);
@@ -432,10 +449,6 @@ public class SlidingPuzzleGameScreen extends GameScreen {
 
             batch.setColor(infoPanelColor);
             batch.draw(whiteTexture, panelX, panelY, panelWidth, panelHeight);
-
-            // Dessiner le bouton de fermeture
-            batch.setColor(0.5f, 0.5f, 0.5f, 1);
-            batch.draw(whiteTexture, closeButton.x, closeButton.y, closeButton.width, closeButton.height);
 
             // Dessiner les informations du tableau
             float textMargin = 20;
@@ -482,11 +495,18 @@ public class SlidingPuzzleGameScreen extends GameScreen {
                 return;
             }
 
+            // Si le panneau d'info est visible, n'importe quel clic le ferme
+            if (showInfoPanel) {
+                System.out.println("Fermeture du panneau d'info");
+                showInfoPanel = false;
+                return;
+            }
+
             if (backButton.contains(worldPos.x, worldPos.y)) {
                 System.out.println("Bouton Retour cliqué");
                 returnToMainMenu();
-            } else if (solveButton.contains(worldPos.x, worldPos.y)) {
-                System.out.println("Bouton Résoudre cliqué");
+            } else if (isTestMode && solveButton.contains(worldPos.x, worldPos.y)) {
+                System.out.println("Bouton Résoudre cliqué (mode test)");
                 if (game instanceof AdventCalendarGame) {
                     AdventCalendarGame adventGame = (AdventCalendarGame) game;
                     adventGame.setScore(dayId, 100);
@@ -496,9 +516,6 @@ public class SlidingPuzzleGameScreen extends GameScreen {
             } else if (infoButton.contains(worldPos.x, worldPos.y)) {
                 System.out.println("Bouton Info cliqué");
                 showInfoPanel = true;
-            } else if (showInfoPanel && closeButton.contains(worldPos.x, worldPos.y)) {
-                System.out.println("Bouton Fermer cliqué");
-                showInfoPanel = false;
             } else {
                 // Gérer le déplacement des tuiles
                 for (int positionIndex = 0; positionIndex < gridZones.length; positionIndex++) {
