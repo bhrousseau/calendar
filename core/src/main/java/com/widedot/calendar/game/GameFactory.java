@@ -1,15 +1,13 @@
 package com.widedot.calendar.game;
 
 import com.badlogic.gdx.Game;
-import com.widedot.calendar.data.Paintable;
 import com.widedot.calendar.screens.GameScreen;
-import com.widedot.calendar.screens.DefaultGameScreen;
-import com.widedot.calendar.painting.PaintingManager;
+import com.widedot.calendar.config.ThemeManager;
 
 /**
  * Fabrique pour créer les différents types de jeux
  */
-public class GameFactory implements GameScreenFactory {
+public class GameFactory {
     private static GameFactory instance;
     private final Game gameInstance;
     
@@ -32,17 +30,7 @@ public class GameFactory implements GameScreenFactory {
         }
         return instance;
     }
-    
-    @Override
-    public GameScreen createGameScreen(int dayId, Paintable painting, Game game) {
-        String gameType = PaintingManager.getInstance().getGameTypeForDay(dayId);
-        return createGameScreen(dayId, gameType, game);
-    }
-    
-    @Override
-    public GameScreen createGameScreen(int dayId, String gameType, Game game) {
-        // Pour l'instant, tous les jeux sont des DefaultGameScreen
-        // À l'avenir, on pourra créer différents types de jeux en fonction de gameType
-        return new DefaultGameScreen(dayId, game);
-    }
+
+
+
 } 

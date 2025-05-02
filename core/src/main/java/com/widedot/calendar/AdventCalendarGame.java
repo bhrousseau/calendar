@@ -1,39 +1,56 @@
 package com.widedot.calendar;
 
 import com.badlogic.gdx.Game;
-import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.Gdx;
-import com.widedot.calendar.config.GameConfig;
-import com.widedot.calendar.game.DefaultGameScreenFactory;
-import com.widedot.calendar.game.GameScreenFactory;
-import com.widedot.calendar.painting.Painting;
-import com.widedot.calendar.painting.PaintingManager;
-import com.widedot.calendar.screens.GameScreen;
+import com.badlogic.gdx.graphics.GL20;
+import com.widedot.calendar.config.Config;
+import com.widedot.calendar.game.DynamicGameScreenFactory;
+import com.widedot.calendar.config.ThemeManager;
+import com.widedot.calendar.data.Theme;
 
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
+/**
+ * Classe principale du jeu
+ */
 public class AdventCalendarGame extends Game {
-    private final SpriteBatch batch;
+   
+    // Batch graphique
+    private SpriteBatch batch;
+    
+    // Gestion temporelle
+    private Calendar calendar;
+    private final Config config;
+    
+    // Fabrique d'écrans de jeu
+    private final DynamicGameScreenFactory gameScreenFactory;
+    
+    // Gestionnaires
+    private final ThemeManager themeManager;
+    
+    // Maps pour stocker l'état des peintures
     private final Map<Integer, Boolean> unlockedPaintings;
     private final Map<Integer, Integer> scores;
     private final Map<Integer, Boolean> visitedPaintings;
     private final Random random;
-    private final GameConfig config;
-    private final PaintingManager paintingManager;
-    private final GameScreenFactory gameScreenFactory;
     
+    /**
+     * Constructeur
+     */
     public AdventCalendarGame() {
         this.batch = new SpriteBatch();
+        this.calendar = Calendar.getInstance();
+        this.config = Config.getInstance();
+        this.gameScreenFactory = DynamicGameScreenFactory.getInstance();
+        this.themeManager = ThemeManager.getInstance();
+        
         this.unlockedPaintings = new HashMap<>();
         this.scores = new HashMap<>();
         this.visitedPaintings = new HashMap<>();
-        this.config = GameConfig.getInstance();
-        this.paintingManager = PaintingManager.getInstance();
-        this.gameScreenFactory = DefaultGameScreenFactory.getInstance();
         
         // Initialiser le générateur aléatoire avec le seed de la configuration
         this.random = new Random(config.getGameSeed());
@@ -44,246 +61,290 @@ public class AdventCalendarGame extends Game {
             scores.put(i, 0);
             visitedPaintings.put(i, false);
         }
+        
+        // En mode test, tous les jours sont déverrouillés seulement si unlocked=true
+        if (config.isTestModeEnabled() && config.isTestUnlocked()) {
+            for (int i = 1; i <= 24; i++) {
+                unlockedPaintings.put(i, true);
+            }
+        }
     }
-
+    
+    /**
+     * Récupère la fabrique d'écrans de jeu
+     * @return La fabrique d'écrans de jeu
+     */
+    public DynamicGameScreenFactory getGameScreenFactory() {
+        return gameScreenFactory;
+    }
+    
     /**
      * Vérifie si un jour peut être déverrouillé
-     * @param dayId L'ID du jour à vérifier
+     * @param day L'ID du jour à vérifier
      * @return true si le jour peut être déverrouillé, false sinon
      */
-    public boolean canUnlockDay(int dayId) {
+    public boolean canUnlock(int day) {
         // Vérifier si le tableau existe
-        if (!paintingManager.hasPaintingForDay(dayId)) {
-            System.out.println("Aucun tableau associé au jour " + dayId);
+        if (!themeManager.hasThemeForDay(day)) {
+            System.out.println("Aucun tableau associé au jour " + day);
             return false;
         }
         
         // Vérifier si le jour est déjà déverrouillé
-        if (unlockedPaintings.get(dayId)) {
-            System.out.println("Le jour " + dayId + " est déjà déverrouillé");
+        if (unlockedPaintings.get(day)) {
+            System.out.println("Le jour " + day + " est déjà déverrouillé");
             return true;
         }
         
         // Vérifier si le jour est valide (entre 1 et 24)
-        if (dayId < 1 || dayId > 24) {
-            System.out.println("Le jour " + dayId + " n'est pas valide (doit être entre 1 et 24)");
+        if (day < 1 || day > 24) {
+            System.out.println("Le jour " + day + " n'est pas valide (doit être entre 1 et 24)");
             return false;
         }
         
         // Vérifier si le jour est déjà passé ou en cours
-        if (!isDayValid(dayId)) {
-            System.out.println("Le jour " + dayId + " n'est pas encore valide (date)");
+        if (!isDayValid(day)) {
+            System.out.println("Le jour " + day + " n'est pas encore valide (date)");
             return false;
         }
         
         // Cas particulier pour le jour 1 (pas de jour précédent)
-        if (dayId == 1) {
+        if (day == 1) {
             System.out.println("Le jour 1 peut toujours être déverrouillé");
             return true;
         }
         
         // Vérifier si le jour précédent a été déverrouillé et résolu
-        int previousDay = dayId - 1;
+        int previousDay = day - 1;
         if (!unlockedPaintings.get(previousDay) || scores.get(previousDay) == 0) {
             System.out.println("Le jour précédent " + previousDay + " n'a pas été déverrouillé ou résolu");
             return false;
         }
         
-        System.out.println("Le jour " + dayId + " peut être déverrouillé");
+        System.out.println("Le jour " + day + " peut être déverrouillé");
         return true;
     }
     
     /**
      * Vérifie si un jour est valide (déjà passé ou en cours)
-     * @param dayId L'ID du jour à vérifier
+     * @param day L'ID du jour à vérifier
      * @return true si le jour est valide, false sinon
      */
-    private boolean isDayValid(int dayId) {
+    private boolean isDayValid(int day) {
+        String calendarMode = config.getCalendarMode();
+        
+        // Déterminer la date de référence (date actuelle ou date de test)
+        Calendar referenceDate = Calendar.getInstance();
+        
+        // En mode test, vérifier si la date de test est dans le futur
         if (config.isTestModeEnabled()) {
-            // En mode test, utiliser la date de test
-            return dayId <= config.getTestDay();
-        } else {
-            // Utiliser la date réelle
-            Calendar now = Calendar.getInstance();
-            int currentYear = now.get(Calendar.YEAR);
-            int currentMonth = now.get(Calendar.MONTH);
-            int currentDay = now.get(Calendar.DAY_OF_MONTH);
+            // Créer une date avec les valeurs de test
+            Calendar testDate = Calendar.getInstance();
+            testDate.set(config.getTestYear(), config.getTestMonth() - 1, config.getTestDay());
             
-            // Le jeu n'est jouable qu'en décembre
-            if (currentMonth != Calendar.DECEMBER) {
-                return false;
-            }
-            
-            // Le jeu est jouable jusqu'au 31 décembre
-            if (currentDay > 31) {
-                return false;
-            }
-            
-            // Vérifier si le jour est déjà passé ou en cours
-            return dayId <= currentDay;
+            // Utiliser la date de test pour la vérification
+            referenceDate.set(config.getTestYear(), config.getTestMonth() - 1, config.getTestDay());
+        }
+
+        System.out.println("calendarMode: " + calendarMode);
+        System.out.println("referenceDate: " + referenceDate.getTime());
+        
+        switch (calendarMode) {
+            case "month":
+                return isValidDayInMonth(day, referenceDate);
+            case "year":
+                return isValidDayInYear(day, referenceDate);
+            default:
+                // Mode par défaut est "month"
+                return isValidDayInMonth(day, referenceDate);
         }
     }
-
+    
+    /**
+     * Vérifie si un jour est valide dans le mode "month"
+     * @param day Le jour à vérifier
+     * @param referenceDate La date de référence (actuelle ou de test)
+     * @return true si le jour est valide, false sinon
+     */
+    private boolean isValidDayInMonth(int day, Calendar referenceDate) {
+        if (day < 1 || day > 31) {
+            return false;
+        }
+        
+        // Vérifier si le jour demandé est valide pour le mois spécifié
+        Calendar targetDateMonth = Calendar.getInstance();
+        targetDateMonth.set(config.getMonthModeYear(), config.getMonthModeMonth() - 1, 1);
+        int maxDayInMonth = targetDateMonth.getActualMaximum(Calendar.DAY_OF_MONTH);
+        
+        System.out.println("Mois configuré: " + config.getMonthModeMonth() + ", max jours: " + maxDayInMonth);
+        System.out.println("Jour demandé: " + day + ", jour référence: " + referenceDate.get(Calendar.DAY_OF_MONTH));
+        
+        // Si le jour demandé dépasse le nombre de jours dans le mois, c'est invalide
+        if (day > maxDayInMonth) {
+            System.out.println("Jour " + day + " dépasse le max de " + maxDayInMonth + " jours dans le mois");
+            return false;
+        }
+        
+        // Le jour est valide si le jour courant est >= au jour demandé
+        boolean isValid = referenceDate.get(Calendar.DAY_OF_MONTH) >= day;
+        System.out.println("Jour " + day + " est " + (isValid ? "valide" : "invalide") + " (jour courant: " + referenceDate.get(Calendar.DAY_OF_MONTH) + ")");
+        return isValid;
+    }
+    
+    /**
+     * Vérifie si un jour est valide dans le mode "year"
+     * @param day Le jour à vérifier (jour de l'année)
+     * @param referenceDate La date de référence (actuelle ou de test)
+     * @return true si le jour est valide, false sinon
+     */
+    private boolean isValidDayInYear(int day, Calendar referenceDate) {
+        if (day < 1 || day > 366) { // 366 pour supporter les années bissextiles
+            return false;
+        }
+        
+        // Vérifier si l'année spécifiée est bissextile
+        Calendar yearCal = Calendar.getInstance();
+        yearCal.set(Calendar.YEAR, config.getYearModeYear());
+        int maxDayInYear = yearCal.getActualMaximum(Calendar.DAY_OF_YEAR);
+        
+        // Si le jour demandé dépasse le nombre de jours dans l'année, c'est invalide
+        if (day > maxDayInYear) {
+            return false;
+        }
+        
+        // Le jour est valide si le jour courant de l'année est >= au jour demandé
+        return referenceDate.get(Calendar.DAY_OF_YEAR) >= day;
+    }
+    
     /**
      * Déverrouille un tableau
-     * @param dayId L'ID du jour à déverrouiller
+     * @param day L'ID du jour à déverrouiller
+     * @return true si le jour a été déverrouillé, false sinon
      */
-    public void unlockPainting(int dayId) {
-        if (canUnlockDay(dayId)) {
-            unlockedPaintings.put(dayId, true);
+    public boolean unlock(int day) {
+        if (canUnlock(day)) {
+            unlockedPaintings.put(day, true);
             // Réinitialiser l'état de visite
-            visitedPaintings.put(dayId, false);
+            visitedPaintings.put(day, false);
+            return true;
         }
+        return false;
     }
-
+    
     /**
      * Vérifie si un tableau est déverrouillé
-     * @param dayId L'ID du jour à vérifier
+     * @param day L'ID du jour à vérifier
      * @return true si le tableau est déverrouillé, false sinon
      */
-    public boolean isPaintingUnlocked(int dayId) {
-        return unlockedPaintings.get(dayId);
+    public boolean isUnlocked(int day) {
+        return unlockedPaintings.get(day);
     }
     
     /**
      * Vérifie si un tableau a été visité
-     * @param dayId L'ID du jour à vérifier
+     * @param day L'ID du jour à vérifier
      * @return true si le tableau a été visité, false sinon
      */
-    public boolean isPaintingVisited(int dayId) {
-        return visitedPaintings.get(dayId);
+    public boolean isVisited(int day) {
+        return visitedPaintings.containsKey(day) && visitedPaintings.get(day);
     }
     
     /**
      * Marque un tableau comme visité
-     * @param dayId L'ID du jour à marquer comme visité
+     * @param day L'ID du jour à marquer
+     * @param visited true si visité, false sinon
      */
-    public void markPaintingAsVisited(int dayId) {
-        visitedPaintings.put(dayId, true);
+    public void setVisited(int day, boolean visited) {
+        visitedPaintings.put(day, visited);
     }
-
+    
+    /**
+     * Récupère le thème associé à un jour
+     * @param day L'ID du jour
+     * @return Le thème associé au jour ou null si non trouvé
+     */
+    public Theme getThemeForDay(int day) {
+        return themeManager.getThemeByDay(day);
+    }
+    
     /**
      * Récupère le score d'un jour
-     * @param dayId L'ID du jour
+     * @param day L'ID du jour
      * @return Le score du jour
      */
-    public int getScore(int dayId) {
-        return scores.get(dayId);
+    public int getScore(int day) {
+        return scores.get(day);
     }
-
+    
     /**
      * Définit le score d'un jour
-     * @param dayId L'ID du jour
+     * @param day L'ID du jour
      * @param score Le score à définir
      */
-    public void setScore(int dayId, int score) {
-        scores.put(dayId, score);
+    public void setScore(int day, int score) {
+        scores.put(day, score);
     }
     
     /**
-     * Récupère la map des tableaux déverrouillés
-     * @return La map des tableaux déverrouillés
+     * Lance le jeu associé à un jour
+     * @param day L'ID du jour
      */
-    public Map<Integer, Boolean> getUnlockedPaintings() {
-        return unlockedPaintings;
-    }
-    
-    /**
-     * Récupère la map des scores
-     * @return La map des scores
-     */
-    public Map<Integer, Integer> getScores() {
-        return scores;
-    }
-    
-    /**
-     * Récupère la map des tableaux visités
-     * @return La map des tableaux visités
-     */
-    public Map<Integer, Boolean> getVisitedPaintings() {
-        return visitedPaintings;
-    }
-    
-    /**
-     * Récupère le générateur aléatoire
-     * @return Le générateur aléatoire
-     */
-    public Random getRandom() {
-        return random;
-    }
-    
-    /**
-     * Récupère un tableau par son identifiant de jour
-     * @param dayId L'identifiant du jour
-     * @return Le tableau correspondant ou null si non trouvé
-     */
-    public Painting getPainting(int dayId) {
-        return paintingManager.getPaintingByDay(dayId);
-    }
-    
-    /**
-     * Récupère le type de jeu associé à un tableau
-     * @param dayId L'identifiant du tableau
-     * @return Le type de jeu ou null si le tableau n'existe pas
-     */
-    public String getGameType(int dayId) {
-        return PaintingManager.getInstance().getGameTypeForDay(dayId);
-    }
-
-    /**
-     * Lance le jeu pour un jour donné
-     * @param dayId L'identifiant du jour
-     */
-    public void launchGame(int dayId) {
-        System.out.println("Tentative de lancement du mini-jeu pour le jour " + dayId);
-        if (isDayValid(dayId) && isPaintingUnlocked(dayId)) {
-            Painting painting = getPainting(dayId);
-            if (painting != null && this != null) {
-                
-                // Sauvegarder l'écran actuel pour pouvoir y revenir
-                Screen currentScreen = getScreen();
-                
-                // Marquer le tableau comme visité
-                markPaintingAsVisited(dayId);
-                
-                try {
-                    // Créer et définir le nouvel écran de jeu
-                    GameScreen gameScreen = gameScreenFactory.createGameScreen(dayId, painting, this);
-                    
-                    // Mettre à jour l'écran de AdventCalendarGame
-                    setScreen(gameScreen);
-                    
-                    // Mettre à jour l'écran de Main
-                    if (this instanceof Game) {
-                        Game mainGame = (Game) Gdx.app.getApplicationListener();
-                        if (mainGame instanceof Main) {
-                            ((Main) mainGame).setScreen(gameScreen);
-                            System.out.println("Écran de Main mis à jour avec: " + gameScreen.getClass().getSimpleName());
-                        }
-                    }
-
-                } catch (Exception e) {
-                    System.err.println("ERREUR lors de la création du nouvel écran: " + e.getMessage());
-                    e.printStackTrace();
-                    // En cas d'erreur, revenir à l'écran précédent
-                    if (currentScreen != null) {
-                        setScreen(currentScreen);
-                    }
-                }
-            } else {
-                System.out.println("Peinture non trouvée pour le jour " + dayId);
-            }
-        } else {
-            System.out.println("Le jour " + dayId + " n'est pas valide ou n'est pas déverrouillé");
+    public void launchGame(int day) {
+        System.out.println("Tentative de lancement du mini-jeu pour le jour " + day);
+        
+        // Vérifier d'abord que le jour est valide et déverrouillé
+        if (!isDayValid(day)) {
+            System.err.println("Le jour " + day + " n'est pas valide");
+            return;
+        }
+        
+        if (!isUnlocked(day)) {
+            System.err.println("Le jour " + day + " n'est pas déverrouillé");
+            return;
+        }
+        
+        // Récupérer le thème pour ce jour
+        Theme theme = getThemeForDay(day);
+        if (theme == null) {
+            System.err.println("Aucun thème trouvé pour le jour " + day);
+            return;
+        }
+        
+        // Récupérer le type de jeu associé au jour
+        String gameTemplate = themeManager.getGameTemplateForDay(day);
+        if (gameTemplate == null || gameTemplate.isEmpty()) {
+            System.err.println("Aucun type de jeu défini pour le jour " + day);
+            return;
+        }
+        
+        try {
+            // Créer et afficher l'écran de jeu correspondant
+            System.out.println("Lancement du jeu " + gameTemplate + " pour le jour " + day);
+            setScreen(gameScreenFactory.createGameScreen(day, gameTemplate, this));
+        } catch (Exception e) {
+            System.err.println("Erreur lors du lancement du jeu pour le jour " + day + ": " + e.getMessage());
+            e.printStackTrace();
         }
     }
-
+    
     @Override
     public void create() {
+        // En mode test, utiliser une date fixe
+        if (config.isTestModeEnabled()) {
+            calendar.set(config.getTestYear(), config.getTestMonth(), config.getTestDay());
+        }
+        
+        // Aller à l'écran du calendrier de l'avent
+        setScreen(new AdventCalendarScreen(this));
     }
     
     @Override
     public void render() {
+        // Effacer l'écran
+        Gdx.gl.glClearColor(0, 0, 0, 1);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+        
+        // Rendre l'écran actif
         super.render();
     }
     
@@ -304,7 +365,26 @@ public class AdventCalendarGame extends Game {
     
     @Override
     public void dispose() {
+        // Libérer les ressources
         batch.dispose();
-        super.dispose();
+        if (getScreen() != null) {
+            getScreen().dispose();
+        }
+    }
+    
+    /**
+     * Récupère le batch graphique
+     * @return Le batch graphique
+     */
+    public SpriteBatch getBatch() {
+        return batch;
+    }
+    
+    /**
+     * Récupère le générateur aléatoire
+     * @return Le générateur aléatoire
+     */
+    public Random getRandom() {
+        return random;
     }
 } 

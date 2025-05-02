@@ -10,8 +10,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
-import com.widedot.calendar.config.GameConfig;
-import com.widedot.calendar.painting.PaintingManager;
+import com.widedot.calendar.config.Config;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -150,7 +149,7 @@ public class AdventCalendarScreen implements Screen {
         }
         
         // Mélanger la liste des jours
-        Collections.shuffle(days, new Random(GameConfig.getInstance().getGameSeed()));
+        Collections.shuffle(days, new Random(Config.getInstance().getGameSeed()));
         
         // Créer les boîtes avec les jours mélangés
         for (int i = 0; i < 24; i++) {
@@ -209,7 +208,7 @@ public class AdventCalendarScreen implements Screen {
             Rectangle box = boxes.get(i);
             Texture texture;
             
-            if (adventGame != null && adventGame.isPaintingUnlocked(i)) {
+            if (adventGame != null && adventGame.isUnlocked(i)) {
                 texture = loadUnlockedTexture(i);
             } else {
                 texture = lockedTexture;
@@ -237,12 +236,12 @@ public class AdventCalendarScreen implements Screen {
                 Rectangle box = boxes.get(i);
                 if (box.contains(touchPos.x, touchPos.y)) {
                     System.out.println("Case cliquée : jour " + i);
-                    if (!adventGame.isPaintingUnlocked(i)) {
+                    if (!adventGame.isUnlocked(i)) {
                         System.out.println("Déverrouillage du jour " + i);
-                        adventGame.unlockPainting(i);
-                    } else if (!adventGame.isPaintingVisited(i)) {
+                        adventGame.unlock(i);
+                    } else if (!adventGame.isVisited(i)) {
                         System.out.println("Marquage du jour " + i + " comme visité et lancement du mini-jeu");
-                        adventGame.markPaintingAsVisited(i);
+                        adventGame.setVisited(i, true);
                         adventGame.launchGame(i);
                     } else {
                         System.out.println("Lancement du mini-jeu pour le jour " + i);

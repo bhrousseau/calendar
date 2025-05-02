@@ -8,7 +8,7 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.widedot.calendar.data.Paintable;
+import com.widedot.calendar.data.Theme;
 import com.widedot.calendar.AdventCalendarScreen;
 import com.widedot.calendar.Main;
 
@@ -21,9 +21,7 @@ public abstract class GameScreen implements Screen {
     protected OrthographicCamera camera;
     protected Viewport viewport;
     protected final SpriteBatch batch;
-    protected final Paintable paintable;
-    private static final float WORLD_WIDTH = 800;
-    private static final float WORLD_HEIGHT = 600;
+    protected Theme theme;
     
     // Dimensions actuelles de la fenêtre
     protected float currentWidth;
@@ -40,7 +38,7 @@ public abstract class GameScreen implements Screen {
         this.camera = new OrthographicCamera();
         this.viewport = new ScreenViewport(camera);
         this.batch = new SpriteBatch();
-        this.paintable = loadPaintable(dayId);
+        this.theme = null; // Le thème sera chargé dans la méthode show()
         
         // Initialiser les dimensions
         this.currentWidth = Gdx.graphics.getWidth();
@@ -52,7 +50,7 @@ public abstract class GameScreen implements Screen {
      * @param day L'identifiant du jour
      * @return La peinture associée au jour
      */
-    protected abstract Paintable loadPaintable(int day);
+    protected abstract Theme loadTheme(int day);
 
     /**
      * Initialise le jeu
@@ -78,6 +76,8 @@ public abstract class GameScreen implements Screen {
     @Override
     public void show() {
         System.out.println("Méthode show de GameScreen appelée pour le jour " + dayId);
+        
+        this.theme = loadTheme(dayId);
         initializeGame();
     }
 
@@ -148,14 +148,10 @@ public abstract class GameScreen implements Screen {
         // Créer un nouvel écran de menu principal
         AdventCalendarScreen mainScreen = new AdventCalendarScreen(game);
         
-        // Mettre à jour l'écran de Game
+        // Mettre à jour l'écran de Game uniquement
         game.setScreen(mainScreen);
         
-        // Mettre à jour l'écran de Main
-        Game mainGame = (Game) Gdx.app.getApplicationListener();
-        if (mainGame instanceof Main) {
-            ((Main) mainGame).setScreen(mainScreen);
-            System.out.println("Écran de Main mis à jour avec: " + mainScreen.getClass().getSimpleName());
-        }
+        // Ajouter du logging pour faciliter le débogage
+        System.out.println("Retour au menu principal depuis " + this.getClass().getSimpleName() + " (jour " + dayId + ")");
     }
 } 

@@ -17,19 +17,24 @@ public class Main extends Game {
         System.out.println("GL30 disponible: " + (Gdx.graphics.isGL30Available() ? "oui" : "non"));
         
         game = new AdventCalendarGame();
-        setScreen(new AdventCalendarScreen(game));
+        game.create();
+        setScreen(game.getScreen());
     }
     
     @Override
     public void render() {
-        screen.render(Gdx.graphics.getDeltaTime());
+        game.render();
+    }
+    
+    @Override
+    public void resize(int width, int height) {
+        System.out.println("Main.resize appelé avec dimensions: " + width + "x" + height);
+        super.resize(width, height);
+        game.resize(width, height);
     }
     
     @Override
     public void dispose() {
-        if (screen != null) {
-            screen.dispose();
-        }
         if (game != null) {
             game.dispose();
         }

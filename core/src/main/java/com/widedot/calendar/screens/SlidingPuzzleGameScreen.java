@@ -10,10 +10,12 @@ import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Align;
 import com.widedot.calendar.AdventCalendarGame;
-import com.widedot.calendar.data.Paintable;
-import com.widedot.calendar.painting.PaintingManager;
+import com.widedot.calendar.data.Theme;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * Écran de jeu pour le puzzle coulissant
@@ -28,10 +30,15 @@ public class SlidingPuzzleGameScreen extends GameScreen {
     private final Color infoPanelColor;
     private boolean showInfoPanel;
     private final Texture whiteTexture;
-    private final int GRID_SIZE = 3;
+    private Color backgroundColor;
+    
+    // Paramètres du jeu provenant de la configuration
+    private int gridSize;
     private final float GRID_MARGIN = 80; // Marge autour de la grille
     private final float SPACING_RATIO = 0.05f; // Espacement fixe de 5% de la taille des tuiles
-    private final float ANIMATION_SPEED = 10f; // Vitesse de l'animation (tuiles par seconde)
+    private float animationSpeed; // Vitesse de l'animation (tuiles par seconde)
+    private int shuffleMoves; // Nombre de mouvements pour mélanger le puzzle
+    
     private final int[] puzzleState; // État actuel du puzzle (index = position, valeur = numéro de tuile)
     private final Rectangle[] gridZones; // Positions des tuiles (index = position)
     private float tileSize; // Taille dynamique des tuiles
@@ -40,6 +47,7 @@ public class SlidingPuzzleGameScreen extends GameScreen {
     private boolean isPuzzleSolved; // Indique si le puzzle est résolu
     private Texture puzzleTexture; // Texture du puzzle
     private TextureRegion[] puzzleTiles; // Régions de texture pour chaque tuile
+    private Theme theme; // Le thème du jeu
 
     // Variables pour l'animation
     private boolean isAnimating = false;
@@ -50,10 +58,10 @@ public class SlidingPuzzleGameScreen extends GameScreen {
 
     private boolean isAdjacent(int tileIndex1, int tileIndex2) {
         // Convertir les indices linéaires en coordonnées de grille
-        int row1 = tileIndex1 / GRID_SIZE;
-        int col1 = tileIndex1 % GRID_SIZE;
-        int row2 = tileIndex2 / GRID_SIZE;
-        int col2 = tileIndex2 % GRID_SIZE;
+        int row1 = tileIndex1 / gridSize;
+        int col1 = tileIndex1 % gridSize;
+        int row2 = tileIndex2 / gridSize;
+        int col2 = tileIndex2 % gridSize;
 
         // Vérifier l'adjacence horizontale ou verticale
         boolean horizontalAdjacent = row1 == row2 && Math.abs(col1 - col2) == 1;
@@ -73,21 +81,21 @@ public class SlidingPuzzleGameScreen extends GameScreen {
         emptyTileIndex = puzzleState.length - 1;
 
         // Nombre de mouvements aléatoires à effectuer
-        int numMoves = 100 + (int)(Math.random() * 100); // Entre 100 et 200 mouvements
+        int numMoves = shuffleMoves;
 
         // Effectuer des mouvements aléatoires valides
         for (int i = 0; i < numMoves; i++) {
             // Trouver les tuiles adjacentes à la case vide
-            int row = emptyTileIndex / GRID_SIZE;
-            int col = emptyTileIndex % GRID_SIZE;
+            int row = emptyTileIndex / gridSize;
+            int col = emptyTileIndex % gridSize;
             int[] possibleMoves = new int[4];
             int numPossibleMoves = 0;
 
             // Vérifier les 4 directions possibles
-            if (row > 0) possibleMoves[numPossibleMoves++] = emptyTileIndex - GRID_SIZE; // Haut
-            if (row < GRID_SIZE - 1) possibleMoves[numPossibleMoves++] = emptyTileIndex + GRID_SIZE; // Bas
+            if (row > 0) possibleMoves[numPossibleMoves++] = emptyTileIndex - gridSize; // Haut
+            if (row < gridSize - 1) possibleMoves[numPossibleMoves++] = emptyTileIndex + gridSize; // Bas
             if (col > 0) possibleMoves[numPossibleMoves++] = emptyTileIndex - 1; // Gauche
-            if (col < GRID_SIZE - 1) possibleMoves[numPossibleMoves++] = emptyTileIndex + 1; // Droite
+            if (col < gridSize - 1) possibleMoves[numPossibleMoves++] = emptyTileIndex + 1; // Droite
 
             // Choisir un mouvement aléatoire parmi les possibles
             if (numPossibleMoves > 0) {
@@ -104,13 +112,72 @@ public class SlidingPuzzleGameScreen extends GameScreen {
     }
 
     /**
-     * Constructeur
+     * Constructeur avec paramètres dynamiques
      * @param dayId L'identifiant du jour
      * @param game L'instance du jeu
+     * @param theme Le thème du jeu
+     * @param parameters Les paramètres du jeu
      */
-    public SlidingPuzzleGameScreen(int dayId, Game game) {
+    public SlidingPuzzleGameScreen(int dayId, Game game, Theme theme, Map<String, Object> parameters) {
         super(dayId, game);
-        System.out.println("Constructeur de SlidingPuzzleGameScreen appelé pour le jour " + dayId);
+        System.out.println("Constructeur de SlidingPuzzleGameScreen appelé pour le jour " + dayId + " avec paramètres");
+        
+        // Stocker le thème, qui sera utilisé par loadTheme() plus tard lors de l'appel à show()
+        this.theme = theme;
+        
+        // Vérifier que tous les paramètres requis sont présents
+        if (parameters == null) {
+            throw new IllegalArgumentException("Les paramètres sont obligatoires pour SlidingPuzzleGameScreen");
+        }
+        
+        // Extraction et vérification des paramètres
+        // Ceci est fait au début pour que tous les paramètres soient disponibles
+        // avant que les méthodes qui les utilisent ne soient appelées
+        
+        // Vérifier et extraire les paramètres obligatoires
+        if (!parameters.containsKey("size")) {
+            throw new IllegalArgumentException("Le paramètre 'size' est obligatoire");
+        }
+        this.gridSize = (Integer) parameters.get("size");
+        
+        if (!parameters.containsKey("animationSpeed")) {
+            throw new IllegalArgumentException("Le paramètre 'animationSpeed' est obligatoire");
+        }
+        Object animSpeedValue = parameters.get("animationSpeed");
+        // Conversion de l'objet en float (gestion de Integer et Float)
+        if (animSpeedValue instanceof Number) {
+            this.animationSpeed = ((Number) animSpeedValue).floatValue();
+        } else {
+            throw new IllegalArgumentException("Le paramètre 'animationSpeed' doit être un nombre");
+        }
+        
+        if (!parameters.containsKey("shuffle")) {
+            throw new IllegalArgumentException("Le paramètre 'shuffle' est obligatoire");
+        }
+        this.shuffleMoves = (Integer) parameters.get("shuffle");
+        
+        // Traiter la couleur de fond
+        if (!parameters.containsKey("bgColor")) {
+            throw new IllegalArgumentException("Le paramètre 'bgColor' est obligatoire");
+        }
+        String bgColor = (String) parameters.get("bgColor");
+        Color parsedColor;
+        
+        String[] bgColorParts = bgColor.split(",");
+        if (bgColorParts.length == 3) {
+            try {
+                int r = Integer.parseInt(bgColorParts[0].trim());
+                int g = Integer.parseInt(bgColorParts[1].trim());
+                int b = Integer.parseInt(bgColorParts[2].trim());
+                parsedColor = new Color(r / 255f, g / 255f, b / 255f, 1f);
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("Format de couleur invalide pour 'bgColor': " + bgColor);
+            }
+        } else {
+            throw new IllegalArgumentException("Format de couleur invalide pour 'bgColor': " + bgColor);
+        }
+        this.backgroundColor = parsedColor;
+        System.out.println("backgroundColor: " + this.backgroundColor);
 
         this.font = new BitmapFont();
         this.layout = new GlyphLayout();
@@ -128,45 +195,56 @@ public class SlidingPuzzleGameScreen extends GameScreen {
         this.whiteTexture = new Texture(pixmap);
         pixmap.dispose();
 
-        this.puzzleState = new int[GRID_SIZE * GRID_SIZE];
-        this.gridZones = new Rectangle[GRID_SIZE * GRID_SIZE];
-        this.emptyTileIndex = GRID_SIZE * GRID_SIZE - 1;
+        this.puzzleState = new int[gridSize * gridSize];
+        this.gridZones = new Rectangle[gridSize * gridSize];
+        this.emptyTileIndex = gridSize * gridSize - 1;
 
         System.out.println("Constructeur de SlidingPuzzleGameScreen terminé");
     }
 
     @Override
-    protected Paintable loadPaintable(int day) {
-        System.out.println("Chargement de la peinture pour le jour " + day);
-        Paintable paintable = PaintingManager.getInstance().getPaintingByDay(day);
+    protected Theme loadTheme(int day) {
+        System.out.println("Chargement de la ressource graphique pour le jour " + day);
         
         // Charger la texture du puzzle
-        if (paintable != null) {
-            String imagePath = paintable.getImagePath();
-            if (imagePath != null && !imagePath.isEmpty()) {
-                puzzleTexture = new Texture(Gdx.files.internal(imagePath));
-                createPuzzleTiles();
-            }
+        String imagePath = this.theme.getSquareImagePath();
+        if (imagePath == null || imagePath.isEmpty()) {
+            throw new IllegalStateException("Le chemin d'image du thème est invalide");
         }
         
-        return paintable;
+        try {
+            System.out.println("Chargement de la texture depuis: " + imagePath);
+            puzzleTexture = new Texture(Gdx.files.internal(imagePath));
+            
+            // Maintenant que tous les paramètres sont initialisés et que la texture est chargée,
+            // nous pouvons créer les tuiles
+            createPuzzleTiles();
+        } catch (Exception e) {
+            System.err.println("Erreur lors du chargement de la texture: " + e.getMessage());
+            e.printStackTrace();
+            throw new IllegalStateException("Erreur lors du chargement de la texture: " + e.getMessage(), e);
+        }
+        
+        return this.theme;
     }
 
     /**
      * Crée les régions de texture pour chaque tuile du puzzle
      */
     private void createPuzzleTiles() {
-        if (puzzleTexture == null) return;
+        if (puzzleTexture == null) {
+            throw new IllegalStateException("La texture du puzzle n'a pas été chargée");
+        }
 
-        puzzleTiles = new TextureRegion[GRID_SIZE * GRID_SIZE];
-        int tileWidth = puzzleTexture.getWidth() / GRID_SIZE;
-        int tileHeight = puzzleTexture.getHeight() / GRID_SIZE;
+        puzzleTiles = new TextureRegion[gridSize * gridSize];
+        int tileWidth = puzzleTexture.getWidth() / gridSize;
+        int tileHeight = puzzleTexture.getHeight() / gridSize;
 
-        for (int row = 0; row < GRID_SIZE; row++) {
-            for (int col = 0; col < GRID_SIZE; col++) {
-                int index = row * GRID_SIZE + col;
+        for (int row = 0; row < gridSize; row++) {
+            for (int col = 0; col < gridSize; col++) {
+                int index = row * gridSize + col;
                 // Inverser la ligne pour correspondre à l'orientation de la grille
-                int textureRow = GRID_SIZE - 1 - row;
+                int textureRow = gridSize - 1 - row;
                 puzzleTiles[index] = new TextureRegion(puzzleTexture, 
                     col * tileWidth, 
                     textureRow * tileHeight, 
@@ -192,24 +270,24 @@ public class SlidingPuzzleGameScreen extends GameScreen {
         
         // Calculer la taille maximale possible pour une tuile
         float maxTileSize = Math.min(
-            availableWidth / (GRID_SIZE + (GRID_SIZE - 1) * SPACING_RATIO),
-            availableHeight / (GRID_SIZE + (GRID_SIZE - 1) * SPACING_RATIO)
+            availableWidth / (gridSize + (gridSize - 1) * SPACING_RATIO),
+            availableHeight / (gridSize + (gridSize - 1) * SPACING_RATIO)
         );
         
         tileSize = maxTileSize;
         tileSpacing = tileSize * SPACING_RATIO;
 
         // Calculer la taille totale de la grille
-        float gridSize = GRID_SIZE * (tileSize + tileSpacing) - tileSpacing;
+        float totalGridSize = gridSize * (tileSize + tileSpacing) - tileSpacing;
 
         // Calculer les marges pour centrer la grille dans le viewport
-        float marginX = (viewport.getWorldWidth() - gridSize) / 2;
-        float marginY = (viewport.getWorldHeight() - gridSize) / 2;
+        float marginX = (viewport.getWorldWidth() - totalGridSize) / 2;
+        float marginY = (viewport.getWorldHeight() - totalGridSize) / 2;
 
         // Initialiser les positions des tuiles
-        for (int row = 0; row < GRID_SIZE; row++) {
-            for (int col = 0; col < GRID_SIZE; col++) {
-                int positionIndex = row * GRID_SIZE + col;
+        for (int row = 0; row < gridSize; row++) {
+            for (int col = 0; col < gridSize; col++) {
+                int positionIndex = row * gridSize + col;
                 gridZones[positionIndex] = new Rectangle(
                     marginX + col * (tileSize + tileSpacing),
                     marginY + row * (tileSize + tileSpacing),
@@ -233,7 +311,7 @@ public class SlidingPuzzleGameScreen extends GameScreen {
     protected void updateGame(float delta) {
         if (isAnimating) {
             // Mettre à jour la progression de l'animation
-            animationProgress += delta * ANIMATION_SPEED;
+            animationProgress += delta * animationSpeed;
             
             if (animationProgress >= 1f) {
                 // Animation terminée
@@ -261,7 +339,7 @@ public class SlidingPuzzleGameScreen extends GameScreen {
                     if (game instanceof AdventCalendarGame) {
                         AdventCalendarGame adventGame = (AdventCalendarGame) game;
                         adventGame.setScore(dayId, 100);
-                        adventGame.markPaintingAsVisited(dayId);
+                        adventGame.setVisited(dayId, true);
                     }
                 }
             }
@@ -271,7 +349,11 @@ public class SlidingPuzzleGameScreen extends GameScreen {
     @Override
     protected void renderGame() {
         // Dessiner le fond
-        batch.setColor(1, 1, 1, 1);
+        batch.setColor(backgroundColor);
+        batch.draw(whiteTexture, 0, 0, viewport.getWorldWidth(), viewport.getWorldHeight());
+
+        // Réinitialiser la couleur avant de dessiner les tuiles (pour qu'elles soient opaques)
+        batch.setColor(Color.WHITE);
 
         // Dessiner les tuiles du puzzle
         if (puzzleTiles != null) {
@@ -363,16 +445,16 @@ public class SlidingPuzzleGameScreen extends GameScreen {
             float descriptionY = yearY - 80;
 
             font.setColor(1, 1, 1, 1);
-            layout.setText(font, paintable.getTitle(), new Color(1, 1, 1, 1), panelWidth - 2 * textMargin, Align.center, false);
+            layout.setText(font, theme.getTitle(), new Color(1, 1, 1, 1), panelWidth - 2 * textMargin, Align.center, false);
             font.draw(batch, layout, panelX + textMargin, titleY);
 
-            layout.setText(font, paintable.getArtist(), new Color(1, 1, 1, 1), panelWidth - 2 * textMargin, Align.center, false);
+            layout.setText(font, theme.getArtist(), new Color(1, 1, 1, 1), panelWidth - 2 * textMargin, Align.center, false);
             font.draw(batch, layout, panelX + textMargin, artistY);
 
-            layout.setText(font, String.valueOf(paintable.getYear()), new Color(1, 1, 1, 1), panelWidth - 2 * textMargin, Align.center, false);
+            layout.setText(font, String.valueOf(theme.getYear()), new Color(1, 1, 1, 1), panelWidth - 2 * textMargin, Align.center, false);
             font.draw(batch, layout, panelX + textMargin, yearY);
 
-            layout.setText(font, paintable.getDescription(), new Color(1, 1, 1, 1), panelWidth - 2 * textMargin, Align.center, true);
+            layout.setText(font, theme.getDescription(), new Color(1, 1, 1, 1), panelWidth - 2 * textMargin, Align.center, true);
             font.draw(batch, layout, panelX + textMargin, descriptionY);
         }
     }
@@ -408,7 +490,7 @@ public class SlidingPuzzleGameScreen extends GameScreen {
                 if (game instanceof AdventCalendarGame) {
                     AdventCalendarGame adventGame = (AdventCalendarGame) game;
                     adventGame.setScore(dayId, 100);
-                    adventGame.markPaintingAsVisited(dayId);
+                    adventGame.setVisited(dayId, true);
                 }
                 returnToMainMenu();
             } else if (infoButton.contains(worldPos.x, worldPos.y)) {
@@ -465,6 +547,7 @@ public class SlidingPuzzleGameScreen extends GameScreen {
     @Override
     public void resize(int width, int height) {
         super.resize(width, height);
+
         currentWidth = width;
         currentHeight = height;
         
@@ -473,24 +556,24 @@ public class SlidingPuzzleGameScreen extends GameScreen {
         float availableHeight = viewport.getWorldHeight() - (2 * GRID_MARGIN);
         
         float maxTileSize = Math.min(
-            availableWidth / (GRID_SIZE + (GRID_SIZE - 1) * SPACING_RATIO),
-            availableHeight / (GRID_SIZE + (GRID_SIZE - 1) * SPACING_RATIO)
+            availableWidth / (gridSize + (gridSize - 1) * SPACING_RATIO),
+            availableHeight / (gridSize + (gridSize - 1) * SPACING_RATIO)
         );
         
         tileSize = maxTileSize;
         tileSpacing = tileSize * SPACING_RATIO;
 
         // Calculer la taille totale de la grille
-        float gridSize = GRID_SIZE * (tileSize + tileSpacing) - tileSpacing;
+        float totalGridSize = gridSize * (tileSize + tileSpacing) - tileSpacing;
 
         // Calculer les marges pour centrer la grille dans le viewport
-        float marginX = (viewport.getWorldWidth() - gridSize) / 2;
-        float marginY = (viewport.getWorldHeight() - gridSize) / 2;
+        float marginX = (viewport.getWorldWidth() - totalGridSize) / 2;
+        float marginY = (viewport.getWorldHeight() - totalGridSize) / 2;
 
         // Mettre à jour les positions des tuiles
-        for (int row = 0; row < GRID_SIZE; row++) {
-            for (int col = 0; col < GRID_SIZE; col++) {
-                int positionIndex = row * GRID_SIZE + col;
+        for (int row = 0; row < gridSize; row++) {
+            for (int col = 0; col < gridSize; col++) {
+                int positionIndex = row * gridSize + col;
                 gridZones[positionIndex].set(
                     marginX + col * (tileSize + tileSpacing),
                     marginY + row * (tileSize + tileSpacing),
