@@ -8,7 +8,8 @@
       "description": "L'Ancien des Jours est une gravure de William Blake, réalisée en 1794. Elle représente Dieu mesurant l'univers avec un compas.",
       "images": {
         "full": "images/paintings/full/ancient_of_days.jpg",
-        "square": "images/paintings/square/ancient_of_days.jpg"
+        "square": "images/paintings/square/ancient_of_days.jpg",
+        "icon": "images/paintings/icon/ancient_of_days.png"
       }
     },
     {
@@ -19,7 +20,8 @@
       "description": "Le violoniste bleu est une œuvre emblématique de Marc Chagall, représentant un musicien jouant du violon dans un style expressionniste caractéristique de l'artiste, avec une dominante de couleur bleue évoquant l'atmosphère mystique et onirique.",
       "images": {
         "full": "images/paintings/full/blue_fiddler.jpg",
-        "square": "images/paintings/square/blue_fiddler.jpg"
+        "square": "images/paintings/square/blue_fiddler.jpg",
+        "icon": "images/paintings/icon/blue_fiddler.png"
       }
     },
     {
@@ -30,7 +32,8 @@
       "description": "Broadway Boogie Woogie est une peinture de Piet Mondrian, réalisée en 1943. Elle représente une vue abstraite de Manhattan.",
       "images": {
         "full": "images/paintings/full/broadway.jpg",
-        "square": "images/paintings/square/broadway.jpg"
+        "square": "images/paintings/square/broadway.jpg",
+        "icon": "images/paintings/icon/broadway.png"
       }
     },
     {
@@ -41,7 +44,8 @@
       "description": "Les joueurs de cartes est une série de peintures de Paul Cézanne, réalisées entre 1890 et 1895. Elle représente des paysans jouant aux cartes.",
       "images": {
         "full": "images/paintings/full/card_players.jpg",
-        "square": "images/paintings/square/card_players.jpg"
+        "square": "images/paintings/square/card_players.jpg",
+        "icon": "images/paintings/icon/card_players.png"
       }
     },
     {
@@ -52,7 +56,8 @@
       "description": "La ville est une peinture de Fernand Léger, réalisée en 1919. Elle représente une vue urbaine abstraite.",
       "images": {
         "full": "images/paintings/full/city.jpg",
-        "square": "images/paintings/square/city.jpg"
+        "square": "images/paintings/square/city.jpg",
+        "icon": "images/paintings/icon/city.png"
       }
     },
     {
@@ -63,7 +68,8 @@
       "description": "Composition (1916) est une peinture abstraite de Piet Mondrian, réalisée en 1916. Elle représente une étape importante dans l'évolution de son style vers le néoplasticisme.",
       "images": {
         "full": "images/paintings/full/composition_1916.jpg",
-        "square": "images/paintings/square/composition_1916.jpg"
+        "square": "images/paintings/square/composition_1916.jpg",
+        "icon": "images/paintings/icon/composition_1916.png"
       }
     },
     {
@@ -74,7 +80,8 @@
       "description": "Composition VII est une peinture abstraite de Wassily Kandinsky, réalisée en 1913. Considérée comme l'une de ses œuvres les plus importantes, elle représente l'apogée de sa période avant-guerre avec une explosion de couleurs et de formes géométriques.",
       "images": {
         "full": "images/paintings/full/composition_vii.jpg",
-        "square": "images/paintings/square/composition_vii.jpg"
+        "square": "images/paintings/square/composition_vii.jpg",
+        "icon": "images/paintings/icon/composition_vii.png"
       }
     },
     {
@@ -85,7 +92,8 @@
       "description": "Composition VIII est une peinture de Wassily Kandinsky, réalisée en 1923. Elle est considérée comme l'une des œuvres les plus importantes de l'artiste.",
       "images": {
         "full": "images/paintings/full/composition_viii.jpg",
-        "square": "images/paintings/square/composition_viii.jpg"
+        "square": "images/paintings/square/composition_viii.jpg",
+        "icon": "images/paintings/icon/composition_viii.png"
       }
     },
     {
@@ -96,7 +104,8 @@
       "description": "Arbre argenté (grey tree) est une peinture de Piet Mondrian, réalisée en 1911. Elle représente un arbre dans un style cubiste, marquant une étape importante dans l'évolution de son style vers l'abstraction.",
       "images": {
         "full": "images/paintings/full/grey_tree.jpg",
-        "square": "images/paintings/square/grey_tree.jpg"
+        "square": "images/paintings/square/grey_tree.jpg",
+        "icon": "images/paintings/icon/grey_tree.png"
       }
     },
     {
@@ -107,7 +116,8 @@
       "description": "Guernica est une peinture murale de Pablo Picasso, réalisée en 1937. Elle a été peinte en réponse au bombardement de Guernica, une ville basque d'Espagne, par les aviateurs allemands et italiens alliés aux forces nationalistes de Franco.",
       "images": {
         "full": "images/paintings/full/guernica.jpg",
-        "square": "images/paintings/square/guernica.jpg"
+        "square": "images/paintings/square/guernica.jpg",
+        "icon": "images/paintings/icon/guernica.png"
       }
     },
     {
@@ -118,7 +128,8 @@
       "description": "Moi et le Village est une peinture de Marc Chagall, réalisée en 1911. Elle représente des souvenirs de son enfance en Biélorussie.",
       "images": {
         "full": "images/paintings/full/i_and_village.jpg",
-        "square": "images/paintings/square/i_and_village.jpg"
+        "square": "images/paintings/square/i_and_village.jpg",
+        "icon": "images/paintings/icon/i_and_village.png"
       }
     },
     {
@@ -129,7 +140,8 @@
       "description": "Impression, Soleil Levant est un tableau de Claude Monet, peint en 1872. Il a donné son nom au mouvement impressionniste.",
       "images": {
         "full": "images/paintings/full/impression.jpg",
-        "square": "images/paintings/square/impression.jpg"
+        "square": "images/paintings/square/impression.jpg",
+        "icon": "images/paintings/icon/impression.png"
       }
     },
     {
@@ -140,7 +152,8 @@
       "description": "Le Baiser est une peinture de Gustav Klimt, réalisée entre 1907 et 1908. C'est l'une des œuvres les plus célèbres de l'artiste et du mouvement Art nouveau.",
       "images": {
         "full": "images/paintings/full/kiss.jpg",
-        "square": "images/paintings/square/kiss.jpg"
+        "square": "images/paintings/square/kiss.jpg",
+        "icon": "images/paintings/icon/kiss.png"
       }
     },
     {
@@ -151,7 +164,8 @@
       "description": "La Joconde, ou Portrait de Mona Lisa, est un tableau de Léonard de Vinci, réalisé entre 1503 et 1519. C'est l'un des portraits les plus célèbres au monde.",
       "images": {
         "full": "images/paintings/full/mona_lisa.jpg",
-        "square": "images/paintings/square/mona_lisa.jpg"
+        "square": "images/paintings/square/mona_lisa.jpg",
+        "icon": "images/paintings/icon/mona_lisa.png"
       }
     },
     {
@@ -162,7 +176,8 @@
       "description": "New York City 1 est une peinture abstraite de Piet Mondrian, réalisée en 1942. Elle représente une vue abstraite de Manhattan avec des lignes et des couleurs primaires.",
       "images": {
         "full": "images/paintings/full/new_york_city_i.jpg",
-        "square": "images/paintings/square/new_york_city_i.jpg"
+        "square": "images/paintings/square/new_york_city_i.jpg",
+        "icon": "images/paintings/icon/new_york_city_i.png"
       }
     },
     {
@@ -173,7 +188,8 @@
       "description": "Chiffres et constellations est une peinture de Joan Miró, réalisée en 1941. Elle représente des formes abstraites et des symboles.",
       "images": {
         "full": "images/paintings/full/numbers_constellations.jpg",
-        "square": "images/paintings/square/numbers_constellations.jpg"
+        "square": "images/paintings/square/numbers_constellations.jpg",
+        "icon": "images/paintings/icon/numbers_constellations.png"
       }
     },
     {
@@ -184,7 +200,8 @@
       "description": "Les Nymphéas est une série d'environ 250 peintures à l'huile de Claude Monet, réalisées entre 1914 et 1926. Ces œuvres représentent le jardin d'eau de Monet à Giverny.",
       "images": {
         "full": "images/paintings/full/nympheas.jpg",
-        "square": "images/paintings/square/nympheas.jpg"
+        "square": "images/paintings/square/nympheas.jpg",
+        "icon": "images/paintings/icon/nympheas.png"
       }
     },
     {
@@ -195,7 +212,8 @@
       "description": "Sur White II est une peinture abstraite de Wassily Kandinsky, réalisée en 1923. Elle fait partie de la période Bauhaus de l'artiste.",
       "images": {
         "full": "images/paintings/full/on_white_ii.jpg",
-        "square": "images/paintings/square/on_white_ii.jpg"
+        "square": "images/paintings/square/on_white_ii.jpg",
+        "icon": "images/paintings/icon/on_white_ii.png"
       }
     },
     {
@@ -206,7 +224,8 @@
       "description": "La Jeune Fille à la perle est une peinture à l'huile sur toile réalisée par le peintre néerlandais Johannes Vermeer vers 1665. Le tableau est conservé au Mauritshuis de La Haye.",
       "images": {
         "full": "images/paintings/full/pearl.jpg",
-        "square": "images/paintings/square/pearl.jpg"
+        "square": "images/paintings/square/pearl.jpg",
+        "icon": "images/paintings/icon/pearl.png"
       }
     },
     {
@@ -217,7 +236,8 @@
       "description": "La Scapigliata est une peinture de Leonardo da Vinci, réalisée vers 1508. Elle représente une tête de jeune femme aux cheveux ébouriffés.",
       "images": {
         "full": "images/paintings/full/scapigliata.jpg",
-        "square": "images/paintings/square/scapigliata.jpg"
+        "square": "images/paintings/square/scapigliata.jpg",
+        "icon": "images/paintings/icon/scapigliata.png"
       }
     },
     {
@@ -228,7 +248,8 @@
       "description": "La mer de glace est une peinture de Caspar David Friedrich, réalisée en 1824. Elle représente un navire naufragé dans un paysage arctique.",
       "images": {
         "full": "images/paintings/full/sea_of_ice.jpg",
-        "square": "images/paintings/square/sea_of_ice.jpg"
+        "square": "images/paintings/square/sea_of_ice.jpg",
+        "icon": "images/paintings/icon/sea_of_ice.png"
       }
     },
     {
@@ -239,7 +260,8 @@
       "description": "Le fils de l'homme est une peinture de René Magritte, réalisée en 1964. Elle représente un homme en costume avec une pomme devant son visage.",
       "images": {
         "full": "images/paintings/full/son_of_man.jpg",
-        "square": "images/paintings/square/son_of_man.jpg"
+        "square": "images/paintings/square/son_of_man.jpg",
+        "icon": "images/paintings/icon/son_of_man.png"
       }
     },
     {
@@ -250,7 +272,8 @@
       "description": "La Nuit étoilée est une peinture de Vincent van Gogh réalisée en juin 1889. Elle représente la vue depuis la fenêtre de sa chambre à l'asile de Saint-Paul-de-Mausole à Saint-Rémy-de-Provence.",
       "images": {
         "full": "images/paintings/full/starry_night.jpg",
-        "square": "images/paintings/square/starry_night.jpg"
+        "square": "images/paintings/square/starry_night.jpg",
+        "icon": "images/paintings/icon/starry_night.png"
       }
     },
     {
@@ -261,7 +284,8 @@
       "description": "Le faux miroir est une peinture surréaliste de René Magritte, réalisée en 1928. Elle représente un œil dont l'iris est remplacé par un ciel nuageux.",
       "images": {
         "full": "images/paintings/full/the_false_mirror.jpg",
-        "square": "images/paintings/square/the_false_mirror.jpg"
+        "square": "images/paintings/square/the_false_mirror.jpg",
+        "icon": "images/paintings/icon/the_false_mirror.png"
       }
     },
     {
@@ -272,7 +296,8 @@
       "description": "La laitière est une peinture de Johannes Vermeer, réalisée vers 1658. Elle représente une servante versant du lait dans un récipient, dans un intérieur hollandais du XVIIe siècle.",
       "images": {
         "full": "images/paintings/full/the_milkmaid.jpg",
-        "square": "images/paintings/square/the_milkmaid.jpg"
+        "square": "images/paintings/square/the_milkmaid.jpg",
+        "icon": "images/paintings/icon/the_milkmaid.png"
       }
     },
     {
@@ -283,7 +308,8 @@
       "description": "Trois musiciens est une peinture de Pablo Picasso, réalisée en 1921. Elle représente trois personnages jouant de la musique.",
       "images": {
         "full": "images/paintings/full/three_musicians.jpg",
-        "square": "images/paintings/square/three_musicians.jpg"
+        "square": "images/paintings/square/three_musicians.jpg",
+        "icon": "images/paintings/icon/three_musicians.png"
       }
     },
     {
@@ -294,7 +320,8 @@
       "description": "L'arbre de vie est une peinture murale de Gustav Klimt, réalisée en 1909. Elle fait partie d'une série de trois peintures pour le palais Stoclet à Bruxelles.",
       "images": {
         "full": "images/paintings/full/tree_of_life.jpg",
-        "square": "images/paintings/square/tree_of_life.jpg"
+        "square": "images/paintings/square/tree_of_life.jpg",
+        "icon": "images/paintings/icon/tree_of_life.png"
       }
     },
     {
@@ -305,7 +332,8 @@
       "description": "Vertumne est une peinture de Giuseppe Arcimboldo, réalisée en 1590. Elle représente l'empereur Rodolphe II sous la forme d'une tête composée de fruits et légumes.",
       "images": {
         "full": "images/paintings/full/vertumnus.jpg",
-        "square": "images/paintings/square/vertumnus.jpg"
+        "square": "images/paintings/square/vertumnus.jpg",
+        "icon": "images/paintings/icon/vertumnus.png"
       }
     },
     {
@@ -316,7 +344,8 @@
       "description": "La Grande Vague de Kanagawa est une estampe japonaise de l'ukiyo-e, réalisée par Katsushika Hokusai vers 1830-1831. C'est la première estampe de la série Trente-six vues du mont Fuji.",
       "images": {
         "full": "images/paintings/full/wave.jpg",
-        "square": "images/paintings/square/wave.jpg"
+        "square": "images/paintings/square/wave.jpg",
+        "icon": "images/paintings/icon/wave.png"
       }
     }
   ]

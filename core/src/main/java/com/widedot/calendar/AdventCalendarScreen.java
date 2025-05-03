@@ -11,6 +11,8 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
 import com.widedot.calendar.config.Config;
+import com.widedot.calendar.config.ThemeManager;
+import com.widedot.calendar.data.Theme;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -33,11 +35,13 @@ public class AdventCalendarScreen implements Screen {
     private final Texture defaultUnlockedTexture;
     private final Map<Integer, Texture> unlockedTextures;
     private final Map<Integer, Rectangle> boxes;
+    private final Map<Integer, Texture> themeIconTextures; // Cache pour les textures d'icônes
+    private final ThemeManager themeManager;
     
     // Constantes pour les noms de fichiers d'images
     private static final String LOCKED_TEXTURE_PATH = "images/locked.png";
     private static final String UNLOCKED_TEXTURE_PATH = "images/unlocked.png";
-    private static final String UNLOCKED_FORMAT = "images/%02d-unlocked.png";
+    private static final String THEMES_JSON_PATH = "themes.json";
     
     // Dimensions de base du monde
     private static final float WORLD_WIDTH = 800;
@@ -66,6 +70,8 @@ public class AdventCalendarScreen implements Screen {
             
             this.batch = new SpriteBatch();
             this.font = new BitmapFont();
+            this.themeManager = ThemeManager.getInstance();
+            this.themeIconTextures = new HashMap<>();
             
             // Charger les textures avec Gdx.files.internal
             try {
@@ -104,6 +110,8 @@ public class AdventCalendarScreen implements Screen {
         this.camera.setToOrtho(false, WORLD_WIDTH, WORLD_HEIGHT);
         this.batch = new SpriteBatch();
         this.font = new BitmapFont();
+        this.themeManager = ThemeManager.getInstance();
+        this.themeIconTextures = new HashMap<>();
         
         // Charger les textures avec Gdx.files.internal
         try {
@@ -168,28 +176,47 @@ public class AdventCalendarScreen implements Screen {
      * @return La texture chargée ou la texture par défaut si le chargement échoue
      */
     private Texture loadUnlockedTexture(int dayId) {
-        if (unlockedTextures.containsKey(dayId)) {
-            return unlockedTextures.get(dayId);
+        Texture texture = new Texture(Gdx.files.internal(UNLOCKED_TEXTURE_PATH));
+        unlockedTextures.put(dayId, texture);
+        return texture;
+    }
+    
+    /**
+     * Obtient la texture de l'icône pour un jour donné
+     * @param dayId L'identifiant du jour (1-24)
+     * @return La texture de l'icône correspondante ou null
+     */
+    private Texture getThemeIconForDay(int dayId) {
+        // Vérifier si la texture est déjà dans le cache
+        if (themeIconTextures.containsKey(dayId)) {
+            return themeIconTextures.get(dayId);
         }
         
-        // Essayer d'abord le format "xx-unlocked.png"
-        String texturePath = String.format(UNLOCKED_FORMAT, dayId);
         try {
-            Texture texture = new Texture(Gdx.files.internal(texturePath));
-            unlockedTextures.put(dayId, texture);
-            return texture;
-        } catch (Exception e) {
-            // Si l'image spécifique n'est pas trouvée, essayer "unlocked.png"
-            try {
-                Texture texture = new Texture(Gdx.files.internal(UNLOCKED_TEXTURE_PATH));
-                unlockedTextures.put(dayId, texture);
-                return texture;
-            } catch (Exception e2) {
-                // Si "unlocked.png" n'est pas trouvé, utiliser la texture par défaut
-                System.out.println("Texture " + UNLOCKED_TEXTURE_PATH + " non trouvée, utilisation de la texture par défaut");
-                return defaultUnlockedTexture;
+            // Chercher d'abord le thème associé au jour via ThemeManager
+            Theme theme = themeManager.getThemeByDay(dayId);
+            
+            // Si aucun thème n'est associé au jour, utiliser un thème cyclique
+            if (theme == null && themeManager.getThemeCount() > 0) {
+                // Utiliser l'index modulo pour distribuer cycliquement les thèmes
+                int themeIndex = (dayId - 1) % themeManager.getThemeCount();
+                theme = themeManager.getAllThemes().get(themeIndex);
             }
+            
+            if (theme != null) {
+                // Construire le chemin de l'icône en remplaçant "full" par "icon" et .jpg par .png
+                String iconPath = theme.getFullImagePath().replace("full", "icon").replace(".jpg", ".png");
+                
+                // Charger et mettre en cache la texture
+                Texture iconTexture = new Texture(Gdx.files.internal(iconPath));
+                themeIconTextures.put(dayId, iconTexture);
+                return iconTexture;
+            }
+        } catch (Exception e) {
+            System.err.println("Erreur lors du chargement de l'icône pour le jour " + dayId + ": " + e.getMessage());
         }
+        
+        return null;
     }
     
     @Override
@@ -206,10 +233,23 @@ public class AdventCalendarScreen implements Screen {
         batch.begin();
         for (int i = 1; i <= 24; i++) {
             Rectangle box = boxes.get(i);
-            Texture texture;
             
+            // Dessiner l'icône du thème derrière la case
+            Texture themeIcon = getThemeIconForDay(i);
+            if (themeIcon != null) {
+                // Réduire la taille de l'icône de 10% et la centrer
+                float iconWidth = box.width * 0.75f;
+                float iconHeight = box.height * 0.75f;
+                float iconX = box.x + (box.width - iconWidth) / 2; // Centrer horizontalement
+                float iconY = box.y + (box.height - iconHeight) / 2; // Centrer verticalement
+                
+                batch.draw(themeIcon, iconX, iconY, iconWidth, iconHeight);
+            }
+            
+            // Dessiner la case (verrouillée ou déverrouillée)
+            Texture texture;
             if (adventGame != null && adventGame.isUnlocked(i)) {
-                texture = loadUnlockedTexture(i);
+                texture = unlockedTextures.containsKey(i) ? unlockedTextures.get(i) : loadUnlockedTexture(i);
             } else {
                 texture = lockedTexture;
             }
@@ -311,10 +351,17 @@ public class AdventCalendarScreen implements Screen {
         font.dispose();
         lockedTexture.dispose();
         defaultUnlockedTexture.dispose();
+        
+        // Disposer des textures déverrouillées
         for (Texture texture : unlockedTextures.values()) {
             if (texture != defaultUnlockedTexture) {
                 texture.dispose();
             }
+        }
+        
+        // Disposer des textures des icônes de thèmes
+        for (Texture texture : themeIconTextures.values()) {
+            texture.dispose();
         }
     }
 } 
