@@ -4,6 +4,7 @@ import com.badlogic.gdx.Game;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.Preferences;
 import com.widedot.calendar.config.Config;
 import com.widedot.calendar.game.DynamicGameScreenFactory;
 import com.widedot.calendar.config.ThemeManager;
@@ -38,6 +39,12 @@ public class AdventCalendarGame extends Game {
     private final Map<Integer, Boolean> visitedPaintings;
     private final Random random;
     
+    // Nom des préférences pour la sauvegarde
+    private static final String PREFERENCES_NAME = "advent_calendar_save";
+    private static final String KEY_UNLOCKED_PREFIX = "unlocked_";
+    private static final String KEY_SCORE_PREFIX = "score_";
+    private static final String KEY_VISITED_PREFIX = "visited_";
+    
     /**
      * Constructeur
      */
@@ -62,6 +69,9 @@ public class AdventCalendarGame extends Game {
             visitedPaintings.put(i, false);
         }
         
+        // Charger l'état de la partie depuis les préférences
+        loadGameState();
+        
         // En mode test, tous les jours sont déverrouillés seulement si unlocked=true
         if (config.isTestModeEnabled() && config.isTestUnlocked()) {
             for (int i = 1; i <= 24; i++) {
@@ -76,6 +86,76 @@ public class AdventCalendarGame extends Game {
      */
     public DynamicGameScreenFactory getGameScreenFactory() {
         return gameScreenFactory;
+    }
+    
+    /**
+     * Sauvegarde l'état actuel du jeu dans les préférences
+     */
+    public void saveGameState() {
+        Preferences prefs = Gdx.app.getPreferences(PREFERENCES_NAME);
+        System.out.println("Sauvegarde de l'état du jeu dans le répertoire: " + Gdx.files.getLocalStoragePath());
+        // Sauvegarder l'état de déverrouillage
+        for (int i = 1; i <= 24; i++) {
+            prefs.putBoolean(KEY_UNLOCKED_PREFIX + i, unlockedPaintings.get(i));
+        }
+        
+        // Sauvegarder les scores
+        for (int i = 1; i <= 24; i++) {
+            prefs.putInteger(KEY_SCORE_PREFIX + i, scores.get(i));
+        }
+        
+        // Sauvegarder l'état de visite
+        for (int i = 1; i <= 24; i++) {
+            prefs.putBoolean(KEY_VISITED_PREFIX + i, visitedPaintings.get(i));
+        }
+        
+        // Enregistrer les changements
+        prefs.flush();
+        System.out.println("État du jeu sauvegardé");
+    }
+    
+    /**
+     * Charge l'état du jeu depuis les préférences
+     */
+    public void loadGameState() {
+        Preferences prefs = Gdx.app.getPreferences(PREFERENCES_NAME);
+        
+        // Vérifier si des préférences existent
+        boolean hasPrefs = false;
+        for (int i = 1; i <= 24; i++) {
+            if (prefs.contains(KEY_UNLOCKED_PREFIX + i)) {
+                hasPrefs = true;
+                break;
+            }
+        }
+        
+        if (!hasPrefs) {
+            System.out.println("Aucune sauvegarde trouvée, utilisation des valeurs par défaut");
+            return;
+        }
+        
+        // Charger l'état de déverrouillage
+        for (int i = 1; i <= 24; i++) {
+            if (prefs.contains(KEY_UNLOCKED_PREFIX + i)) {
+                unlockedPaintings.put(i, prefs.getBoolean(KEY_UNLOCKED_PREFIX + i));
+            }
+        }
+        
+        // Charger les scores
+        for (int i = 1; i <= 24; i++) {
+            if (prefs.contains(KEY_SCORE_PREFIX + i)) {
+                scores.put(i, prefs.getInteger(KEY_SCORE_PREFIX + i));
+            }
+        }
+        
+        // Charger l'état de visite
+        for (int i = 1; i <= 24; i++) {
+            if (prefs.contains(KEY_VISITED_PREFIX + i)) {
+                visitedPaintings.put(i, prefs.getBoolean(KEY_VISITED_PREFIX + i));
+            }
+        }
+        
+        System.out.println("État du jeu chargé");
     }
     
     /**
@@ -226,6 +306,10 @@ public class AdventCalendarGame extends Game {
             unlockedPaintings.put(day, true);
             // Réinitialiser l'état de visite
             visitedPaintings.put(day, false);
+            
+            // Sauvegarder l'état après déverrouillage
+            saveGameState();
+            
             return true;
         }
         return false;
@@ -256,6 +340,9 @@ public class AdventCalendarGame extends Game {
      */
     public void setVisited(int day, boolean visited) {
         visitedPaintings.put(day, visited);
+        
+        // Sauvegarder l'état après modification de visite
+        saveGameState();
     }
     
     /**
@@ -283,6 +370,9 @@ public class AdventCalendarGame extends Game {
      */
     public void setScore(int day, int score) {
         scores.put(day, score);
+        
+        // Sauvegarder l'état après modification du score
+        saveGameState();
     }
     
     /**
@@ -356,6 +446,8 @@ public class AdventCalendarGame extends Game {
     @Override
     public void pause() {
         super.pause();
+        // Sauvegarder l'état du jeu lors de la mise en pause (important pour les applications mobiles)
+        saveGameState();
     }
     
     @Override
@@ -365,6 +457,9 @@ public class AdventCalendarGame extends Game {
     
     @Override
     public void dispose() {
+        // Sauvegarder l'état avant de fermer
+        saveGameState();
+        
         // Libérer les ressources
         batch.dispose();
         if (getScreen() != null) {
