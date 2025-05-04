@@ -13,6 +13,7 @@ import com.widedot.calendar.AdventCalendarGame;
 import com.widedot.calendar.data.Theme;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.audio.Sound;
 import com.widedot.calendar.config.Config;
 
 import java.util.Map;
@@ -32,6 +33,10 @@ public class SlidingPuzzleGameScreen extends GameScreen {
     private final Texture whiteTexture;
     private Color backgroundColor;
     private boolean isTestMode; // Ajout d'une variable pour le mode test
+    
+    // Sons
+    private Sound solveSound;
+    private static final String SOLVE_SOUND_PATH = "audio/win.wav";
     
     // Paramètres du jeu provenant de la configuration
     private int gridSize;
@@ -56,6 +61,9 @@ public class SlidingPuzzleGameScreen extends GameScreen {
     private float animationProgress = 0f;
     private Vector3 animationStart = new Vector3();
     private Vector3 animationEnd = new Vector3();
+    
+    // Flag pour éviter la double initialisation du puzzle
+    private boolean isInitialized = false;
 
     private boolean isAdjacent(int tileIndex1, int tileIndex2) {
         // Convertir les indices linéaires en coordonnées de grille
@@ -121,83 +129,72 @@ public class SlidingPuzzleGameScreen extends GameScreen {
      */
     public SlidingPuzzleGameScreen(int dayId, Game game, Theme theme, Map<String, Object> parameters) {
         super(dayId, game);
-        System.out.println("Constructeur de SlidingPuzzleGameScreen appelé pour le jour " + dayId + " avec paramètres");
         
-        // Vérifier si on est en mode test
-        if (game instanceof AdventCalendarGame) {
-            AdventCalendarGame adventGame = (AdventCalendarGame) game;
-            // Accéder au mode test directement en utilisant Config.getInstance()
-            this.isTestMode = Config.getInstance().isTestModeEnabled();
-            System.out.println("Mode test: " + isTestMode);
-        } else {
-            this.isTestMode = false;
-        }
-        
-        // Stocker le thème, qui sera utilisé par loadTheme() plus tard lors de l'appel à show()
         this.theme = theme;
         
-        // Vérifier que tous les paramètres requis sont présents
-        if (parameters == null) {
-            throw new IllegalArgumentException("Les paramètres sont obligatoires pour SlidingPuzzleGameScreen");
-        }
+        // Initialiser les paramètres avec des valeurs par défaut
+        this.gridSize = 4;
+        this.animationSpeed = 10f;
+        this.shuffleMoves = 200;
+        this.backgroundColor = new Color(0, 0, 0, 1);
         
-        // Extraction et vérification des paramètres
-        // Ceci est fait au début pour que tous les paramètres soient disponibles
-        // avant que les méthodes qui les utilisent ne soient appelées
+        // Vérifier si on est en mode test via Config
+        this.isTestMode = Config.getInstance().isTestModeEnabled();
+        System.out.println("Mode test: " + isTestMode);
         
-        // Vérifier et extraire les paramètres obligatoires
-        if (!parameters.containsKey("size")) {
-            throw new IllegalArgumentException("Le paramètre 'size' est obligatoire");
-        }
-        this.gridSize = (Integer) parameters.get("size");
-        
-        if (!parameters.containsKey("animationSpeed")) {
-            throw new IllegalArgumentException("Le paramètre 'animationSpeed' est obligatoire");
-        }
-        Object animSpeedValue = parameters.get("animationSpeed");
-        // Conversion de l'objet en float (gestion de Integer et Float)
-        if (animSpeedValue instanceof Number) {
-            this.animationSpeed = ((Number) animSpeedValue).floatValue();
-        } else {
-            throw new IllegalArgumentException("Le paramètre 'animationSpeed' doit être un nombre");
-        }
-        
-        if (!parameters.containsKey("shuffle")) {
-            throw new IllegalArgumentException("Le paramètre 'shuffle' est obligatoire");
-        }
-        this.shuffleMoves = (Integer) parameters.get("shuffle");
-        
-        // Traiter la couleur de fond
-        if (!parameters.containsKey("bgColor")) {
-            throw new IllegalArgumentException("Le paramètre 'bgColor' est obligatoire");
-        }
-        String bgColor = (String) parameters.get("bgColor");
-        Color parsedColor;
-        
-        String[] bgColorParts = bgColor.split(",");
-        if (bgColorParts.length == 3) {
-            try {
-                int r = Integer.parseInt(bgColorParts[0].trim());
-                int g = Integer.parseInt(bgColorParts[1].trim());
-                int b = Integer.parseInt(bgColorParts[2].trim());
-                parsedColor = new Color(r / 255f, g / 255f, b / 255f, 1f);
-            } catch (NumberFormatException e) {
-                throw new IllegalArgumentException("Format de couleur invalide pour 'bgColor': " + bgColor);
+        // Appliquer les paramètres spécifiques s'ils existent
+        if (parameters != null) {
+            // Taille de la grille
+            if (parameters.containsKey("size")) {
+                int size = ((Number)parameters.get("size")).intValue();
+                if (size >= 2 && size <= 6) {
+                    this.gridSize = size;
+                }
             }
-        } else {
-            throw new IllegalArgumentException("Format de couleur invalide pour 'bgColor': " + bgColor);
+            
+            // Couleur de fond
+            if (parameters.containsKey("bgColor")) {
+                String bgColor = (String)parameters.get("bgColor");
+                String[] parts = bgColor.split(",");
+                if (parts.length == 3) {
+                    try {
+                        float r = Integer.parseInt(parts[0]) / 255f;
+                        float g = Integer.parseInt(parts[1]) / 255f;
+                        float b = Integer.parseInt(parts[2]) / 255f;
+                        this.backgroundColor = new Color(r, g, b, 1);
+                    } catch (NumberFormatException e) {
+                        System.err.println("Format de couleur invalide: " + bgColor);
+                    }
+                }
+            }
+            
+            // Nombre de mouvements pour mélanger
+            if (parameters.containsKey("shuffle")) {
+                this.shuffleMoves = ((Number)parameters.get("shuffle")).intValue();
+            }
+            
+            // Vitesse d'animation
+            if (parameters.containsKey("animationSpeed")) {
+                this.animationSpeed = ((Number)parameters.get("animationSpeed")).floatValue();
+            }
         }
-        this.backgroundColor = parsedColor;
-        System.out.println("backgroundColor: " + this.backgroundColor);
-
+        
+        // Initialisation des couleurs et éléments UI
         this.font = new BitmapFont();
+        // Utiliser une échelle entière pour éviter les problèmes d'alignement de pixels
+        font.getData().setScale(1.0f);
         this.layout = new GlyphLayout();
-        this.backButton = new Rectangle(0, 0, 100, 50);
-        this.solveButton = new Rectangle(0, 0, 100, 50);
-        this.infoButton = new Rectangle(0, 0, 50, 50);
-        this.closeButton = new Rectangle(0, 0, 30, 30);
-        this.infoPanelColor = new Color(0.2f, 0.2f, 0.2f, 0.8f);
+        
+        // Initialiser les boutons
+        this.backButton = new Rectangle(20, 20, 100, 50);
+        this.solveButton = new Rectangle(viewport.getWorldWidth() - 120, 20, 100, 50);
+        this.infoButton = new Rectangle(viewport.getWorldWidth() - 70, viewport.getWorldHeight() - 70, 50, 50);
+        this.closeButton = new Rectangle(viewport.getWorldWidth() - 50, viewport.getWorldHeight() - 50, 30, 30);
+        this.infoPanelColor = new Color(0.3f, 0.3f, 0.3f, 0.8f);
         this.showInfoPanel = false;
+        
+        System.out.println("Création du puzzle coulissant pour le jour " + dayId);
+        System.out.println("Paramètres: gridSize=" + gridSize + ", shuffle=" + shuffleMoves);
 
         // Créer une texture blanche
         Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
@@ -208,7 +205,20 @@ public class SlidingPuzzleGameScreen extends GameScreen {
 
         this.puzzleState = new int[gridSize * gridSize];
         this.gridZones = new Rectangle[gridSize * gridSize];
+        
+        // Initialiser tous les Rectangle du tableau gridZones
+        for (int i = 0; i < gridZones.length; i++) {
+            gridZones[i] = new Rectangle(0, 0, 1, 1); // Création avec valeurs par défaut
+        }
+        
         this.emptyTileIndex = gridSize * gridSize - 1;
+        
+        // Charger le son de résolution
+        try {
+            this.solveSound = Gdx.audio.newSound(Gdx.files.internal(SOLVE_SOUND_PATH));
+        } catch (Exception e) {
+            System.err.println("Erreur lors du chargement du son 'solve': " + e.getMessage());
+        }
 
         System.out.println("Constructeur de SlidingPuzzleGameScreen terminé");
     }
@@ -267,6 +277,12 @@ public class SlidingPuzzleGameScreen extends GameScreen {
 
     @Override
     protected void initializeGame() {
+        // Si le jeu est déjà initialisé, ne pas le refaire
+        if (isInitialized) {
+            System.out.println("Le puzzle a déjà été initialisé, on ne le refait pas");
+            return;
+        }
+        
         System.out.println("Initialisation du puzzle coulissant pour le jour " + dayId);
 
         // Vérifier que la texture est chargée
@@ -316,6 +332,10 @@ public class SlidingPuzzleGameScreen extends GameScreen {
         solveButton.setPosition(viewport.getWorldWidth() - 120, 20);
         infoButton.setPosition(viewport.getWorldWidth() - 70, viewport.getWorldHeight() - 70);
         closeButton.setPosition(viewport.getWorldWidth() - 50, viewport.getWorldHeight() - 50);
+        
+        // Marquer le jeu comme initialisé
+        isInitialized = true;
+        System.out.println("Initialisation du puzzle terminée");
     }
 
     @Override
@@ -347,6 +367,12 @@ public class SlidingPuzzleGameScreen extends GameScreen {
                 if (solved) {
                     System.out.println("Puzzle résolu !");
                     isPuzzleSolved = true;
+                    
+                    // Jouer le son de résolution
+                    if (solveSound != null) {
+                        solveSound.play();
+                    }
+                    
                     if (game instanceof AdventCalendarGame) {
                         AdventCalendarGame adventGame = (AdventCalendarGame) game;
                         adventGame.setScore(dayId, 100);
@@ -407,38 +433,60 @@ public class SlidingPuzzleGameScreen extends GameScreen {
             layout.setText(font, victoryMessage);
             float textX = (viewport.getWorldWidth() - layout.width) / 2;
             float textY = messageY + messageHeight * 0.7f;
-            font.draw(batch, victoryMessage, textX, textY);
+            // Arrondir les coordonnées pour éviter le flou
+            font.draw(batch, victoryMessage, Math.round(textX), Math.round(textY));
 
             // Afficher un message pour indiquer de cliquer
             String clickMessage = "Cliquez pour retourner au menu";
             layout.setText(font, clickMessage);
             textX = (viewport.getWorldWidth() - layout.width) / 2;
             textY = messageY + messageHeight * 0.3f;
-            font.draw(batch, clickMessage, textX, textY);
+            // Arrondir les coordonnées pour éviter le flou
+            font.draw(batch, clickMessage, Math.round(textX), Math.round(textY));
         }
 
         // Dessiner les boutons
         batch.setColor(0.5f, 0.5f, 0.5f, 1);
+        
+        // Dessiner le bouton Retour
         batch.draw(whiteTexture, backButton.x, backButton.y, backButton.width, backButton.height);
-        // Ne dessiner le bouton Résoudre qu'en mode test
+        
+        // Dessiner le bouton Résoudre (en mode test uniquement)
         if (isTestMode) {
             batch.draw(whiteTexture, solveButton.x, solveButton.y, solveButton.width, solveButton.height);
         }
+        
+        // Dessiner le bouton Info
         batch.draw(whiteTexture, infoButton.x, infoButton.y, infoButton.width, infoButton.height);
 
         // Dessiner le texte des boutons
         font.setColor(1, 1, 1, 1);
-        layout.setText(font, "Retour", new Color(1, 1, 1, 1), backButton.width, Align.center, false);
-        font.draw(batch, layout, backButton.x, backButton.y + backButton.height / 2 + layout.height / 2);
+        
+        // Texte du bouton Retour
+        String returnText = "Retour";
+        layout.setText(font, returnText);
+        float returnTextX = backButton.x + (backButton.width - layout.width) / 2;
+        float returnTextY = backButton.y + (backButton.height + layout.height) / 2;
+        // Arrondir les coordonnées aux pixels entiers pour éviter le flou
+        font.draw(batch, returnText, Math.round(returnTextX), Math.round(returnTextY));
 
-        // Ne dessiner le texte du bouton Résoudre qu'en mode test
+        // Texte du bouton Résoudre (en mode test uniquement)
         if (isTestMode) {
-            layout.setText(font, "Résoudre", new Color(1, 1, 1, 1), solveButton.width, Align.center, false);
-            font.draw(batch, layout, solveButton.x, solveButton.y + solveButton.height / 2 + layout.height / 2);
+            String solveText = "Résoudre";
+            layout.setText(font, solveText);
+            float solveTextX = solveButton.x + (solveButton.width - layout.width) / 2;
+            float solveTextY = solveButton.y + (solveButton.height + layout.height) / 2;
+            // Arrondir les coordonnées aux pixels entiers pour éviter le flou
+            font.draw(batch, solveText, Math.round(solveTextX), Math.round(solveTextY));
         }
 
-        layout.setText(font, "Info", new Color(1, 1, 1, 1), infoButton.width, Align.center, false);
-        font.draw(batch, layout, infoButton.x, infoButton.y + infoButton.height / 2 + layout.height / 2);
+        // Texte du bouton Info
+        String infoText = "Info";
+        layout.setText(font, infoText);
+        float infoTextX = infoButton.x + (infoButton.width - layout.width) / 2;
+        float infoTextY = infoButton.y + (infoButton.height + layout.height) / 2;
+        // Arrondir les coordonnées aux pixels entiers pour éviter le flou
+        font.draw(batch, infoText, Math.round(infoTextX), Math.round(infoTextY));
 
         // Dessiner le panneau d'information si nécessaire
         if (showInfoPanel) {
@@ -458,23 +506,31 @@ public class SlidingPuzzleGameScreen extends GameScreen {
             float descriptionY = yearY - 80;
 
             font.setColor(1, 1, 1, 1);
-            layout.setText(font, theme.getTitle(), new Color(1, 1, 1, 1), panelWidth - 2 * textMargin, Align.center, false);
-            font.draw(batch, layout, panelX + textMargin, titleY);
+            
+            // Titre avec position arrondie pour éviter le flou
+            layout.setText(font, theme.getTitle(), Color.WHITE, panelWidth - 2 * textMargin, Align.center, false);
+            font.draw(batch, layout, Math.round(panelX + textMargin), Math.round(titleY));
 
-            layout.setText(font, theme.getArtist(), new Color(1, 1, 1, 1), panelWidth - 2 * textMargin, Align.center, false);
-            font.draw(batch, layout, panelX + textMargin, artistY);
+            // Artiste avec position arrondie
+            layout.setText(font, theme.getArtist(), Color.WHITE, panelWidth - 2 * textMargin, Align.center, false);
+            font.draw(batch, layout, Math.round(panelX + textMargin), Math.round(artistY));
 
-            layout.setText(font, String.valueOf(theme.getYear()), new Color(1, 1, 1, 1), panelWidth - 2 * textMargin, Align.center, false);
-            font.draw(batch, layout, panelX + textMargin, yearY);
+            // Année avec position arrondie
+            layout.setText(font, String.valueOf(theme.getYear()), Color.WHITE, panelWidth - 2 * textMargin, Align.center, false);
+            font.draw(batch, layout, Math.round(panelX + textMargin), Math.round(yearY));
 
-            layout.setText(font, theme.getDescription(), new Color(1, 1, 1, 1), panelWidth - 2 * textMargin, Align.center, true);
-            font.draw(batch, layout, panelX + textMargin, descriptionY);
+            // Description avec position arrondie
+            layout.setText(font, theme.getDescription(), Color.WHITE, panelWidth - 2 * textMargin, Align.center, true);
+            font.draw(batch, layout, Math.round(panelX + textMargin), Math.round(descriptionY));
         }
     }
 
     @Override
     protected void handleInput() {
-        if (isAnimating) return; // Désactiver les entrées pendant l'animation
+        // Désactiver les entrées pendant l'animation ou les transitions
+        if (isAnimating || TransitionScreen.isTransitionActive()) {
+            return;
+        }
 
         if (Gdx.input.justTouched()) {
             System.out.println("Toucher détecté dans SlidingPuzzleGameScreen");
@@ -511,6 +567,10 @@ public class SlidingPuzzleGameScreen extends GameScreen {
                     AdventCalendarGame adventGame = (AdventCalendarGame) game;
                     adventGame.setScore(dayId, 100);
                     adventGame.setVisited(dayId, true);
+                }
+                // Jouer le son de résolution en mode test aussi
+                if (solveSound != null) {
+                    solveSound.play();
                 }
                 returnToMainMenu();
             } else if (infoButton.contains(worldPos.x, worldPos.y)) {
@@ -558,6 +618,9 @@ public class SlidingPuzzleGameScreen extends GameScreen {
         whiteTexture.dispose();
         if (puzzleTexture != null) {
             puzzleTexture.dispose();
+        }
+        if (solveSound != null) {
+            solveSound.dispose();
         }
     }
 

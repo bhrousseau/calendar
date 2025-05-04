@@ -9,6 +9,8 @@ import com.widedot.calendar.config.Config;
 import com.widedot.calendar.game.DynamicGameScreenFactory;
 import com.widedot.calendar.config.ThemeManager;
 import com.widedot.calendar.data.Theme;
+import com.widedot.calendar.screens.TransitionScreen;
+import com.badlogic.gdx.Screen;
 
 import java.util.Calendar;
 import java.util.HashMap;
@@ -408,9 +410,12 @@ public class AdventCalendarGame extends Game {
         }
         
         try {
-            // Créer et afficher l'écran de jeu correspondant
-            System.out.println("Lancement du jeu " + gameTemplate + " pour le jour " + day);
-            setScreen(gameScreenFactory.createGameScreen(day, gameTemplate, this));
+            // Créer l'écran de jeu correspondant
+            Screen gameScreen = gameScreenFactory.createGameScreen(day, gameTemplate, this);
+            
+            // Utiliser l'écran de transition pour passer au jeu
+            System.out.println("Lancement du jeu " + gameTemplate + " pour le jour " + day + " avec transition");
+            setScreen(new com.widedot.calendar.screens.TransitionScreen(this, gameScreen));
         } catch (Exception e) {
             System.err.println("Erreur lors du lancement du jeu pour le jour " + day + ": " + e.getMessage());
             e.printStackTrace();

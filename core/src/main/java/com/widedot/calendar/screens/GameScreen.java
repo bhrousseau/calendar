@@ -11,6 +11,8 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.widedot.calendar.data.Theme;
 import com.widedot.calendar.AdventCalendarScreen;
 import com.widedot.calendar.Main;
+import com.widedot.calendar.AdventCalendarGame;
+import com.widedot.calendar.screens.TransitionScreen;
 
 /**
  * Classe abstraite de base pour tous les écrans de jeu
@@ -27,6 +29,10 @@ public abstract class GameScreen implements Screen {
     protected float currentWidth;
     protected float currentHeight;
 
+    // Dimensions de base du monde
+    private static final float BASE_WIDTH = 800;
+    private static final float BASE_HEIGHT = 600;
+
     /**
      * Constructeur
      * @param dayId L'identifiant du jour
@@ -41,8 +47,8 @@ public abstract class GameScreen implements Screen {
         this.theme = null; // Le thème sera chargé dans la méthode show()
         
         // Initialiser les dimensions
-        this.currentWidth = Gdx.graphics.getWidth();
-        this.currentHeight = Gdx.graphics.getHeight();
+        this.currentWidth = BASE_WIDTH;
+        this.currentHeight = BASE_HEIGHT;
     }
 
     /**
@@ -73,34 +79,67 @@ public abstract class GameScreen implements Screen {
      */
     protected abstract void handleInput();
 
+    /**
+     * Détermine si les entrées utilisateur doivent être traitées
+     * @return true si les entrées peuvent être traitées, false sinon
+     */
+    protected boolean canHandleInput() {
+        // Vérifier si une transition est en cours
+        if (TransitionScreen.isTransitionActive()) {
+            return false;
+        }
+        return true;
+    }
+
     @Override
     public void show() {
         System.out.println("Méthode show de GameScreen appelée pour le jour " + dayId);
         
-        this.theme = loadTheme(dayId);
+        // Récupérer le thème pour ce jour
+        if (game instanceof AdventCalendarGame) {
+            AdventCalendarGame adventGame = (AdventCalendarGame) game;
+            
+            try {
+                theme = loadTheme(dayId);
+                System.out.println("Thème chargé: " + (theme != null ? theme.getTitle() : "null"));
+            } catch (Exception e) {
+                System.err.println("Erreur lors du chargement du thème: " + e.getMessage());
+                e.printStackTrace();
+            }
+            
+            // Définir un score initial de 0 si non défini
+            if (adventGame.getScore(dayId) == 0) {
+                adventGame.setScore(dayId, 0);
+            }
+        }
+        
+        // Initialiser le jeu
         initializeGame();
     }
 
     @Override
     public void render(float delta) {
         // Effacer l'écran
-        Gdx.gl.glClearColor(0, 0, 0, 1);
+        Gdx.gl.glClearColor(0.2f, 0.2f, 0.2f, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         
         // Mettre à jour la caméra
+        viewport.apply();
         camera.update();
-        
-        // Configurer le batch avec la matrice de projection de la caméra
         batch.setProjectionMatrix(camera.combined);
         
-        // Gérer les entrées et mettre à jour le jeu
-        handleInput();
+        // Mettre à jour le jeu
         updateGame(delta);
         
-        // Rendre le jeu
+        // Dessiner le jeu
         batch.begin();
         renderGame();
         batch.end();
+        
+        // Gérer les entrées utilisateur seulement si autorisé
+        if (canHandleInput()) {
+            handleInput();
+        }
     }
 
     @Override
@@ -142,16 +181,15 @@ public abstract class GameScreen implements Screen {
     }
 
     /**
-     * Retourne au menu principal
+     * Retourne au menu principal (calendrier de l'avent)
      */
     protected void returnToMainMenu() {
-        // Créer un nouvel écran de menu principal
-        AdventCalendarScreen mainScreen = new AdventCalendarScreen(game);
-        
-        // Mettre à jour l'écran de Game uniquement
-        game.setScreen(mainScreen);
-        
-        // Ajouter du logging pour faciliter le débogage
-        System.out.println("Retour au menu principal depuis " + this.getClass().getSimpleName() + " (jour " + dayId + ")");
+        if (game instanceof AdventCalendarGame) {
+            AdventCalendarGame adventGame = (AdventCalendarGame) game;
+            Screen calendarScreen = new AdventCalendarScreen(adventGame);
+            
+            // Utiliser l'écran de transition pour revenir au calendrier
+            game.setScreen(new com.widedot.calendar.screens.TransitionScreen(game, calendarScreen));
+        }
     }
 } 
