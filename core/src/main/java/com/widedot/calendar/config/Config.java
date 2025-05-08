@@ -20,6 +20,7 @@ public class Config {
     private int testMonth = Calendar.DECEMBER;
     private int testYear = 2023;
     private boolean testUnlocked = false;
+    private boolean testUseSave = true;  // Par défaut, on utilise la sauvegarde
     private long gameSeed = 12345;
     
     // Nouveaux paramètres pour les modes de calendrier
@@ -68,6 +69,7 @@ public class Config {
                 testMonth = testMode.getInt("month", testMonth);
                 testYear = testMode.getInt("year", testYear);
                 testUnlocked = testMode.getBoolean("unlocked", testUnlocked);
+                testUseSave = testMode.getBoolean("use_save", testUseSave);
             }
             
             // Charger les paramètres du jeu
@@ -132,6 +134,14 @@ public class Config {
      */
     public boolean isTestUnlocked() {
         return testUnlocked;
+    }
+    
+    /**
+     * Vérifie si la sauvegarde doit être utilisée en mode test.
+     * @return true si la sauvegarde doit être utilisée, false sinon
+     */
+    public boolean isTestUseSave() {
+        return testUseSave;
     }
     
     /**

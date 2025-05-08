@@ -120,6 +120,12 @@ public class AdventCalendarGame extends Game {
      * Charge l'état du jeu depuis les préférences
      */
     public void loadGameState() {
+        // Si on est en mode test et que use_save est false, ne pas charger la sauvegarde
+        if (config.isTestModeEnabled() && !config.isTestUseSave()) {
+            System.out.println("Mode test avec use_save=false : pas de chargement de la sauvegarde");
+            return;
+        }
+
         Preferences prefs = Gdx.app.getPreferences(PREFERENCES_NAME);
         
         // Vérifier si des préférences existent

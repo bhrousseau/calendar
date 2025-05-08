@@ -36,7 +36,9 @@ public class SlidingPuzzleGameScreen extends GameScreen {
     
     // Sons
     private Sound solveSound;
+    private Sound slidingSound;
     private static final String SOLVE_SOUND_PATH = "audio/win.wav";
+    private static final String SLIDING_SOUND_PATH = "audio/sliding.wav";
     
     // Paramètres du jeu provenant de la configuration
     private int gridSize;
@@ -216,8 +218,9 @@ public class SlidingPuzzleGameScreen extends GameScreen {
         // Charger le son de résolution
         try {
             this.solveSound = Gdx.audio.newSound(Gdx.files.internal(SOLVE_SOUND_PATH));
+            this.slidingSound = Gdx.audio.newSound(Gdx.files.internal(SLIDING_SOUND_PATH));
         } catch (Exception e) {
-            System.err.println("Erreur lors du chargement du son 'solve': " + e.getMessage());
+            System.err.println("Erreur lors du chargement des sons: " + e.getMessage());
         }
 
         System.out.println("Constructeur de SlidingPuzzleGameScreen terminé");
@@ -593,6 +596,15 @@ public class SlidingPuzzleGameScreen extends GameScreen {
                         if (isAdjacent(positionIndex, emptyTileIndex)) {
                             System.out.println("Déplacement de la tuile " + tileNumber + " (position " + positionIndex + ") vers la case vide (position " + emptyTileIndex + ")");
 
+                            // Jouer le son de déplacement
+                            if (slidingSound != null) {
+                                System.out.println("Son de déplacement joué");
+                                slidingSound.play();
+                            }
+                            else {
+                                System.out.println("ERREUR: slidingSound est null");
+                            }
+
                             // Initialiser l'animation
                             isAnimating = true;
                             animationProgress = 0f;
@@ -621,6 +633,9 @@ public class SlidingPuzzleGameScreen extends GameScreen {
         }
         if (solveSound != null) {
             solveSound.dispose();
+        }
+        if (slidingSound != null) {
+            slidingSound.dispose();
         }
     }
 

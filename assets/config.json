@@ -4,7 +4,8 @@
     "day": 31,
     "month": 5,
     "year": 2025,
-    "unlocked": false
+    "unlocked": false,
+    "use_save": true
   },
   "game": {
     "seed": 12345,
