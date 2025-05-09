@@ -68,10 +68,25 @@ public class ThemeManager {
                 // Récupérer les chemins d'images
                 JsonValue images = themeValue.get("images");
                 String fullImagePath = images.getString("full");
-                String squareImagePath = images.getString("square");
+                
+                // Récupérer les informations de recadrage
+                Theme.CropInfo squareCrop = null;
+                JsonValue crop = themeValue.get("crop");
+                if (crop != null) {
+                    JsonValue square = crop.get("square");
+                    if (square != null) {
+                        squareCrop = new Theme.CropInfo(
+                            square.getInt("x"),
+                            square.getInt("y"),
+                            square.getInt("width"),
+                            square.getInt("height"),
+                            square.getFloat("matchPercentage")
+                        );
+                    }
+                }
                 
                 // Créer un thème
-                Theme theme = new Theme(name, title, artist, year, description, fullImagePath, squareImagePath);
+                Theme theme = new Theme(name, title, artist, year, description, fullImagePath, squareCrop);
                 themesByName.put(name, theme);
                 allThemes.add(theme);
             }

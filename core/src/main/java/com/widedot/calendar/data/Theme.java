@@ -10,7 +10,32 @@ public class Theme {
     private final int year;
     private final String description;
     private final String fullImagePath;
-    private final String squareImagePath;
+    private final CropInfo squareCrop;
+    
+    /**
+     * Classe interne pour stocker les informations de recadrage
+     */
+    public static class CropInfo {
+        private final int x;
+        private final int y;
+        private final int width;
+        private final int height;
+        private final float matchPercentage;
+        
+        public CropInfo(int x, int y, int width, int height, float matchPercentage) {
+            this.x = x;
+            this.y = y;
+            this.width = width;
+            this.height = height;
+            this.matchPercentage = matchPercentage;
+        }
+        
+        public int getX() { return x; }
+        public int getY() { return y; }
+        public int getWidth() { return width; }
+        public int getHeight() { return height; }
+        public float getMatchPercentage() { return matchPercentage; }
+    }
     
     /**
      * Constructeur
@@ -20,17 +45,17 @@ public class Theme {
      * @param year L'année de création
      * @param description La description
      * @param fullImagePath Le chemin vers l'image complète
-     * @param squareImagePath Le chemin vers l'image carrée
+     * @param squareCrop Les informations de recadrage pour l'image carrée
      */
     public Theme(String name, String title, String artist, int year, String description, 
-                String fullImagePath, String squareImagePath) {
+                String fullImagePath, CropInfo squareCrop) {
         this.name = name;
         this.title = title;
         this.artist = artist;
         this.year = year;
         this.description = description;
         this.fullImagePath = fullImagePath;
-        this.squareImagePath = squareImagePath;
+        this.squareCrop = squareCrop;
     }
     
     /**
@@ -82,11 +107,11 @@ public class Theme {
     }
     
     /**
-     * Récupère le chemin de l'image carrée
-     * @return Le chemin de l'image
+     * Récupère les informations de recadrage pour l'image carrée
+     * @return Les informations de recadrage
      */
-    public String getSquareImagePath() {
-        return squareImagePath;
+    public CropInfo getSquareCrop() {
+        return squareCrop;
     }
     
     // Implémentation de l'interface Paintable (pour compatibilité)

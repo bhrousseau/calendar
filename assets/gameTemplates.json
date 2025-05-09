@@ -5,7 +5,7 @@
       "defaultParameters": {
         "size": 4,
         "bgColor": "0,0,0",
-        "shuffle": 200,
+        "shuffle": 10,
         "animationSpeed": 10
       },
       "parameterTypes": {
@@ -16,13 +16,13 @@
       },
       "presets": {
         "easy": {
-          "shuffle": 200
+          "shuffle": 10
         },
         "medium": {
-          "shuffle": 400
+          "shuffle": 10
         },
         "hard": {
-          "shuffle": 600
+          "shuffle": 10
         },
         "bgBlack": {
           "bgColor": "0,0,0"
