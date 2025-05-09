@@ -28,7 +28,7 @@
       "reference": "SPZ_starry_night",
       "gameTemplate": "SPZ",
       "theme": "starry_night",
-      "presets": ["hard", "bgWhite"]
+      "presets": ["hard"]
     },
     {
       "reference": "SPZ_kiss",

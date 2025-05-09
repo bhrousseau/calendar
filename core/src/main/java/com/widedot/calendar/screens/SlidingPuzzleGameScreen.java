@@ -57,27 +57,132 @@ public class SlidingPuzzleGameScreen extends GameScreen {
     private TextureRegion[] puzzleTiles; // Régions de texture pour chaque tuile
     private Theme theme; // Le thème du jeu
 
-    // Variables pour l'animation
-    private boolean isAnimating = false;
-    private int animatingTileIndex;
-    private float animationProgress = 0f;
-    private Vector3 animationStart = new Vector3();
-    private Vector3 animationEnd = new Vector3();
-    
-    // Variables pour l'animation de victoire
-    private boolean isVictoryAnimating = false;
-    private float victoryAnimationProgress = 0f;
-    private float victoryAnimationDuration = 4.5f; // Sera calculé dynamiquement
-    private float fadeInDuration = 1f;
-    private float mergeDuration = 1.5f;
-    private float phaseDelay = 0.5f;
-    private float currentTileSpacing;
-    private boolean isVictoryAnimationComplete = false;
+    // Variables d'animation
+    private static class AnimationState {
+        // Constantes de timing
+        private static final float FADE_IN_DURATION = 1f;
+        private static final float MERGE_DURATION = 1f;
+        private static final float PHASE_DELAY = 0f;
+        private static final float PIXELS_PER_SECOND = 500f;
+        private static final float VICTORY_MESSAGE_DELAY = 1f;
+
+        // État de l'animation
+        private boolean isActive = false;
+        private boolean isComplete = false;
+        private float progress = 0f;
+        private float totalDuration = 0f;
+        private float irisOpenDuration = 0f;
+        private float victoryMessageTimer = 0f;
+
+        // Progression des phases
+        private float fadeProgress = 0f;
+        private float mergeProgress = 0f;
+        private float irisOpenProgress = 0f;
+
+        public void start() {
+            isActive = true;
+            isComplete = false;
+            progress = 0f;
+            victoryMessageTimer = 0f;
+            fadeProgress = 0f;
+            mergeProgress = 0f;
+            irisOpenProgress = 0f;
+        }
+
+        public void update(float delta) {
+            if (!isActive) return;
+            
+            progress += delta;
+            
+            // Calculer les progressions de chaque phase
+            fadeProgress = Math.min(1f, progress / FADE_IN_DURATION);
+            mergeProgress = Math.max(0f, Math.min(1f, (progress - FADE_IN_DURATION - PHASE_DELAY) / MERGE_DURATION));
+            
+            float irisOpenStart = FADE_IN_DURATION + MERGE_DURATION + PHASE_DELAY;
+            if (progress >= irisOpenStart) {
+                irisOpenProgress = Math.min(1f, (progress - irisOpenStart) / irisOpenDuration);
+            }
+
+            if (progress >= totalDuration) {
+                isActive = false;
+                isComplete = true;
+                fadeProgress = 1f;
+                mergeProgress = 1f;
+                irisOpenProgress = 1f;
+            }
+        }
+
+        public void updateVictoryMessageTimer(float delta) {
+            if (isComplete) {
+                victoryMessageTimer += delta;
+            }
+        }
+
+        public boolean shouldShowVictoryMessage() {
+            return isComplete && victoryMessageTimer >= VICTORY_MESSAGE_DELAY;
+        }
+
+        public void calculateDurations(float imageWidth, float imageHeight, Theme.CropInfo squareCrop) {
+            // Calculer la durée de l'ouverture rectangulaire
+            float totalDistance = Math.max(
+                imageWidth - squareCrop.getWidth(),
+                imageHeight - squareCrop.getHeight()
+            );
+            irisOpenDuration = totalDistance / PIXELS_PER_SECOND;
+            
+            // Calculer la durée totale
+            totalDuration = FADE_IN_DURATION + MERGE_DURATION + PHASE_DELAY + irisOpenDuration;
+        }
+
+        public boolean isActive() { return isActive; }
+        public boolean isComplete() { return isComplete; }
+        public float getFadeProgress() { return fadeProgress; }
+        public float getMergeProgress() { return mergeProgress; }
+        public float getIrisOpenProgress() { return irisOpenProgress; }
+    }
+
+    // Variables d'animation de victoire
+    private final AnimationState animationState = new AnimationState();
     private Texture fullImageTexture;
-    private float irisOpenProgress = 0f;
-    private Rectangle irisOpenRect;
-    private float irisOpenDuration = 0f; // Sera calculé dynamiquement
-    private float pixelsPerSecond = 500f; // Vitesse de déplacement des pixels
+
+    // Variables d'animation des tuiles
+    private static class TileAnimation {
+        private boolean isActive = false;
+        private float progress = 0f;
+        private int tileIndex;
+        private Vector3 start = new Vector3();
+        private Vector3 end = new Vector3();
+
+        public void start(int tileIndex, Vector3 start, Vector3 end) {
+            this.isActive = true;
+            this.progress = 0f;
+            this.tileIndex = tileIndex;
+            this.start.set(start);
+            this.end.set(end);
+        }
+
+        public void update(float delta, float speed) {
+            if (!isActive) return;
+            
+            progress += delta * speed;
+            if (progress >= 1f) {
+                isActive = false;
+                progress = 1f;
+            }
+        }
+
+        public boolean isActive() { return isActive; }
+        public float getProgress() { return progress; }
+        public int getTileIndex() { return tileIndex; }
+        public Vector3 getCurrentPosition() {
+            Vector3 current = new Vector3();
+            current.x = start.x + (end.x - start.x) * progress;
+            current.y = start.y + (end.y - start.y) * progress;
+            return current;
+        }
+    }
+
+    private final TileAnimation tileAnimation = new TileAnimation();
 
     // Flag pour éviter la double initialisation du puzzle
     private boolean isInitialized = false;
@@ -354,23 +459,13 @@ public class SlidingPuzzleGameScreen extends GameScreen {
         // Initialiser un état du puzzle résoluble
         initializeSolvablePuzzle();
 
-        // Calculer la durée de l'animation d'ouverture rectangulaire
+        // Calculer les durées d'animation
         if (fullImageTexture != null && theme != null && theme.getSquareCrop() != null) {
-            Theme.CropInfo squareCrop = theme.getSquareCrop();
-            float imageWidth = fullImageTexture.getWidth();
-            float imageHeight = fullImageTexture.getHeight();
-            
-            // Calculer la distance totale à parcourir (différence entre l'image complète et la zone recadrée)
-            float totalDistance = Math.max(
-                imageWidth - squareCrop.getWidth(),
-                imageHeight - squareCrop.getHeight()
+            animationState.calculateDurations(
+                fullImageTexture.getWidth(),
+                fullImageTexture.getHeight(),
+                theme.getSquareCrop()
             );
-            
-            // Calculer la durée en fonction de la distance et de la vitesse
-            irisOpenDuration = totalDistance / pixelsPerSecond;
-            
-            // Mettre à jour la durée totale de l'animation
-            victoryAnimationDuration = fadeInDuration + mergeDuration + phaseDelay + irisOpenDuration;
         }
 
         // Positionner les boutons
@@ -386,14 +481,12 @@ public class SlidingPuzzleGameScreen extends GameScreen {
 
     @Override
     protected void updateGame(float delta) {
-        if (isAnimating) {
-            // Mettre à jour la progression de l'animation
-            animationProgress += delta * animationSpeed;
+        if (tileAnimation.isActive()) {
+            tileAnimation.update(delta, animationSpeed);
             
-            if (animationProgress >= 1f) {
+            if (!tileAnimation.isActive()) {
                 // Animation terminée
-                isAnimating = false;
-                animationProgress = 0f;
+                int animatingTileIndex = tileAnimation.getTileIndex();
 
                 // Échanger les tuiles dans l'état du puzzle
                 int temp = puzzleState[animatingTileIndex];
@@ -413,10 +506,7 @@ public class SlidingPuzzleGameScreen extends GameScreen {
                 if (solved) {
                     System.out.println("Puzzle résolu !");
                     isPuzzleSolved = true;
-                    isVictoryAnimating = true;
-                    isVictoryAnimationComplete = false;
-                    victoryAnimationProgress = 0f;
-                    currentTileSpacing = tileSpacing;
+                    animationState.start();
                     
                     // Jouer le son de résolution
                     if (solveSound != null) {
@@ -433,20 +523,8 @@ public class SlidingPuzzleGameScreen extends GameScreen {
         }
 
         // Mettre à jour l'animation de victoire
-        if (isVictoryAnimating) {
-            victoryAnimationProgress += delta;
-            
-            // Calculer la progression de l'effet d'ouverture
-            float irisOpenStart = fadeInDuration + mergeDuration + phaseDelay;
-            if (victoryAnimationProgress >= irisOpenStart) {
-                irisOpenProgress = Math.min(1f, (victoryAnimationProgress - irisOpenStart) / irisOpenDuration);
-            }
-            
-            if (victoryAnimationProgress >= victoryAnimationDuration) {
-                isVictoryAnimating = false;
-                isVictoryAnimationComplete = true;
-            }
-        }
+        animationState.update(delta);
+        animationState.updateVictoryMessageTimer(delta);
     }
 
     @Override
@@ -460,193 +538,25 @@ public class SlidingPuzzleGameScreen extends GameScreen {
 
         // Dessiner les tuiles du puzzle
         if (puzzleTiles != null) {
-            if (isVictoryAnimating || isVictoryAnimationComplete) {
-                // Calculer la progression de l'animation
-                float fadeProgress = Math.min(victoryAnimationProgress / fadeInDuration, 1f);
-                float mergeProgress = Math.max(0f, Math.min(1f, (victoryAnimationProgress - fadeInDuration - phaseDelay) / mergeDuration));
-                
-                // Si l'animation est terminée, utiliser la progression maximale
-                if (isVictoryAnimationComplete) {
-                    fadeProgress = 1f;
-                    mergeProgress = 1f;
-                    irisOpenProgress = 1f;
-                }
+            if (animationState.isActive() || animationState.isComplete()) {
+                float fadeProgress = animationState.getFadeProgress();
+                float mergeProgress = animationState.getMergeProgress();
+                float irisOpenProgress = animationState.getIrisOpenProgress();
 
-                // Si nous sommes dans la phase d'ouverture rectangulaire
+                // Si nous sommes dans la phase d'ouverture rectangulaire ou l'animation est terminée
                 if (irisOpenProgress > 0 && fullImageTexture != null) {
-                    // Calculer la taille et la position pour centrer l'image complète
-                    float screenWidth = viewport.getWorldWidth();
-                    float screenHeight = viewport.getWorldHeight();
-                    float imageWidth = fullImageTexture.getWidth();
-                    float imageHeight = fullImageTexture.getHeight();
-                    
-                    // Calculer le ratio pour s'assurer que l'image tient dans l'écran (zoom final)
-                    float finalScale = Math.min(
-                        screenWidth * 0.8f / imageWidth,
-                        screenHeight * 0.8f / imageHeight
-                    );
-                    
-                    // Récupérer les informations de recadrage
-                    Theme.CropInfo squareCrop = theme.getSquareCrop();
-                    if (squareCrop != null) {
-                        // Calculer le zoom initial pour correspondre à la taille des tuiles réunies
-                        float initialScale = (gridSize * tileSize) / squareCrop.getWidth();
-                        
-                        // Interpoler le zoom entre la valeur initiale et finale
-                        float currentScale = initialScale + (finalScale - initialScale) * irisOpenProgress;
-                        
-                        // Calculer les dimensions avec le zoom actuel
-                        float scaledWidth = imageWidth * currentScale;
-                        float scaledHeight = imageHeight * currentScale;
-                        float x = (screenWidth - scaledWidth) / 2;
-                        float y = (screenHeight - scaledHeight) / 2;
-
-                        // Calculer les dimensions de la zone recadrée dans l'image complète
-                        float cropX = squareCrop.getX() * currentScale;
-                        float cropY = squareCrop.getY() * currentScale;
-                        float cropWidth = squareCrop.getWidth() * currentScale;
-                        float cropHeight = squareCrop.getHeight() * currentScale;
-
-                        // Calculer les dimensions de l'ouverture rectangulaire
-                        float openWidth = cropWidth + (scaledWidth - cropWidth) * irisOpenProgress;
-                        float openHeight = cropHeight + (scaledHeight - cropHeight) * irisOpenProgress;
-                        float openX = x + (scaledWidth - openWidth) / 2;
-                        float openY = y + (scaledHeight - openHeight) / 2;
-
-                        // Dessiner l'image complète avec l'effet d'ouverture
-                        batch.setColor(1f, 1f, 1f, 1f);
-                        batch.draw(fullImageTexture, 
-                            openX, openY, openWidth, openHeight,
-                            (int)(squareCrop.getX() - (openWidth - cropWidth) / (2 * currentScale)),
-                            (int)(squareCrop.getY() - (openHeight - cropHeight) / (2 * currentScale)),
-                            (int)(openWidth / currentScale),
-                            (int)(openHeight / currentScale),
-                            false, false);
-                    }
+                    renderIrisOpenEffect(irisOpenProgress);
                 } else {
-                    // Dessiner la case vide avec fade in
-                    if (fadeProgress < 1f) {
-                        batch.setColor(1f, 1f, 1f, fadeProgress);
-                        batch.draw(puzzleTiles[emptyTileIndex], 
-                            gridZones[emptyTileIndex].x, 
-                            gridZones[emptyTileIndex].y, 
-                            gridZones[emptyTileIndex].width, 
-                            gridZones[emptyTileIndex].height);
-                    } else if (mergeProgress < 1f) {
-                        // Garder la pièce visible après le fade in et l'animer avec les autres
-                        batch.setColor(Color.WHITE);
-                        float x = gridZones[emptyTileIndex].x;
-                        float y = gridZones[emptyTileIndex].y;
-                        
-                        // Calculer la position finale (sans espacement)
-                        float gridX = gridZones[0].x;
-                        float gridY = gridZones[0].y;
-                        float finalX = gridX + (emptyTileIndex % gridSize) * tileSize;
-                        float finalY = gridY + (emptyTileIndex / gridSize) * tileSize;
-                        
-                        // Calculer le décalage pour maintenir l'image centrée
-                        float totalGridWidth = gridSize * (tileSize + tileSpacing) - tileSpacing;
-                        float totalGridHeight = gridSize * (tileSize + tileSpacing) - tileSpacing;
-                        float finalGridWidth = gridSize * tileSize;
-                        float finalGridHeight = gridSize * tileSize;
-                        
-                        // Calculer le décalage pour maintenir le centre
-                        float offsetX = (totalGridWidth - finalGridWidth) / 2;
-                        float offsetY = (totalGridHeight - finalGridHeight) / 2;
-                        
-                        // Interpoler la position en tenant compte du décalage
-                        x = x + (finalX - x + offsetX) * mergeProgress;
-                        y = y + (finalY - y + offsetY) * mergeProgress;
-                        
-                        batch.draw(puzzleTiles[emptyTileIndex], x, y, tileSize, tileSize);
-                    } else {
-                        // Afficher la pièce à sa position finale pendant le délai
-                        batch.setColor(Color.WHITE);
-                        float gridX = gridZones[0].x;
-                        float gridY = gridZones[0].y;
-                        float finalX = gridX + (emptyTileIndex % gridSize) * tileSize;
-                        float finalY = gridY + (emptyTileIndex / gridSize) * tileSize;
-                        
-                        // Appliquer le décalage final
-                        float totalGridWidth = gridSize * (tileSize + tileSpacing) - tileSpacing;
-                        float totalGridHeight = gridSize * (tileSize + tileSpacing) - tileSpacing;
-                        float finalGridWidth = gridSize * tileSize;
-                        float finalGridHeight = gridSize * tileSize;
-                        float offsetX = (totalGridWidth - finalGridWidth) / 2;
-                        float offsetY = (totalGridHeight - finalGridHeight) / 2;
-                        
-                        batch.draw(puzzleTiles[emptyTileIndex], finalX + offsetX, finalY + offsetY, tileSize, tileSize);
-                    }
-                    
-                    // Dessiner toutes les tuiles avec l'espacement réduit
-                    batch.setColor(Color.WHITE);
-                    for (int i = 0; i < gridZones.length; i++) {
-                        if (i != emptyTileIndex) {
-                            int tileNumber = puzzleState[i];
-                            float x = gridZones[i].x;
-                            float y = gridZones[i].y;
-                            
-                            // Calculer la position finale (sans espacement)
-                            float gridX = gridZones[0].x;
-                            float gridY = gridZones[0].y;
-                            float finalX = gridX + (i % gridSize) * tileSize;
-                            float finalY = gridY + (i / gridSize) * tileSize;
-                            
-                            if (mergeProgress < 1f) {
-                                // Calculer le décalage pour maintenir l'image centrée
-                                float totalGridWidth = gridSize * (tileSize + tileSpacing) - tileSpacing;
-                                float totalGridHeight = gridSize * (tileSize + tileSpacing) - tileSpacing;
-                                float finalGridWidth = gridSize * tileSize;
-                                float finalGridHeight = gridSize * tileSize;
-                                
-                                // Calculer le décalage pour maintenir le centre
-                                float offsetX = (totalGridWidth - finalGridWidth) / 2;
-                                float offsetY = (totalGridHeight - finalGridHeight) / 2;
-                                
-                                // Interpoler la position en tenant compte du décalage
-                                x = x + (finalX - x + offsetX) * mergeProgress;
-                                y = y + (finalY - y + offsetY) * mergeProgress;
-                                
-                                batch.draw(puzzleTiles[tileNumber], x, y, tileSize, tileSize);
-                            } else {
-                                // Calculer le décalage final
-                                float totalGridWidth = gridSize * (tileSize + tileSpacing) - tileSpacing;
-                                float totalGridHeight = gridSize * (tileSize + tileSpacing) - tileSpacing;
-                                float finalGridWidth = gridSize * tileSize;
-                                float finalGridHeight = gridSize * tileSize;
-                                float offsetX = (totalGridWidth - finalGridWidth) / 2;
-                                float offsetY = (totalGridHeight - finalGridHeight) / 2;
-                                
-                                batch.draw(puzzleTiles[tileNumber], finalX + offsetX, finalY + offsetY, tileSize, tileSize);
-                            }
-                        }
-                    }
+                    renderMergingTiles(fadeProgress, mergeProgress);
                 }
             } else {
                 // Rendu normal du puzzle
-                for (int i = 0; i < gridZones.length; i++) {
-                    if (i != emptyTileIndex && (!isAnimating || i != animatingTileIndex)) {
-                        int tileNumber = puzzleState[i];
-                        batch.draw(puzzleTiles[tileNumber], 
-                            gridZones[i].x, 
-                            gridZones[i].y, 
-                            gridZones[i].width, 
-                            gridZones[i].height);
-                    }
-                }
-
-                // Dessiner la tuile en cours d'animation
-                if (isAnimating) {
-                    int tileNumber = puzzleState[animatingTileIndex];
-                    float x = animationStart.x + (animationEnd.x - animationStart.x) * animationProgress;
-                    float y = animationStart.y + (animationEnd.y - animationStart.y) * animationProgress;
-                    batch.draw(puzzleTiles[tileNumber], x, y, tileSize, tileSize);
-                }
+                renderNormalPuzzle();
             }
         }
 
         // Si le puzzle est résolu et l'animation de victoire est terminée, afficher le message de victoire
-        if (isPuzzleSolved && !isVictoryAnimating) {
+        if (isPuzzleSolved && animationState.shouldShowVictoryMessage()) {
             // Dessiner un fond semi-transparent pour le message
             float messageWidth = viewport.getWorldWidth() * 0.6f;
             float messageHeight = viewport.getWorldHeight() * 0.2f;
@@ -754,10 +664,154 @@ public class SlidingPuzzleGameScreen extends GameScreen {
         }
     }
 
+    private void renderIrisOpenEffect(float progress) {
+        float screenWidth = viewport.getWorldWidth();
+        float screenHeight = viewport.getWorldHeight();
+        float imageWidth = fullImageTexture.getWidth();
+        float imageHeight = fullImageTexture.getHeight();
+        
+        // Calculer le ratio pour s'assurer que l'image tient dans l'écran (zoom final)
+        float finalScale = Math.min(
+            screenWidth * 0.8f / imageWidth,
+            screenHeight * 0.8f / imageHeight
+        );
+        
+        Theme.CropInfo squareCrop = theme.getSquareCrop();
+        if (squareCrop != null) {
+            // Calculer le zoom initial pour correspondre à la taille des tuiles réunies
+            float initialScale = (gridSize * tileSize) / squareCrop.getWidth();
+            
+            // Interpoler le zoom entre la valeur initiale et finale
+            float currentScale = initialScale + (finalScale - initialScale) * progress;
+            
+            // Calculer les dimensions avec le zoom actuel
+            float scaledWidth = imageWidth * currentScale;
+            float scaledHeight = imageHeight * currentScale;
+            float x = (screenWidth - scaledWidth) / 2;
+            float y = (screenHeight - scaledHeight) / 2;
+
+            // Calculer les dimensions de la zone recadrée dans l'image complète
+            float cropX = squareCrop.getX() * currentScale;
+            float cropY = squareCrop.getY() * currentScale;
+            float cropWidth = squareCrop.getWidth() * currentScale;
+            float cropHeight = squareCrop.getHeight() * currentScale;
+
+            // Calculer les dimensions de l'ouverture rectangulaire
+            float openWidth = cropWidth + (scaledWidth - cropWidth) * progress;
+            float openHeight = cropHeight + (scaledHeight - cropHeight) * progress;
+            float openX = x + (scaledWidth - openWidth) / 2;
+            float openY = y + (scaledHeight - openHeight) / 2;
+
+            // Dessiner l'image complète avec l'effet d'ouverture
+            batch.setColor(1f, 1f, 1f, 1f);
+            batch.draw(fullImageTexture, 
+                openX, openY, openWidth, openHeight,
+                (int)(squareCrop.getX() - (openWidth - cropWidth) / (2 * currentScale)),
+                (int)(squareCrop.getY() - (openHeight - cropHeight) / (2 * currentScale)),
+                (int)(openWidth / currentScale),
+                (int)(openHeight / currentScale),
+                false, false);
+        }
+    }
+
+    private void renderMergingTiles(float fadeProgress, float mergeProgress) {
+        // Dessiner la case vide avec fade in
+        if (fadeProgress < 1f) {
+            batch.setColor(1f, 1f, 1f, fadeProgress);
+            batch.draw(puzzleTiles[emptyTileIndex], 
+                gridZones[emptyTileIndex].x, 
+                gridZones[emptyTileIndex].y, 
+                gridZones[emptyTileIndex].width, 
+                gridZones[emptyTileIndex].height);
+        } else if (mergeProgress < 1f) {
+            renderMergingTile(emptyTileIndex, mergeProgress);
+        } else {
+            renderFinalTile(emptyTileIndex);
+        }
+        
+        // Dessiner toutes les tuiles avec l'espacement réduit
+        batch.setColor(Color.WHITE);
+        for (int i = 0; i < gridZones.length; i++) {
+            if (i != emptyTileIndex) {
+                if (mergeProgress < 1f) {
+                    renderMergingTile(i, mergeProgress);
+                } else {
+                    renderFinalTile(i);
+                }
+            }
+        }
+    }
+
+    private void renderMergingTile(int index, float mergeProgress) {
+        int tileNumber = puzzleState[index];
+        float x = gridZones[index].x;
+        float y = gridZones[index].y;
+        
+        // Calculer la position finale (sans espacement)
+        float gridX = gridZones[0].x;
+        float gridY = gridZones[0].y;
+        float finalX = gridX + (index % gridSize) * tileSize;
+        float finalY = gridY + (index / gridSize) * tileSize;
+        
+        // Calculer le décalage pour maintenir l'image centrée
+        float totalGridWidth = gridSize * (tileSize + tileSpacing) - tileSpacing;
+        float totalGridHeight = gridSize * (tileSize + tileSpacing) - tileSpacing;
+        float finalGridWidth = gridSize * tileSize;
+        float finalGridHeight = gridSize * tileSize;
+        
+        // Calculer le décalage pour maintenir le centre
+        float offsetX = (totalGridWidth - finalGridWidth) / 2;
+        float offsetY = (totalGridHeight - finalGridHeight) / 2;
+        
+        // Interpoler la position en tenant compte du décalage
+        x = x + (finalX - x + offsetX) * mergeProgress;
+        y = y + (finalY - y + offsetY) * mergeProgress;
+        
+        batch.draw(puzzleTiles[tileNumber], x, y, tileSize, tileSize);
+    }
+
+    private void renderFinalTile(int index) {
+        int tileNumber = puzzleState[index];
+        float gridX = gridZones[0].x;
+        float gridY = gridZones[0].y;
+        float finalX = gridX + (index % gridSize) * tileSize;
+        float finalY = gridY + (index / gridSize) * tileSize;
+        
+        // Calculer le décalage final
+        float totalGridWidth = gridSize * (tileSize + tileSpacing) - tileSpacing;
+        float totalGridHeight = gridSize * (tileSize + tileSpacing) - tileSpacing;
+        float finalGridWidth = gridSize * tileSize;
+        float finalGridHeight = gridSize * tileSize;
+        float offsetX = (totalGridWidth - finalGridWidth) / 2;
+        float offsetY = (totalGridHeight - finalGridHeight) / 2;
+        
+        batch.draw(puzzleTiles[tileNumber], finalX + offsetX, finalY + offsetY, tileSize, tileSize);
+    }
+
+    private void renderNormalPuzzle() {
+        for (int i = 0; i < gridZones.length; i++) {
+            if (i != emptyTileIndex && (!tileAnimation.isActive() || i != tileAnimation.getTileIndex())) {
+                int tileNumber = puzzleState[i];
+                batch.draw(puzzleTiles[tileNumber], 
+                    gridZones[i].x, 
+                    gridZones[i].y, 
+                    gridZones[i].width, 
+                    gridZones[i].height);
+            }
+        }
+
+        // Dessiner la tuile en cours d'animation
+        if (tileAnimation.isActive()) {
+            int tileNumber = puzzleState[tileAnimation.getTileIndex()];
+            Vector3 currentPos = tileAnimation.getCurrentPosition();
+            batch.draw(puzzleTiles[tileNumber], currentPos.x, currentPos.y, tileSize, tileSize);
+        }
+    }
+
     @Override
     protected void handleInput() {
         // Désactiver les entrées pendant l'animation ou les transitions
-        if (isAnimating || TransitionScreen.isTransitionActive()) {
+        if (tileAnimation.isActive() || TransitionScreen.isTransitionActive()) {
             return;
         }
 
@@ -832,13 +886,9 @@ public class SlidingPuzzleGameScreen extends GameScreen {
                             }
 
                             // Initialiser l'animation
-                            isAnimating = true;
-                            animationProgress = 0f;
-                            animatingTileIndex = positionIndex;
-
-                            // Définir les positions de début et de fin de l'animation
-                            animationStart.set(gridZones[positionIndex].x, gridZones[positionIndex].y, 0);
-                            animationEnd.set(gridZones[emptyTileIndex].x, gridZones[emptyTileIndex].y, 0);
+                            Vector3 start = new Vector3(gridZones[positionIndex].x, gridZones[positionIndex].y, 0);
+                            Vector3 end = new Vector3(gridZones[emptyTileIndex].x, gridZones[emptyTileIndex].y, 0);
+                            tileAnimation.start(positionIndex, start, end);
                         } else {
                             System.out.println("Déplacement impossible - Tuile " + tileNumber + " (position " + positionIndex + ") non adjacente à la case vide (position " + emptyTileIndex + ")");
                         }
