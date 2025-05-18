@@ -1,8 +1,6 @@
 package com.widedot.calendar.game;
 
 import com.badlogic.gdx.Game;
-import com.widedot.calendar.screens.GameScreen;
-import com.widedot.calendar.config.ThemeManager;
 
 /**
  * Fabrique pour créer les différents types de jeux

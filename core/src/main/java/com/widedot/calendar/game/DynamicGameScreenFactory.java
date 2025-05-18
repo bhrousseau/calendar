@@ -7,11 +7,10 @@ import com.widedot.calendar.config.GameManager;
 import com.widedot.calendar.config.GameTemplateManager;
 import com.widedot.calendar.config.ThemeManager;
 import com.widedot.calendar.config.DayMappingManager;
-
-import java.lang.reflect.Constructor;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.List;
+import com.badlogic.gdx.utils.ObjectMap;
+import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.Gdx;
+import com.widedot.calendar.screens.SlidingPuzzleGameScreen;
 
 /**
  * Implémentation dynamique de la fabrique d'écrans de jeu qui utilise la réflexion
@@ -20,13 +19,13 @@ import java.util.List;
 public class DynamicGameScreenFactory {
     private static DynamicGameScreenFactory instance;
 
-    private final Map<String, Class<?>> gameClassCache;
+    private final ObjectMap<String, Class<?>> gameClassCache;
 
     /**
      * Constructeur privé pour le pattern Singleton
      */
     private DynamicGameScreenFactory() {
-        gameClassCache = new HashMap<>();
+        gameClassCache = new ObjectMap<>();
     }
 
     /**
@@ -48,45 +47,24 @@ public class DynamicGameScreenFactory {
      * @return L'écran de jeu créé
      */
     public GameScreen createGameScreen(int dayId, String gameTemplate, Game game) {
-        if (gameTemplate == null || gameTemplate.isEmpty()) {
-            throw new IllegalArgumentException("Le type de jeu ne peut pas être null ou vide");
-        }
-
-        // Récupérer les gestionnaires nécessaires
-        GameTemplateManager templateManager = GameTemplateManager.getInstance();
-        GameManager gameManager = GameManager.getInstance();
-        DayMappingManager dayMappingManager = DayMappingManager.getInstance();
-
-        // Récupérer le template de jeu
-        GameTemplateManager.GameTemplate template = templateManager.getTemplateByType(gameTemplate);
-        if (template == null) {
-            throw new IllegalArgumentException("Aucun template trouvé pour le type de jeu: " + gameTemplate);
-        }
-
-        // Récupérer la référence de jeu à partir du mapping jour -> jeu
-        String gameReference = dayMappingManager.getGameReferenceForDay(dayId);
+        String gameReference = DayMappingManager.getInstance().getGameReferenceForDay(dayId);
         if (gameReference == null) {
-            throw new IllegalArgumentException("Aucune référence de jeu trouvée pour le jour: " + dayId);
+            throw new IllegalArgumentException("Aucune configuration trouvée pour le jour " + dayId);
         }
 
-        // Récupérer la configuration de jeu associée à la référence de jeu
-        GameManager.GameConfig gameConfig = gameManager.getGameByReference(gameReference);
+        GameManager.GameConfig gameConfig = GameManager.getInstance().getGameByReference(gameReference);
         if (gameConfig == null) {
-            throw new IllegalArgumentException("Aucune configuration trouvée pour le jeu: " + gameReference);
+            throw new IllegalArgumentException("Aucune configuration trouvée pour la référence " + gameReference);
         }
 
-        // Créer l'écran de jeu
+        GameTemplateManager.GameTemplate template = GameTemplateManager.getInstance().getTemplateByType(gameTemplate);
+        if (template == null) {
+            throw new IllegalArgumentException("Aucun template trouvé pour le type de jeu " + gameTemplate);
+        }
+
         return createGameScreen(gameConfig, template, dayId, game);
     }
 
-     /**
-     * Crée un écran de jeu à partir d'une configuration et d'un template
-     * @param gameConfig La configuration du jeu
-     * @param template Le template du jeu
-     * @param dayId L'identifiant du jour
-     * @param game L'instance du jeu
-     * @return L'écran de jeu créé
-     */
     private GameScreen createGameScreen(GameManager.GameConfig gameConfig,
                                         GameTemplateManager.GameTemplate template,
                                         int dayId, Game game) {
@@ -94,92 +72,81 @@ public class DynamicGameScreenFactory {
         // 1. Paramètres par défaut du template
         // 2. Paramètres des presets appliqués
         // 3. Paramètres spécifiques de la configuration
-        Map<String, Object> finalParameters = new HashMap<>(template.getDefaultParameters());
+        ObjectMap<String, Object> finalParameters = new ObjectMap<>();
+        ObjectMap<String, Object> defaultParams = template.getDefaultParameters();
+        if (defaultParams != null) {
+            for (ObjectMap.Entry<String, Object> entry : defaultParams.entries()) {
+                finalParameters.put(entry.key, entry.value);
+            }
+        }
 
         // Appliquer les presets
-        List<String> presets = gameConfig.getPresets();
+        Array<String> presets = gameConfig.getPresets();
         if (presets != null) {
             for (String preset : presets) {
-                Map<String, Object> presetParams = template.getPresetParameters(preset);
+                ObjectMap<String, Object> presetParams = template.getPresetParameters(preset);
                 if (presetParams != null) {
-                    finalParameters.putAll(presetParams);
+                    for (ObjectMap.Entry<String, Object> entry : presetParams.entries()) {
+                        finalParameters.put(entry.key, entry.value);
+                    }
                 } else {
-                    System.err.println("ATTENTION: Preset '" + preset + "' non trouvé pour le type de jeu " + template.getGameTemplate());
+                    Gdx.app.error("DynamicGameScreenFactory", "ATTENTION: Preset '" + preset + "' non trouvé pour le type de jeu " + template.getGameTemplate());
                 }
             }
         }
 
         // Appliquer les paramètres spécifiques
-        Map<String, Object> specificParams = gameConfig.getParameters();
+        ObjectMap<String, Object> specificParams = gameConfig.getParameters();
         if (specificParams != null) {
-            finalParameters.putAll(specificParams);
+            for (ObjectMap.Entry<String, Object> entry : specificParams.entries()) {
+                finalParameters.put(entry.key, entry.value);
+            }
         }
 
         // Récupérer le thème associé
         String themeName = gameConfig.getTheme();
-        Theme theme = null;
-        if (themeName != null) {
-            theme = ThemeManager.getInstance().getThemeByName(themeName);
-            System.out.println("Chargement du thème " + themeName + " -> " + (theme != null ? "trouvé" : "non trouvé"));
-            if (theme == null) {
-                throw new IllegalArgumentException("Thème non trouvé: " + themeName);
-            }
-        } else {
-            throw new IllegalArgumentException("Aucun thème spécifié pour la configuration du jeu");
+        Theme theme = ThemeManager.getInstance().getThemeByName(themeName);
+        if (theme == null) {
+            throw new IllegalArgumentException("Thème non trouvé: " + themeName);
         }
 
-        try {
-            // Récupérer la classe du jeu
-            String gameClassName = "com.widedot.calendar.screens." + template.getGameClass();
-            Class<?> gameClass = getGameClass(gameClassName);
-
-            // Créer l'instance du jeu avec le constructeur approprié
-            Constructor<?> constructor;
-            Object[] parameters;
-
-            System.out.println("Création d'un jeu de type " + template.getGameTemplate() + " avec la classe " + gameClassName);
-            System.out.println("Thème utilisé: " + (theme == null ? "null" : theme.getName()));
-            System.out.println("Paramètres: " + finalParameters);
-
-            try {
-                // Essayer d'abord le constructeur avec paramètres (dayId, game, theme, parameters)
-                constructor = gameClass.getConstructor(int.class, Game.class, Theme.class, Map.class);
-                parameters = new Object[]{dayId, game, theme, finalParameters};
-                System.out.println("Utilisation du constructeur avec (dayId, game, theme, parameters)");
-            } catch (NoSuchMethodException e1) {
-                try {
-                    // Sinon essayer le constructeur avec paramètres (dayId, game, parameters)
-                    constructor = gameClass.getConstructor(int.class, Game.class, Map.class);
-                    parameters = new Object[]{dayId, game, finalParameters};
-                    System.out.println("Utilisation du constructeur avec (dayId, game, parameters)");
-                } catch (NoSuchMethodException e2) {
-                    throw new RuntimeException("Aucun constructeur compatible trouvé pour la classe " + gameClassName);
-                }
-            }
-
-            return (GameScreen) constructor.newInstance(parameters);
-        } catch (Exception e) {
-            System.err.println("ERREUR lors de l'instanciation de l'écran de jeu: " + e.getMessage());
-            e.printStackTrace();
-            throw new RuntimeException("Échec d'instanciation de l'écran de jeu pour le jour " + dayId + ": " + e.getMessage(), e);
+        // Créer l'écran de jeu via le registre
+        String gameName = template.getName();
+        GameScreenLoader loader = GameScreenRegistry.getLoader(gameName);
+        if (loader == null) {
+            throw new RuntimeException("Aucun loader trouvé pour le jeu: " + gameName);
         }
+        return loader.create(dayId, game, theme, finalParameters);
     }
 
-    /**
-     * Récupère la classe d'un écran de jeu à partir de son nom complet
-     * @param className Le nom complet de la classe
-     * @return La classe
-     * @throws ClassNotFoundException Si la classe n'est pas trouvée
-     */
     private Class<?> getGameClass(String className) throws ClassNotFoundException {
-        // Vérifier si la classe est déjà dans le cache
-        if (gameClassCache.containsKey(className)) {
-            return gameClassCache.get(className);
+        Class<?> gameClass = gameClassCache.get(className);
+        if (gameClass == null) {
+            gameClass = Class.forName(className);
+            gameClassCache.put(className, gameClass);
         }
-
-        // Sinon charger la classe et la mettre en cache
-        Class<?> gameClass = Class.forName(className);
-        gameClassCache.put(className, gameClass);
         return gameClass;
+    }
+}
+
+/**
+ * Interface fonctionnelle pour loader d'écran de jeu
+ */
+interface GameScreenLoader {
+    GameScreen create(int dayId, Game game, Theme theme, ObjectMap<String, Object> parameters);
+}
+
+/**
+ * Registre statique des loaders d'écrans de jeu
+ */
+class GameScreenRegistry {
+    private static final ObjectMap<String, GameScreenLoader> registry = new ObjectMap<>();
+    static {
+        // Associer le nom du jeu à son loader
+        registry.put("slidingPuzzle", (dayId, game, theme, parameters) -> new SlidingPuzzleGameScreen(dayId, game, theme, parameters));
+        // Ajouter ici d'autres jeux si besoin
+    }
+    public static GameScreenLoader getLoader(String name) {
+        return registry.get(name);
     }
 }

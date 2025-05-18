@@ -88,7 +88,7 @@
       "description": "La ville est une peinture de Fernand Léger, réalisée en 1919. Elle représente une vue urbaine abstraite.",
       "images": {
         "full": "images/paintings/full/city.jpg",
-        "icon": "images/paintings/icon/city.png"
+        "icon": "images/paintings/icon/the_city.png"
       },
       "crop": {
         "square": {

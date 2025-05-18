@@ -6,9 +6,7 @@ import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
-
-import java.util.HashMap;
-import java.util.Map;
+import com.badlogic.gdx.utils.ObjectMap;
 
 /**
  * Gestionnaire de ressources pour le jeu
@@ -17,21 +15,21 @@ import java.util.Map;
 public class ResourceManager {
     private static ResourceManager instance;
     
-    private final Map<String, Texture> textures;
-    private final Map<String, Sound> sounds;
-    private final Map<String, Music> music;
-    private final Map<String, BitmapFont> fonts;
-    private final Map<String, TextureAtlas> textureAtlases;
+    private final ObjectMap<String, Texture> textures;
+    private final ObjectMap<String, Sound> sounds;
+    private final ObjectMap<String, Music> music;
+    private final ObjectMap<String, BitmapFont> fonts;
+    private final ObjectMap<String, TextureAtlas> textureAtlases;
     
     /**
      * Constructeur privé pour le pattern Singleton
      */
     private ResourceManager() {
-        textures = new HashMap<>();
-        sounds = new HashMap<>();
-        music = new HashMap<>();
-        fonts = new HashMap<>();
-        textureAtlases = new HashMap<>();
+        textures = new ObjectMap<>();
+        sounds = new ObjectMap<>();
+        music = new ObjectMap<>();
+        fonts = new ObjectMap<>();
+        textureAtlases = new ObjectMap<>();
     }
     
     /**

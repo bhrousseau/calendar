@@ -1,34 +1,38 @@
 package com.widedot.calendar.game;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
+import com.badlogic.gdx.math.RandomXS128;
+import com.badlogic.gdx.utils.ObjectMap;
+import com.widedot.calendar.AdventCalendarGame;
+import com.badlogic.gdx.utils.Array;
 
 /**
  * Classe qui gère l'état du jeu (scores, déverrouillage, etc.)
  */
 public class GameState {
     private static GameState instance;
+    private final AdventCalendarGame game;
     
-    private final Map<Integer, Boolean> unlockedPaintings;
-    private final Map<Integer, Integer> scores;
-    private final Map<Integer, Boolean> visitedPaintings;
-    private final Random random;
+    private final ObjectMap<String, Boolean> unlockedPaintings;
+    private final ObjectMap<String, Integer> scores;
+    private final ObjectMap<String, Boolean> visitedPaintings;
+    private long gameSeed;
+    private Array<Integer> shuffledDays;
     
     /**
      * Constructeur privé pour le pattern Singleton
      */
-    private GameState() {
-        this.unlockedPaintings = new HashMap<>();
-        this.scores = new HashMap<>();
-        this.visitedPaintings = new HashMap<>();
-        this.random = new Random();
+    private GameState(AdventCalendarGame game) {
+        this.game = game;
+        this.unlockedPaintings = new ObjectMap<>();
+        this.scores = new ObjectMap<>();
+        this.visitedPaintings = new ObjectMap<>();
+        this.shuffledDays = new Array<>();
         
         // Initialiser tous les tableaux comme verrouillés
         for (int i = 1; i <= 24; i++) {
-            unlockedPaintings.put(i, false);
-            scores.put(i, 0);
-            visitedPaintings.put(i, false);
+            unlockedPaintings.put(String.valueOf(i), false);
+            scores.put(String.valueOf(i), 0);
+            visitedPaintings.put(String.valueOf(i), false);
         }
     }
     
@@ -36,9 +40,9 @@ public class GameState {
      * Récupère l'instance unique de GameState (pattern Singleton)
      * @return L'instance de GameState
      */
-    public static GameState getInstance() {
+    public static GameState getInstance(AdventCalendarGame game) {
         if (instance == null) {
-            instance = new GameState();
+            instance = new GameState(game);
         }
         return instance;
     }
@@ -49,7 +53,7 @@ public class GameState {
      */
     public void unlockPainting(int dayId) {
         if (dayId >= 1 && dayId <= 24) {
-            unlockedPaintings.put(dayId, true);
+            unlockedPaintings.put(String.valueOf(dayId), true);
         }
     }
     
@@ -59,7 +63,7 @@ public class GameState {
      * @return true si le tableau est déverrouillé, false sinon
      */
     public boolean isPaintingUnlocked(int dayId) {
-        return unlockedPaintings.getOrDefault(dayId, false);
+        return unlockedPaintings.containsKey(String.valueOf(dayId)) ? unlockedPaintings.get(String.valueOf(dayId)) : false;
     }
     
     /**
@@ -68,7 +72,7 @@ public class GameState {
      * @return true si le tableau a été visité, false sinon
      */
     public boolean isPaintingVisited(int dayId) {
-        return visitedPaintings.getOrDefault(dayId, false);
+        return visitedPaintings.containsKey(String.valueOf(dayId)) ? visitedPaintings.get(String.valueOf(dayId)) : false;
     }
     
     /**
@@ -77,7 +81,7 @@ public class GameState {
      */
     public void markPaintingAsVisited(int dayId) {
         if (dayId >= 1 && dayId <= 24) {
-            visitedPaintings.put(dayId, true);
+            visitedPaintings.put(String.valueOf(dayId), true);
         }
     }
     
@@ -87,7 +91,7 @@ public class GameState {
      * @return Le score
      */
     public int getScore(int dayId) {
-        return scores.getOrDefault(dayId, 0);
+        return scores.containsKey(String.valueOf(dayId)) ? scores.get(String.valueOf(dayId)) : 0;
     }
     
     /**
@@ -97,7 +101,7 @@ public class GameState {
      */
     public void setScore(int dayId, int score) {
         if (dayId >= 1 && dayId <= 24) {
-            scores.put(dayId, score);
+            scores.put(String.valueOf(dayId), score);
         }
     }
     
@@ -105,8 +109,8 @@ public class GameState {
      * Récupère le générateur aléatoire
      * @return Le générateur aléatoire
      */
-    public Random getRandom() {
-        return random;
+    public RandomXS128 getRandom() {
+        return game.getRandom();
     }
     
     /**
@@ -114,7 +118,7 @@ public class GameState {
      * @param seed La graine à définir
      */
     public void setRandomSeed(long seed) {
-        random.setSeed(seed);
+        game.getRandom().setSeed(seed);
     }
     
     /**
@@ -127,9 +131,48 @@ public class GameState {
         
         // Réinitialiser tous les tableaux comme verrouillés
         for (int i = 1; i <= 24; i++) {
-            unlockedPaintings.put(i, false);
-            scores.put(i, 0);
-            visitedPaintings.put(i, false);
+            unlockedPaintings.put(String.valueOf(i), false);
+            scores.put(String.valueOf(i), 0);
+            visitedPaintings.put(String.valueOf(i), false);
         }
+    }
+    
+    /**
+     * Définit la graine du jeu et initialise le mélange des jours
+     * @param seed La graine à définir
+     */
+    public void initializeGameSeed(long seed) {
+        this.gameSeed = seed;
+        game.getRandom().setSeed(seed);
+        
+        // Initialiser le mélange des jours
+        shuffledDays.clear();
+        for (int i = 1; i <= 24; i++) {
+            shuffledDays.add(i);
+        }
+        
+        // Mélanger les jours
+        for (int i = shuffledDays.size - 1; i > 0; i--) {
+            int j = game.getRandom().nextInt(i + 1);
+            int temp = shuffledDays.get(i);
+            shuffledDays.set(i, shuffledDays.get(j));
+            shuffledDays.set(j, temp);
+        }
+    }
+    
+    /**
+     * Récupère la graine du jeu
+     * @return La graine du jeu
+     */
+    public long getGameSeed() {
+        return gameSeed;
+    }
+    
+    /**
+     * Récupère l'ordre mélangé des jours
+     * @return L'array contenant l'ordre des jours
+     */
+    public Array<Integer> getShuffledDays() {
+        return shuffledDays;
     }
 } 

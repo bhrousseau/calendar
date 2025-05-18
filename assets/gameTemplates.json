@@ -1,7 +1,7 @@
 {
   "gameTemplates": {
     "SPZ": {
-      "gameClass": "SlidingPuzzleGameScreen",
+      "name": "slidingPuzzle",
       "defaultParameters": {
         "size": 4,
         "bgColor": "0,0,0",

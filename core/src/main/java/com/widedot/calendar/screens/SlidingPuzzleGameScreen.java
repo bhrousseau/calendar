@@ -15,8 +15,7 @@ import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.audio.Sound;
 import com.widedot.calendar.config.Config;
-
-import java.util.Map;
+import com.badlogic.gdx.utils.ObjectMap;
 
 /**
  * Écran de jeu pour le puzzle coulissant
@@ -249,7 +248,7 @@ public class SlidingPuzzleGameScreen extends GameScreen {
      * @param theme Le thème du jeu
      * @param parameters Les paramètres du jeu
      */
-    public SlidingPuzzleGameScreen(int dayId, Game game, Theme theme, Map<String, Object> parameters) {
+    public SlidingPuzzleGameScreen(int dayId, Game game, Theme theme, ObjectMap<String, Object> parameters) {
         super(dayId, game);
         
         this.theme = theme;

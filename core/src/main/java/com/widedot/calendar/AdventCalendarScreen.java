@@ -11,17 +11,11 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.audio.Sound;
-import com.widedot.calendar.config.Config;
 import com.widedot.calendar.config.ThemeManager;
 import com.widedot.calendar.data.Theme;
 import com.widedot.calendar.screens.TransitionScreen;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.ObjectMap;
 
 /**
  * Écran principal du calendrier de l'Avent
@@ -35,9 +29,9 @@ public class AdventCalendarScreen implements Screen {
     private final BitmapFont font;
     private final Texture lockedTexture;
     private final Texture defaultUnlockedTexture;
-    private final Map<Integer, Texture> unlockedTextures;
-    private final Map<Integer, Rectangle> boxes;
-    private final Map<Integer, Texture> themeIconTextures; // Cache pour les textures d'icônes
+    private final ObjectMap<String, Texture> themeIconTextures;
+    private final ObjectMap<String, Texture> unlockedTextures;
+    private final ObjectMap<Integer, Rectangle> boxes;
     private final ThemeManager themeManager;
 
     // Sons
@@ -83,7 +77,7 @@ public class AdventCalendarScreen implements Screen {
                 this.batch = new SpriteBatch();
                 this.font = new BitmapFont();
                 this.themeManager = ThemeManager.getInstance();
-                this.themeIconTextures = new HashMap<>();
+                this.themeIconTextures = new ObjectMap<>();
     
                 // Charger les textures avec Gdx.files.internal
                 try {
@@ -100,8 +94,8 @@ public class AdventCalendarScreen implements Screen {
                 throw e;
             }
 
-            this.unlockedTextures = new HashMap<>();
-            this.boxes = new HashMap<Integer, Rectangle>();
+            this.unlockedTextures = new ObjectMap<>();
+            this.boxes = new ObjectMap<>();
 
             // Initialiser les dimensions
             this.currentWidth = WORLD_WIDTH;
@@ -128,7 +122,7 @@ public class AdventCalendarScreen implements Screen {
         this.batch = new SpriteBatch();
         this.font = new BitmapFont();
         this.themeManager = ThemeManager.getInstance();
-        this.themeIconTextures = new HashMap<>();
+        this.themeIconTextures = new ObjectMap<>();
 
         // Charger les textures avec Gdx.files.internal
         try {
@@ -144,8 +138,8 @@ public class AdventCalendarScreen implements Screen {
             throw e;
         }
 
-        this.unlockedTextures = new HashMap<>();
-        this.boxes = new HashMap<Integer, Rectangle>();
+        this.unlockedTextures = new ObjectMap<>();
+        this.boxes = new ObjectMap<>();
 
         // Initialiser les dimensions
         this.currentWidth = WORLD_WIDTH;
@@ -172,14 +166,8 @@ public class AdventCalendarScreen implements Screen {
         float startX = (currentWidth - gridWidth) / 2;
         float startY = (currentHeight - gridHeight) / 2;
 
-        // Créer une liste des jours (1 à 24)
-        List<Integer> days = new ArrayList<>();
-        for (int i = 1; i <= 24; i++) {
-            days.add(i);
-        }
-
-        // Mélanger la liste des jours
-        Collections.shuffle(days, new Random(Config.getInstance().getGameSeed()));
+        // Utiliser l'ordre des jours stocké dans le GameState
+        Array<Integer> days = adventGame.getGameState().getShuffledDays();
 
         // Créer les boîtes avec les jours mélangés
         for (int i = 0; i < 24; i++) {
@@ -199,7 +187,7 @@ public class AdventCalendarScreen implements Screen {
      */
     private Texture loadUnlockedTexture(int dayId) {
         Texture texture = new Texture(Gdx.files.internal(UNLOCKED_TEXTURE_PATH));
-        unlockedTextures.put(dayId, texture);
+        unlockedTextures.put(String.valueOf(dayId), texture);
         return texture;
     }
 
@@ -210,8 +198,8 @@ public class AdventCalendarScreen implements Screen {
      */
     private Texture getThemeIconForDay(int dayId) {
         // Vérifier si la texture est déjà dans le cache
-        if (themeIconTextures.containsKey(dayId)) {
-            return themeIconTextures.get(dayId);
+        if (themeIconTextures.containsKey(String.valueOf(dayId))) {
+            return themeIconTextures.get(String.valueOf(dayId));
         }
 
         try {
@@ -231,7 +219,7 @@ public class AdventCalendarScreen implements Screen {
 
                 // Charger et mettre en cache la texture
                 Texture iconTexture = new Texture(Gdx.files.internal(iconPath));
-                themeIconTextures.put(dayId, iconTexture);
+                themeIconTextures.put(String.valueOf(dayId), iconTexture);
                 return iconTexture;
             }
         } catch (Exception e) {
@@ -271,7 +259,7 @@ public class AdventCalendarScreen implements Screen {
             // Dessiner la case (verrouillée ou déverrouillée)
             Texture texture;
             if (adventGame != null && adventGame.isUnlocked(i)) {
-                texture = unlockedTextures.containsKey(i) ? unlockedTextures.get(i) : loadUnlockedTexture(i);
+                texture = unlockedTextures.containsKey(String.valueOf(i)) ? unlockedTextures.get(String.valueOf(i)) : loadUnlockedTexture(i);
             } else {
                 texture = lockedTexture;
             }

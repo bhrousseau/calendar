@@ -2,6 +2,7 @@ package com.widedot.calendar;
 
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
+import com.widedot.calendar.platform.PlatformFactory;
 
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
 public class Main extends Game {
@@ -15,6 +16,11 @@ public class Main extends Game {
         System.out.println("Dimensions de la fenêtre: " + Gdx.graphics.getWidth() + "x" + Gdx.graphics.getHeight());
         System.out.println("Type de graphics: " + Gdx.graphics.getClass().getName());
         System.out.println("GL30 disponible: " + (Gdx.graphics.isGL30Available() ? "oui" : "non"));
+        
+        // Vérifier que la plateforme est initialisée
+        if (PlatformFactory.getPlatform() == null) {
+            throw new IllegalStateException("Platform not initialized. Make sure to set the platform before creating the game.");
+        }
         
         game = new AdventCalendarGame();
         game.create();

@@ -5,8 +5,6 @@ import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.utils.JsonReader;
 import com.badlogic.gdx.utils.JsonValue;
 
-import java.util.Calendar;
-
 /**
  * Classe qui gère la configuration du jeu à partir d'un fichier JSON.
  */
@@ -14,10 +12,24 @@ public class Config {
     private static Config instance;
     private final JsonValue config;
     
+    // Constantes pour les mois
+    public static final int JANUARY = 0;
+    public static final int FEBRUARY = 1;
+    public static final int MARCH = 2;
+    public static final int APRIL = 3;
+    public static final int MAY = 4;
+    public static final int JUNE = 5;
+    public static final int JULY = 6;
+    public static final int AUGUST = 7;
+    public static final int SEPTEMBER = 8;
+    public static final int OCTOBER = 9;
+    public static final int NOVEMBER = 10;
+    public static final int DECEMBER = 11;
+    
     // Valeurs par défaut
     private boolean testModeEnabled = true;
     private int testDay = 24;
-    private int testMonth = Calendar.DECEMBER;
+    private int testMonth = DECEMBER;
     private int testYear = 2023;
     private boolean testUnlocked = false;
     private boolean testUseSave = true;  // Par défaut, on utilise la sauvegarde
@@ -25,7 +37,7 @@ public class Config {
     
     // Nouveaux paramètres pour les modes de calendrier
     private String calendarMode = "month";  // Valeurs possibles: "month" ou "year"
-    private int monthModeMonth = Calendar.DECEMBER;
+    private int monthModeMonth = DECEMBER;
     private int monthModeYear = 2023;
     private int yearModeYear = 2023;
     

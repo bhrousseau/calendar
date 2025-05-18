@@ -9,8 +9,7 @@ buildscript {
     maven { url 'https://s01.oss.sonatype.org/content/repositories/snapshots/' }
   }
   dependencies {
-
-
+    classpath "org.wisepersist:gwt-gradle-plugin:1.1.16"
   }
 }
 
@@ -36,9 +35,9 @@ configure(subprojects) {
   tasks.register('generateAssetList') {
     inputs.dir("${project.rootDir}/assets/")
     // projectFolder/assets
-    File assetsFolder = new File("${project.rootDir}/assets/")
+    def assetsFolder = file("${project.rootDir}/assets/")
     // projectFolder/assets/assets.txt
-    File assetsFile = new File(assetsFolder, "assets.txt")
+    def assetsFile = file("${assetsFolder}/assets.txt")
     // delete that file in case we've already created it
     assetsFile.delete()
 

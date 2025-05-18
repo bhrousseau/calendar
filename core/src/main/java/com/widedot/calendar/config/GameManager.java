@@ -5,11 +5,7 @@ import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.utils.JsonReader;
 import com.badlogic.gdx.utils.JsonValue;
 import com.badlogic.gdx.utils.Array;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Map;
+import com.badlogic.gdx.utils.ObjectMap;
 
 /**
  * Gestionnaire des configurations de jeux
@@ -19,7 +15,7 @@ public class GameManager {
     private static final String GAMES_FILE = "games.json";
     private static GameManager instance;
     
-    private final Map<String, GameConfig> gamesByReference;
+    private final ObjectMap<String, GameConfig> gamesByReference;
     private final Array<GameConfig> allGames;
     
     /**
@@ -29,11 +25,11 @@ public class GameManager {
         private final String reference;
         private final String gameTemplate;
         private final String theme;
-        private final List<String> presets;
-        private final Map<String, Object> parameters;
+        private final Array<String> presets;
+        private final ObjectMap<String, Object> parameters;
         
         public GameConfig(String reference, String gameTemplate, String theme, 
-                        List<String> presets, Map<String, Object> parameters) {
+                        Array<String> presets, ObjectMap<String, Object> parameters) {
             this.reference = reference;
             this.gameTemplate = gameTemplate;
             this.theme = theme;
@@ -53,11 +49,11 @@ public class GameManager {
             return theme;
         }
         
-        public List<String> getPresets() {
+        public Array<String> getPresets() {
             return presets;
         }
         
-        public Map<String, Object> getParameters() {
+        public ObjectMap<String, Object> getParameters() {
             return parameters;
         }
     }
@@ -66,7 +62,7 @@ public class GameManager {
      * Constructeur privé pour le pattern Singleton
      */
     private GameManager() {
-        gamesByReference = new HashMap<>();
+        gamesByReference = new ObjectMap<>();
         allGames = new Array<>();
         loadGames();
     }
@@ -100,16 +96,16 @@ public class GameManager {
                     String theme = gameValue.getString("theme");
                     
                     // Charger les presets
-                    List<String> presets = new ArrayList<>();
+                    Array<String> presets = new Array<>();
                     JsonValue presetsValue = gameValue.get("presets");
-                    if (presetsValue != null && presetsValue.isArray()) {
-                        for (int i = 0; i < presetsValue.size; i++) {
-                            presets.add(presetsValue.getString(i));
+                    if (presetsValue != null) {
+                        for (JsonValue preset = presetsValue.child; preset != null; preset = preset.next) {
+                            presets.add(preset.asString());
                         }
                     }
                     
                     // Charger les paramètres
-                    Map<String, Object> parameters = new HashMap<>();
+                    ObjectMap<String, Object> parameters = new ObjectMap<>();
                     JsonValue paramsValue = gameValue.get("parameters");
                     if (paramsValue != null) {
                         for (JsonValue param = paramsValue.child; param != null; param = param.next) {
@@ -118,23 +114,23 @@ public class GameManager {
                     }
                     
                     // Créer et stocker la configuration
-                    GameConfig gameConfig = new GameConfig(reference, gameTemplate, theme, presets, parameters);
-                    gamesByReference.put(reference, gameConfig);
-                    allGames.add(gameConfig);
+                    GameConfig config = new GameConfig(reference, gameTemplate, theme, presets, parameters);
+                    gamesByReference.put(reference, config);
+                    allGames.add(config);
                 }
             }
             
-            System.out.println("Chargement de " + allGames.size + " configurations de jeux réussi");
+            Gdx.app.log("GameManager", "Chargement de " + allGames.size + " configurations de jeux réussi");
         } catch (Exception e) {
-            System.err.println("Erreur lors du chargement des configurations de jeux: " + e.getMessage());
-            e.printStackTrace();
+            Gdx.app.error("GameManager", "Erreur lors du chargement des configurations de jeux: " + e.getMessage(), e);
+            throw new RuntimeException("Échec du chargement des configurations de jeux: " + e.getMessage(), e);
         }
     }
     
     /**
      * Ajoute un paramètre à une map en fonction de son type
      */
-    private void addParameterToMap(JsonValue param, Map<String, Object> map) {
+    private void addParameterToMap(JsonValue param, ObjectMap<String, Object> map) {
         String name = param.name;
         if (param.isNumber()) {
             if (param.asString().contains(".")) {
@@ -171,8 +167,8 @@ public class GameManager {
      * @param gameTemplate Le type de jeu
      * @return Une liste des configurations du type spécifié
      */
-    public List<GameConfig> getGamesByType(String gameTemplate) {
-        List<GameConfig> result = new ArrayList<>();
+    public Array<GameConfig> getGamesByType(String gameTemplate) {
+        Array<GameConfig> result = new Array<>();
         for (GameConfig config : allGames) {
             if (config.getGameTemplate().equals(gameTemplate)) {
                 result.add(config);

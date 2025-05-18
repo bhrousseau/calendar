@@ -9,13 +9,11 @@ import com.widedot.calendar.config.Config;
 import com.widedot.calendar.game.DynamicGameScreenFactory;
 import com.widedot.calendar.config.ThemeManager;
 import com.widedot.calendar.data.Theme;
-import com.widedot.calendar.screens.TransitionScreen;
 import com.badlogic.gdx.Screen;
-
-import java.util.Calendar;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
+import com.badlogic.gdx.utils.ObjectMap;
+import com.badlogic.gdx.math.RandomXS128;
+import com.badlogic.gdx.utils.TimeUtils;
+import com.widedot.calendar.game.GameState;
 
 /**
  * Classe principale du jeu
@@ -26,7 +24,7 @@ public class AdventCalendarGame extends Game {
     private SpriteBatch batch;
     
     // Gestion temporelle
-    private Calendar calendar;
+    private long currentTime;
     private final Config config;
     
     // Fabrique d'écrans de jeu
@@ -34,12 +32,13 @@ public class AdventCalendarGame extends Game {
     
     // Gestionnaires
     private final ThemeManager themeManager;
+    private final GameState gameState;
     
     // Maps pour stocker l'état des peintures
-    private final Map<Integer, Boolean> unlockedPaintings;
-    private final Map<Integer, Integer> scores;
-    private final Map<Integer, Boolean> visitedPaintings;
-    private final Random random;
+    private final ObjectMap<Integer, Boolean> unlockedPaintings;
+    private final ObjectMap<Integer, Integer> scores;
+    private final ObjectMap<Integer, Boolean> visitedPaintings;
+    private final RandomXS128 random;
     
     // Nom des préférences pour la sauvegarde
     private static final String PREFERENCES_NAME = "advent_calendar_save";
@@ -52,17 +51,20 @@ public class AdventCalendarGame extends Game {
      */
     public AdventCalendarGame() {
         this.batch = new SpriteBatch();
-        this.calendar = Calendar.getInstance();
         this.config = Config.getInstance();
         this.gameScreenFactory = DynamicGameScreenFactory.getInstance();
         this.themeManager = ThemeManager.getInstance();
         
-        this.unlockedPaintings = new HashMap<>();
-        this.scores = new HashMap<>();
-        this.visitedPaintings = new HashMap<>();
+        this.unlockedPaintings = new ObjectMap<>();
+        this.scores = new ObjectMap<>();
+        this.visitedPaintings = new ObjectMap<>();
         
-        // Initialiser le générateur aléatoire avec le seed de la configuration
-        this.random = new Random(config.getGameSeed());
+        // Initialiser le générateur aléatoire
+        this.random = new RandomXS128();
+        
+        // Initialiser le GameState
+        this.gameState = GameState.getInstance(this);
+        this.gameState.initializeGameSeed(config.getGameSeed());
         
         // Initialiser tous les tableaux comme verrouillés
         for (int i = 1; i <= 24; i++) {
@@ -80,6 +82,8 @@ public class AdventCalendarGame extends Game {
                 unlockedPaintings.put(i, true);
             }
         }
+        
+        this.currentTime = TimeUtils.millis();
     }
     
     /**
@@ -222,78 +226,83 @@ public class AdventCalendarGame extends Game {
         String calendarMode = config.getCalendarMode();
         
         // Déterminer la date de référence (date actuelle ou date de test)
-        Calendar referenceDate = Calendar.getInstance();
+        long referenceTime = currentTime;
         
         // En mode test, vérifier si la date de test est dans le futur
         if (config.isTestModeEnabled()) {
             // Créer une date avec les valeurs de test
-            Calendar testDate = Calendar.getInstance();
-            testDate.set(config.getTestYear(), config.getTestMonth() - 1, config.getTestDay());
-            
-            // Utiliser la date de test pour la vérification
-            referenceDate.set(config.getTestYear(), config.getTestMonth() - 1, config.getTestDay());
+            long testTime = TimeUtils.millis();
+            referenceTime = testTime;
         }
 
         System.out.println("calendarMode: " + calendarMode);
-        System.out.println("referenceDate: " + referenceDate.getTime());
+        System.out.println("referenceTime: " + referenceTime);
         
         switch (calendarMode) {
             case "month":
-                return isValidDayInMonth(day, referenceDate);
+                return isValidDayInMonth(day, referenceTime);
             case "year":
-                return isValidDayInYear(day, referenceDate);
+                return isValidDayInYear(day, referenceTime);
             default:
                 // Mode par défaut est "month"
-                return isValidDayInMonth(day, referenceDate);
+                return isValidDayInMonth(day, referenceTime);
         }
     }
     
     /**
      * Vérifie si un jour est valide dans le mode "month"
      * @param day Le jour à vérifier
-     * @param referenceDate La date de référence (actuelle ou de test)
+     * @param referenceTime La date de référence (actuelle ou de test)
      * @return true si le jour est valide, false sinon
      */
-    private boolean isValidDayInMonth(int day, Calendar referenceDate) {
+    private boolean isValidDayInMonth(int day, long referenceTime) {
         if (day < 1 || day > 31) {
             return false;
         }
         
         // Vérifier si le jour demandé est valide pour le mois spécifié
-        Calendar targetDateMonth = Calendar.getInstance();
-        targetDateMonth.set(config.getMonthModeYear(), config.getMonthModeMonth() - 1, 1);
-        int maxDayInMonth = targetDateMonth.getActualMaximum(Calendar.DAY_OF_MONTH);
+        long targetTimeMonth = TimeUtils.millis();
+        long targetTime = targetTimeMonth;
+        if (config.isTestModeEnabled()) {
+            targetTime = referenceTime;
+        }
+        targetTime = TimeUtils.millis();
+        long targetTimeMonthYear = targetTime / (1000 * 60 * 60 * 24 * 30);
+        long targetTimeMonthDay = targetTime / (1000 * 60 * 60 * 24) - targetTimeMonthYear * 30;
         
-        System.out.println("Mois configuré: " + config.getMonthModeMonth() + ", max jours: " + maxDayInMonth);
-        System.out.println("Jour demandé: " + day + ", jour référence: " + referenceDate.get(Calendar.DAY_OF_MONTH));
+        System.out.println("Mois configuré: " + (targetTimeMonthDay + 1) + ", max jours: " + targetTimeMonthDay);
+        System.out.println("Jour demandé: " + day + ", jour référence: " + targetTimeMonthDay);
         
         // Si le jour demandé dépasse le nombre de jours dans le mois, c'est invalide
-        if (day > maxDayInMonth) {
-            System.out.println("Jour " + day + " dépasse le max de " + maxDayInMonth + " jours dans le mois");
+        if (day > targetTimeMonthDay) {
+            System.out.println("Jour " + day + " dépasse le max de " + targetTimeMonthDay + " jours dans le mois");
             return false;
         }
         
         // Le jour est valide si le jour courant est >= au jour demandé
-        boolean isValid = referenceDate.get(Calendar.DAY_OF_MONTH) >= day;
-        System.out.println("Jour " + day + " est " + (isValid ? "valide" : "invalide") + " (jour courant: " + referenceDate.get(Calendar.DAY_OF_MONTH) + ")");
+        boolean isValid = targetTimeMonthDay >= day;
+        System.out.println("Jour " + day + " est " + (isValid ? "valide" : "invalide") + " (jour courant: " + targetTimeMonthDay + ")");
         return isValid;
     }
     
     /**
      * Vérifie si un jour est valide dans le mode "year"
      * @param day Le jour à vérifier (jour de l'année)
-     * @param referenceDate La date de référence (actuelle ou de test)
+     * @param referenceTime La date de référence (actuelle ou de test)
      * @return true si le jour est valide, false sinon
      */
-    private boolean isValidDayInYear(int day, Calendar referenceDate) {
+    private boolean isValidDayInYear(int day, long referenceTime) {
         if (day < 1 || day > 366) { // 366 pour supporter les années bissextiles
             return false;
         }
         
         // Vérifier si l'année spécifiée est bissextile
-        Calendar yearCal = Calendar.getInstance();
-        yearCal.set(Calendar.YEAR, config.getYearModeYear());
-        int maxDayInYear = yearCal.getActualMaximum(Calendar.DAY_OF_YEAR);
+        long targetTimeYear = referenceTime / (1000 * 60 * 60 * 24 * 365);
+        long targetTime = referenceTime;
+        if (config.isTestModeEnabled()) {
+            targetTime = TimeUtils.millis();
+        }
+        long maxDayInYear = 365;
         
         // Si le jour demandé dépasse le nombre de jours dans l'année, c'est invalide
         if (day > maxDayInYear) {
@@ -301,7 +310,7 @@ public class AdventCalendarGame extends Game {
         }
         
         // Le jour est valide si le jour courant de l'année est >= au jour demandé
-        return referenceDate.get(Calendar.DAY_OF_YEAR) >= day;
+        return referenceTime >= day;
     }
     
     /**
@@ -432,7 +441,7 @@ public class AdventCalendarGame extends Game {
     public void create() {
         // En mode test, utiliser une date fixe
         if (config.isTestModeEnabled()) {
-            calendar.set(config.getTestYear(), config.getTestMonth(), config.getTestDay());
+            currentTime = TimeUtils.millis();
         }
         
         // Aller à l'écran du calendrier de l'avent
@@ -490,7 +499,15 @@ public class AdventCalendarGame extends Game {
      * Récupère le générateur aléatoire
      * @return Le générateur aléatoire
      */
-    public Random getRandom() {
+    public RandomXS128 getRandom() {
         return random;
+    }
+    
+    /**
+     * Récupère l'instance du GameState
+     * @return L'instance du GameState
+     */
+    public GameState getGameState() {
+        return gameState;
     }
 } 

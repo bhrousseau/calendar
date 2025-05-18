@@ -7,9 +7,7 @@ import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.utils.Align;
-
-import java.util.ArrayList;
-import java.util.List;
+import com.badlogic.gdx.utils.Array;
 
 /**
  * Classe représentant un panneau dans l'interface utilisateur
@@ -20,8 +18,8 @@ public class Panel {
     private final Color backgroundColor;
     private final BitmapFont font;
     private final GlyphLayout layout;
-    private final List<Button> buttons;
-    private final List<String> textLines;
+    private final Array<Button> buttons;
+    private final Array<String> textLines;
     private final float textMargin;
     
     /**
@@ -42,8 +40,8 @@ public class Panel {
         this.backgroundColor = backgroundColor;
         this.font = font;
         this.layout = new GlyphLayout();
-        this.buttons = new ArrayList<>();
-        this.textLines = new ArrayList<>();
+        this.buttons = new Array<>();
+        this.textLines = new Array<>();
         this.textMargin = textMargin;
     }
     
@@ -136,7 +134,12 @@ public class Panel {
      * Récupère les boutons du panneau
      * @return Les boutons du panneau
      */
-    public List<Button> getButtons() {
+    public Array<Button> getButtons() {
         return buttons;
+    }
+    
+    public void setTextLines(Array<String> textLines) {
+        this.textLines.clear();
+        this.textLines.addAll(textLines);
     }
 } 

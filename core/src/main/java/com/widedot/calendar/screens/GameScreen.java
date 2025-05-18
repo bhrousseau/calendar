@@ -10,9 +10,7 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.widedot.calendar.data.Theme;
 import com.widedot.calendar.AdventCalendarScreen;
-import com.widedot.calendar.Main;
 import com.widedot.calendar.AdventCalendarGame;
-import com.widedot.calendar.screens.TransitionScreen;
 
 /**
  * Classe abstraite de base pour tous les écrans de jeu

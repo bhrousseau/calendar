@@ -4,9 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.utils.JsonReader;
 import com.badlogic.gdx.utils.JsonValue;
-
-import java.util.HashMap;
-import java.util.Map;
+import com.badlogic.gdx.utils.ObjectMap;
 
 /**
  * Gestionnaire des associations jour -> référence de jeu
@@ -16,13 +14,13 @@ public class DayMappingManager {
     private static final String DAY_MAPPING_FILE = "dayMapping.json";
     private static DayMappingManager instance;
     
-    private final Map<Integer, String> dayMappings; // Correspondance jour -> référence de jeu
+    private final ObjectMap<Integer, String> dayMappings; // Correspondance jour -> référence de jeu
     
     /**
      * Constructeur privé pour le pattern Singleton
      */
     private DayMappingManager() {
-        dayMappings = new HashMap<>();
+        dayMappings = new ObjectMap<>();
         loadDayMappings();
     }
     
@@ -57,7 +55,7 @@ public class DayMappingManager {
                 }
             }
             
-            System.out.println("Chargement de " + dayMappings.size() + " correspondances jour -> jeu réussi");
+            System.out.println("Chargement de " + dayMappings.size + " correspondances jour -> jeu réussi");
         } catch (Exception e) {
             System.err.println("Erreur lors du chargement des mappings jour -> jeu: " + e.getMessage());
             e.printStackTrace();
@@ -87,6 +85,6 @@ public class DayMappingManager {
      * @return Le nombre de mappings
      */
     public int getMappingCount() {
-        return dayMappings.size();
+        return dayMappings.size;
     }
 } 

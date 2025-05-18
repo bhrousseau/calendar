@@ -5,13 +5,8 @@ import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.utils.JsonReader;
 import com.badlogic.gdx.utils.JsonValue;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.ObjectMap;
 import com.widedot.calendar.data.Theme;
-import com.widedot.calendar.config.GameManager;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.List;
-import java.util.ArrayList;
 
 /**
  * Gestionnaire des thèmes (tableaux)
@@ -21,17 +16,17 @@ public class ThemeManager {
     private static final String THEMES_FILE = "themes.json";
     private static ThemeManager instance;
     
-    private final Map<String, Theme> themesByName;
+    private final ObjectMap<String, Theme> themesByName;
     private final Array<Theme> allThemes;
-    private final Map<Integer, String> dayToThemeMap; // Correspondance jour -> nom de thème
+    private final ObjectMap<Integer, String> dayToThemeMap; // Correspondance jour -> nom de thème
     
     /**
      * Constructeur privé pour le pattern Singleton
      */
     private ThemeManager() {
-        themesByName = new HashMap<>();
+        themesByName = new ObjectMap<>();
         allThemes = new Array<>();
-        dayToThemeMap = new HashMap<>();
+        dayToThemeMap = new ObjectMap<>();
         loadThemes();
         loadDayToThemeMapping();
     }
@@ -122,7 +117,7 @@ public class ThemeManager {
                 }
             }
             
-            System.out.println("Chargement de " + dayToThemeMap.size() + " correspondances jour -> thème réussi");
+            System.out.println("Chargement de " + dayToThemeMap.size + " correspondances jour -> thème réussi");
         } catch (Exception e) {
             System.err.println("Erreur lors du chargement des correspondances jour -> thème: " + e.getMessage());
             e.printStackTrace();
@@ -148,16 +143,42 @@ public class ThemeManager {
         System.out.println("Recherche de thème pour le jour " + dayId + ": " + (themeName != null ? themeName : "non trouvé"));
         
         if (themeName == null) {
-            System.out.println("Aucun thème associé au jour " + dayId + ". Jour-thèmes disponibles: " + dayToThemeMap.keySet());
+            System.out.println("Aucun thème associé au jour " + dayId + ". Jour-thèmes disponibles: " + getDayToThemeKeys());
             return null;
         }
         
         Theme theme = themesByName.get(themeName);
         if (theme == null) {
-            System.out.println("Thème '" + themeName + "' référencé mais non trouvé dans les thèmes disponibles: " + themesByName.keySet());
+            System.out.println("Thème '" + themeName + "' référencé mais non trouvé dans les thèmes disponibles: " + getThemeNames());
         }
         
         return theme;
+    }
+    
+    /**
+     * Récupère les clés de la map jour -> thème
+     * @return Une chaîne contenant les clés
+     */
+    private String getDayToThemeKeys() {
+        StringBuilder sb = new StringBuilder();
+        for (ObjectMap.Entry<Integer, String> entry : dayToThemeMap.entries()) {
+            if (sb.length() > 0) sb.append(", ");
+            sb.append(entry.key);
+        }
+        return sb.toString();
+    }
+    
+    /**
+     * Récupère les noms des thèmes disponibles
+     * @return Une chaîne contenant les noms des thèmes
+     */
+    private String getThemeNames() {
+        StringBuilder sb = new StringBuilder();
+        for (ObjectMap.Entry<String, Theme> entry : themesByName.entries()) {
+            if (sb.length() > 0) sb.append(", ");
+            sb.append(entry.key);
+        }
+        return sb.toString();
     }
     
     /**
@@ -196,20 +217,16 @@ public class ThemeManager {
     /**
      * Récupère tous les thèmes d'un type de jeu donné
      * @param gameTemplate Le type de jeu recherché
-     * @return Une liste des thèmes du type spécifié
+     * @return Un array des thèmes du type spécifié
      */
-    public List<Theme> getThemesByGameTemplate(String gameTemplate) {
+    public Array<Theme> getThemesByGameTemplate(String gameTemplate) {
         // Comme tous les thèmes ont le même type de jeu SPZ par défaut
         // On retourne simplement tous les thèmes si le type est SPZ
         if ("SPZ".equals(gameTemplate)) {
-            List<Theme> result = new ArrayList<>();
-            for (Theme theme : allThemes) {
-                result.add(theme);
-            }
-            return result;
+            return allThemes;
         }
-        // Sinon, on retourne une liste vide
-        return new ArrayList<>();
+        // Sinon, on retourne un array vide
+        return new Array<>();
     }
     
     /**
