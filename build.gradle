@@ -9,7 +9,8 @@ buildscript {
     maven { url 'https://s01.oss.sonatype.org/content/repositories/snapshots/' }
   }
   dependencies {
-    classpath "org.wisepersist:gwt-gradle-plugin:1.1.16"
+
+
   }
 }
 
@@ -35,9 +36,9 @@ configure(subprojects) {
   tasks.register('generateAssetList') {
     inputs.dir("${project.rootDir}/assets/")
     // projectFolder/assets
-    def assetsFolder = file("${project.rootDir}/assets/")
+    File assetsFolder = new File("${project.rootDir}/assets/")
     // projectFolder/assets/assets.txt
-    def assetsFile = file("${assetsFolder}/assets.txt")
+    File assetsFile = new File(assetsFolder, "assets.txt")
     // delete that file in case we've already created it
     assetsFile.delete()
 
@@ -57,7 +58,7 @@ configure(subprojects) {
 
 subprojects {
   version = "$projectVersion"
-  ext.appName = 'calendar'
+  ext.appName = 'testHTML'
   repositories {
     mavenCentral()
     maven { url 'https://s01.oss.sonatype.org' }
@@ -69,4 +70,4 @@ subprojects {
   }
 }
 
-eclipse.project.name = 'calendar' + '-parent'
+eclipse.project.name = 'testHTML' + '-parent'

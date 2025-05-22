@@ -2,20 +2,33 @@ package com.widedot.calendar.platform;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
-import com.google.gwt.core.client.GWT;
-import com.google.gwt.storage.client.Storage;
+import com.badlogic.gdx.Preferences;
+import com.badlogic.gdx.Input;
 
 public class HtmlPlatform implements PlatformSpecific {
-    private Storage localStorage;
+    private Preferences preferences;
 
     @Override
     public void initialize() {
-        localStorage = Storage.getLocalStorageIfSupported();
+        // Do not access Gdx.app here because it might not be initialized yet in GWT.
+        // Preferences will be created lazily when first needed.
     }
 
     @Override
     public void dispose() {
-        // Nothing to dispose
+        if (preferences != null) {
+            try {
+            preferences.flush();
+            } catch (Exception ignored) {
+            }
+        }
+    }
+
+    private Preferences prefs() {
+        if (preferences == null && Gdx.app != null) {
+            preferences = Gdx.app.getPreferences("calendar-game");
+        }
+        return preferences;
     }
 
     @Override
@@ -25,57 +38,40 @@ public class HtmlPlatform implements PlatformSpecific {
 
     @Override
     public void saveData(String key, String data) {
-        if (localStorage != null) {
-            localStorage.setItem(key, data);
+        Preferences p = prefs();
+        if (p != null) {
+            p.putString(key, data);
+            p.flush();
         }
     }
 
     @Override
     public String loadData(String key) {
-        if (localStorage != null) {
-            return localStorage.getItem(key);
-        }
-        return null;
+        Preferences p = prefs();
+        return p == null ? null : p.getString(key, null);
     }
 
     @Override
     public boolean isTouchDevice() {
-        return true; // Most web browsers support touch
+        return Gdx.input.isPeripheralAvailable(Input.Peripheral.MultitouchScreen);
     }
 
     @Override
     public void openURL(String url) {
-        GWT.getWindow().open(url, "_blank");
+        Gdx.net.openURI(url);
     }
 
     @Override
     public void share(String text) {
-        if (GWT.isClient()) {
-            nativeShare(text);
-        }
+        // Sharing not supported in HTML platform
+        Gdx.app.log("HtmlPlatform", "Sharing not supported in HTML platform");
     }
-
-    private native void nativeShare(String text) /*-{
-        if (navigator.share) {
-            navigator.share({
-                title: 'Calendar Game',
-                text: text
-            });
-        }
-    }-*/;
 
     @Override
     public void vibrate(int duration) {
-        if (GWT.isClient()) {
-            nativeVibrate(duration);
-        }
+        // Vibration not supported in HTML platform
+        Gdx.app.log("HtmlPlatform", "Vibration not supported in HTML platform");
     }
-
-    private native void nativeVibrate(int duration) /*-{
-        if (navigator.vibrate) {
-            navigator.vibrate(duration);
-        }
-    }-*/;
 
     @Override
     public void showKeyboard(boolean show) {
@@ -84,7 +80,7 @@ public class HtmlPlatform implements PlatformSpecific {
 
     @Override
     public String getDeviceLanguage() {
-        return GWT.getLocale();
+        return "en";
     }
 
     @Override
@@ -94,6 +90,6 @@ public class HtmlPlatform implements PlatformSpecific {
 
     @Override
     public String getDeviceVersion() {
-        return GWT.getVersion();
+        return "1.0";
     }
 } 

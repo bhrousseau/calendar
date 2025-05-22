@@ -19,13 +19,10 @@ import com.widedot.calendar.screens.SlidingPuzzleGameScreen;
 public class DynamicGameScreenFactory {
     private static DynamicGameScreenFactory instance;
 
-    private final ObjectMap<String, Class<?>> gameClassCache;
-
     /**
      * Constructeur privé pour le pattern Singleton
      */
     private DynamicGameScreenFactory() {
-        gameClassCache = new ObjectMap<>();
     }
 
     /**
@@ -117,15 +114,6 @@ public class DynamicGameScreenFactory {
             throw new RuntimeException("Aucun loader trouvé pour le jeu: " + gameName);
         }
         return loader.create(dayId, game, theme, finalParameters);
-    }
-
-    private Class<?> getGameClass(String className) throws ClassNotFoundException {
-        Class<?> gameClass = gameClassCache.get(className);
-        if (gameClass == null) {
-            gameClass = Class.forName(className);
-            gameClassCache.put(className, gameClass);
-        }
-        return gameClass;
     }
 }
 

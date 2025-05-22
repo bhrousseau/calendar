@@ -1,0 +1,36 @@
+{
+  "gameTemplates": {
+    "SPZ": {
+      "name": "slidingPuzzle",
+      "defaultParameters": {
+        "size": 4,
+        "bgColor": "0,0,0",
+        "shuffle": 10,
+        "animationSpeed": 10
+      },
+      "parameterTypes": {
+        "size": "int",
+        "bgColor": "string",
+        "shuffle": "int",
+        "animationSpeed": "float"
+      },
+      "presets": {
+        "easy": {
+          "shuffle": 10
+        },
+        "medium": {
+          "shuffle": 10
+        },
+        "hard": {
+          "shuffle": 10
+        },
+        "bgBlack": {
+          "bgColor": "0,0,0"
+        },
+        "bgWhite": {
+          "bgColor": "255,255,255"
+        }
+      }
+    }
+  }
+} 

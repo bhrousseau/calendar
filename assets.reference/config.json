@@ -1,0 +1,21 @@
+{
+  "test_mode": {
+    "enabled": true,
+    "day": 31,
+    "month": 5,
+    "year": 2025,
+    "unlocked": false,
+    "use_save": true
+  },
+  "game": {
+    "seed": 12345,
+    "calendar_mode": "month", 
+    "month_mode": {
+      "month": 5,
+      "year": 2025
+    },
+    "year_mode": {
+      "year": 2023
+    }
+  }
+} 

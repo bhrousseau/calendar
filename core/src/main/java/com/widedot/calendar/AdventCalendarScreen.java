@@ -16,6 +16,7 @@ import com.widedot.calendar.data.Theme;
 import com.widedot.calendar.screens.TransitionScreen;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ObjectMap;
+import com.badlogic.gdx.graphics.Pixmap;
 
 /**
  * Écran principal du calendrier de l'Avent
@@ -44,9 +45,9 @@ public class AdventCalendarScreen implements Screen {
     private static final String UNLOCKED_TEXTURE_PATH = "images/unlocked.png";
     
     // Constantes pour les noms de fichiers audio
-    private static final String LOCKED_SOUND_PATH = "audio/locked.wav";
-    private static final String OPEN_SOUND_PATH = "audio/open2.wav";
-    private static final String ENTER_SOUND_PATH = "audio/enter.wav";
+    private static final String LOCKED_SOUND_PATH = "audio/locked.mp3";
+    private static final String OPEN_SOUND_PATH = "audio/open2.mp3";
+    private static final String ENTER_SOUND_PATH = "audio/enter.mp3";
 
     // Dimensions de base du monde
     private static final float WORLD_WIDTH = 800;
@@ -68,6 +69,7 @@ public class AdventCalendarScreen implements Screen {
              * @param game L'instance du jeu
              */
             public AdventCalendarScreen(Game game) {
+                Gdx.app.log("AdventCalendarScreen", "Constructor(Game) called");
                 this.game = game;
                 this.adventGame = (AdventCalendarGame) game; // Cast en AdventCalendarGame
     
@@ -81,18 +83,23 @@ public class AdventCalendarScreen implements Screen {
     
                 // Charger les textures avec Gdx.files.internal
                 try {
-                    this.lockedTexture = new Texture(Gdx.files.internal(LOCKED_TEXTURE_PATH));
-                    this.defaultUnlockedTexture = new Texture(Gdx.files.internal(UNLOCKED_TEXTURE_PATH));
+                    Gdx.app.log("AdventCalendarScreen", "Loading lockedTexture: " + LOCKED_TEXTURE_PATH);
+                    this.lockedTexture = loadTextureSafe(LOCKED_TEXTURE_PATH);
+                    Gdx.app.log("AdventCalendarScreen", "lockedTexture loaded successfully.");
+                    Gdx.app.log("AdventCalendarScreen", "Loading defaultUnlockedTexture: " + UNLOCKED_TEXTURE_PATH);
+                    this.defaultUnlockedTexture = loadTextureSafe(UNLOCKED_TEXTURE_PATH);
+                    Gdx.app.log("AdventCalendarScreen", "defaultUnlockedTexture loaded successfully.");
     
                     // Charger les sons
-                    this.lockedSound = Gdx.audio.newSound(Gdx.files.internal(LOCKED_SOUND_PATH));
-                    this.openSound = Gdx.audio.newSound(Gdx.files.internal(OPEN_SOUND_PATH));
-                    this.enterSound = Gdx.audio.newSound(Gdx.files.internal(ENTER_SOUND_PATH));
-            } catch (Exception e) {
-                System.err.println("Erreur lors du chargement des ressources: " + e.getMessage());
-                e.printStackTrace();
-                throw e;
-            }
+                    this.lockedSound = loadSoundSafe(LOCKED_SOUND_PATH);
+                    this.openSound   = loadSoundSafe(OPEN_SOUND_PATH);
+                    this.enterSound  = loadSoundSafe(ENTER_SOUND_PATH);
+                } catch (Exception e) {
+                    Gdx.app.error("AdventCalendarScreen", "Erreur lors du chargement des ressources: " + e.getMessage(), e);
+                    System.err.println("Erreur lors du chargement des ressources: " + e.getMessage());
+                    e.printStackTrace();
+                    throw e;
+                }
 
             this.unlockedTextures = new ObjectMap<>();
             this.boxes = new ObjectMap<>();
@@ -115,6 +122,7 @@ public class AdventCalendarScreen implements Screen {
      * @param adventGame L'instance du jeu de calendrier de l'Avent
      */
     public AdventCalendarScreen(AdventCalendarGame adventGame) {
+        Gdx.app.log("AdventCalendarScreen", "Constructor(AdventCalendarGame) called");
         this.game = adventGame;
         this.adventGame = adventGame;
         this.camera = new OrthographicCamera();
@@ -126,14 +134,19 @@ public class AdventCalendarScreen implements Screen {
 
         // Charger les textures avec Gdx.files.internal
         try {
-            this.lockedTexture = new Texture(Gdx.files.internal(LOCKED_TEXTURE_PATH));
-            this.defaultUnlockedTexture = new Texture(Gdx.files.internal(UNLOCKED_TEXTURE_PATH));
+            Gdx.app.log("AdventCalendarScreen", "Loading lockedTexture: " + LOCKED_TEXTURE_PATH);
+            this.lockedTexture = loadTextureSafe(LOCKED_TEXTURE_PATH);
+            Gdx.app.log("AdventCalendarScreen", "lockedTexture loaded successfully.");
+            Gdx.app.log("AdventCalendarScreen", "Loading defaultUnlockedTexture: " + UNLOCKED_TEXTURE_PATH);
+            this.defaultUnlockedTexture = loadTextureSafe(UNLOCKED_TEXTURE_PATH);
+            Gdx.app.log("AdventCalendarScreen", "defaultUnlockedTexture loaded successfully.");
 
             // Charger les sons
-            this.lockedSound = Gdx.audio.newSound(Gdx.files.internal(LOCKED_SOUND_PATH));
-            this.openSound = Gdx.audio.newSound(Gdx.files.internal(OPEN_SOUND_PATH));
-            this.enterSound = Gdx.audio.newSound(Gdx.files.internal(ENTER_SOUND_PATH));
+            this.lockedSound = loadSoundSafe(LOCKED_SOUND_PATH);
+            this.openSound   = loadSoundSafe(OPEN_SOUND_PATH);
+            this.enterSound  = loadSoundSafe(ENTER_SOUND_PATH);
         } catch (Exception e) {
+            Gdx.app.error("AdventCalendarScreen", "Erreur lors du chargement des ressources: " + e.getMessage(), e);
             System.err.println("Erreur lors du chargement des ressources: " + e.getMessage());
             throw e;
         }
@@ -199,9 +212,10 @@ public class AdventCalendarScreen implements Screen {
     private Texture getThemeIconForDay(int dayId) {
         // Vérifier si la texture est déjà dans le cache
         if (themeIconTextures.containsKey(String.valueOf(dayId))) {
+            Gdx.app.log("AdventCalendarScreen", "Returning cached theme icon for day " + dayId);
             return themeIconTextures.get(String.valueOf(dayId));
         }
-
+        Gdx.app.log("AdventCalendarScreen", "Attempting to load theme icon for day " + dayId);
         try {
             // Chercher d'abord le thème associé au jour via ThemeManager
             Theme theme = themeManager.getThemeByDay(dayId);
@@ -216,21 +230,26 @@ public class AdventCalendarScreen implements Screen {
             if (theme != null) {
                 // Construire le chemin de l'icône en remplaçant "full" par "icon" et .jpg par .png
                 String iconPath = theme.getFullImagePath().replace("full", "icon").replace(".jpg", ".png");
+                Gdx.app.log("AdventCalendarScreen", "Theme icon path for day " + dayId + ": " + iconPath);
 
                 // Charger et mettre en cache la texture
                 Texture iconTexture = new Texture(Gdx.files.internal(iconPath));
                 themeIconTextures.put(String.valueOf(dayId), iconTexture);
+                Gdx.app.log("AdventCalendarScreen", "Theme icon loaded for day " + dayId);
                 return iconTexture;
             }
         } catch (Exception e) {
+            Gdx.app.error("AdventCalendarScreen", "Erreur lors du chargement de l'icône pour le jour " + dayId + ": " + e.getMessage(), e);
             System.err.println("Erreur lors du chargement de l'icône pour le jour " + dayId + ": " + e.getMessage());
         }
 
+        Gdx.app.log("AdventCalendarScreen", "No theme icon loaded for day " + dayId + ", returning null.");
         return null;
     }
 
     @Override
     public void render(float delta) {
+        Gdx.app.log("AdventCalendarScreen", "render() called");
         // Effacer l'écran avec une couleur de fond
         Gdx.gl.glClearColor(0.1f, 0.3f, 0.1f, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
@@ -240,6 +259,7 @@ public class AdventCalendarScreen implements Screen {
         batch.setProjectionMatrix(camera.combined);
 
         // Dessiner les boîtes
+        Gdx.app.log("AdventCalendarScreen", "Before batch.begin()");
         batch.begin();
         for (int i = 1; i <= 24; i++) {
             Rectangle box = boxes.get(i);
@@ -267,6 +287,7 @@ public class AdventCalendarScreen implements Screen {
             batch.draw(texture, box.x, box.y, box.width, box.height);
         }
         batch.end();
+        Gdx.app.log("AdventCalendarScreen", "After batch.end()");
 
         // Gérer les entrées utilisateur
         handleInput();
@@ -392,6 +413,36 @@ public class AdventCalendarScreen implements Screen {
         // Disposer des textures des icônes de thèmes
         for (Texture texture : themeIconTextures.values()) {
             texture.dispose();
+        }
+    }
+
+    /**
+     * Charge une texture de manière sécurisée. Si le chargement échoue (par exemple sur la plateforme
+     * HTML à cause de la taille maximale de texture WebGL), une texture de secours unie est générée
+     * afin d'éviter l'annulation de la construction de l'écran.
+     */
+    private Texture loadTextureSafe(String internalPath) {
+        try {
+            return new Texture(Gdx.files.internal(internalPath));
+        } catch (Exception e) {
+            // Générer une texture de remplacement 64x64 rouge opaque
+            Pixmap fallback = new Pixmap(64, 64, Pixmap.Format.RGBA8888);
+            fallback.setColor(1, 0, 0, 1);
+            fallback.fill();
+            Texture tex = new Texture(fallback);
+            fallback.dispose();
+            Gdx.app.error("AdventCalendarScreen", "Impossible de charger " + internalPath + " : " + e.getMessage() + ". Utilisation d'une texture de secours.");
+            return tex;
+        }
+    }
+
+    private Sound loadSoundSafe(String internalPath) {
+        try {
+            return Gdx.audio.newSound(Gdx.files.internal(internalPath));
+        } catch (Exception e) {
+            Gdx.app.error("AdventCalendarScreen", "Erreur lors du chargement du son " + internalPath + ": " + e.getMessage(), e);
+            System.err.println("Erreur lors du chargement du son " + internalPath + ": " + e.getMessage());
+            return null;
         }
     }
 }

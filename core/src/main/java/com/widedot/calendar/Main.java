@@ -10,20 +10,25 @@ public class Main extends Game {
     
     @Override
     public void create() {
-        System.out.println("Début de l'initialisation du jeu");
-        System.out.println("Version de LibGDX: " + Gdx.app.getVersion());
-        System.out.println("Type d'application: " + Gdx.app.getType());
-        System.out.println("Dimensions de la fenêtre: " + Gdx.graphics.getWidth() + "x" + Gdx.graphics.getHeight());
-        System.out.println("Type de graphics: " + Gdx.graphics.getClass().getName());
-        System.out.println("GL30 disponible: " + (Gdx.graphics.isGL30Available() ? "oui" : "non"));
-        
+        Gdx.app.log("DEBUG", "Début de l'initialisation du jeu");
+        Gdx.app.log("DEBUG", "Version de LibGDX: " + Gdx.app.getVersion());
+        Gdx.app.log("DEBUG", "Type d'application: " + Gdx.app.getType());
+        Gdx.app.log("DEBUG", "Dimensions de la fenêtre: " + Gdx.graphics.getWidth() + "x" + Gdx.graphics.getHeight());
+        Gdx.app.log("DEBUG", "Type de graphics: " + Gdx.graphics.getClass().getName());
+        Gdx.app.log("DEBUG", "GL30 disponible: " + (Gdx.graphics.isGL30Available() ? "oui" : "non"));
+        Gdx.app.log("DEBUG", "Main.create()");
+
         // Vérifier que la plateforme est initialisée
         if (PlatformFactory.getPlatform() == null) {
+            Gdx.app.error("DEBUG", "Platform not initialized. Make sure to set the platform before creating the game.");
             throw new IllegalStateException("Platform not initialized. Make sure to set the platform before creating the game.");
         }
         
+        Gdx.app.log("DEBUG", "before new AdventCalendarGame()");
         game = new AdventCalendarGame();
+        Gdx.app.log("DEBUG", "after new AdventCalendarGame()");
         game.create();
+        Gdx.app.log("DEBUG", "after AdventCalendarGame.create()");
         setScreen(game.getScreen());
     }
     

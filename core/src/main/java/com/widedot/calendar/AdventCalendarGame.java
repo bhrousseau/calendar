@@ -439,13 +439,15 @@ public class AdventCalendarGame extends Game {
     
     @Override
     public void create() {
+        Gdx.app.log("AdventCalendarGame", "create() called");
         // En mode test, utiliser une date fixe
         if (config.isTestModeEnabled()) {
             currentTime = TimeUtils.millis();
         }
         
-        // Aller à l'écran du calendrier de l'avent
+        Gdx.app.log("AdventCalendarGame", "Setting screen to AdventCalendarScreen");
         setScreen(new AdventCalendarScreen(this));
+        Gdx.app.log("AdventCalendarGame", "AdventCalendarScreen set");
     }
     
     @Override

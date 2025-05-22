@@ -36,8 +36,8 @@ public class SlidingPuzzleGameScreen extends GameScreen {
     // Sons
     private Sound solveSound;
     private Sound slidingSound;
-    private static final String SOLVE_SOUND_PATH = "audio/win.wav";
-    private static final String SLIDING_SOUND_PATH = "audio/sliding.wav";
+    private static final String SOLVE_SOUND_PATH = "audio/win.mp3";
+    private static final String SLIDING_SOUND_PATH = "audio/sliding.mp3";
     
     // Paramètres du jeu provenant de la configuration
     private int gridSize;
