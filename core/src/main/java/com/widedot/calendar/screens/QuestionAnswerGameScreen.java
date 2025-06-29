@@ -254,7 +254,7 @@ public class QuestionAnswerGameScreen extends GameScreen {
                 
                 // Gérer les caractères imprimables et accentués
                 if (Character.isLetterOrDigit(character) || 
-                    Character.isSpaceChar(character) || 
+                    character == ' ' || character == '\t' || character == '\u00A0' || // espaces divers
                     isAcceptableSymbol(character)) {
                     inputText += character;
                     return true;
