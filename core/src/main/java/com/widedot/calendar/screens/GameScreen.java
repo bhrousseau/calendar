@@ -30,6 +30,9 @@ public abstract class GameScreen implements Screen {
     // Dimensions de base du monde
     private static final float BASE_WIDTH = 800;
     private static final float BASE_HEIGHT = 600;
+    
+    // Flag pour éviter la double initialisation
+    private boolean isInitialized = false;
 
     /**
      * Constructeur
@@ -42,7 +45,7 @@ public abstract class GameScreen implements Screen {
         this.camera = new OrthographicCamera();
         this.viewport = new ScreenViewport(camera);
         this.batch = new SpriteBatch();
-        this.theme = null; // Le thème sera chargé dans la méthode show()
+        this.theme = null;
         
         // Initialiser les dimensions
         this.currentWidth = BASE_WIDTH;
@@ -57,9 +60,25 @@ public abstract class GameScreen implements Screen {
     protected abstract Theme loadTheme(int day);
 
     /**
-     * Initialise le jeu
+     * Initialise le jeu (appelée une seule fois)
      */
     protected abstract void initializeGame();
+
+    /**
+     * Appelée quand l'écran devient actif (peut être appelée plusieurs fois)
+     */
+    protected void onScreenActivated() {
+        // Override dans les classes enfants si nécessaire
+        // Exemple: reprendre la musique, réactiver les animations, etc.
+    }
+
+    /**
+     * Appelée quand l'écran devient inactif
+     */
+    protected void onScreenDeactivated() {
+        // Override dans les classes enfants si nécessaire  
+        // Exemple: mettre en pause la musique, arrêter les animations, etc.
+    }
 
     /**
      * Met à jour l'état du jeu
@@ -93,26 +112,37 @@ public abstract class GameScreen implements Screen {
     public void show() {
         System.out.println("Méthode show de GameScreen appelée pour le jour " + dayId);
         
-        // Récupérer le thème pour ce jour
-        if (game instanceof AdventCalendarGame) {
-            AdventCalendarGame adventGame = (AdventCalendarGame) game;
+        // Initialisation lourde (une seule fois)
+        if (!isInitialized) {
+            System.out.println("Initialisation de l'écran de jeu pour le jour " + dayId);
             
-            try {
-                theme = loadTheme(dayId);
-                System.out.println("Thème chargé: " + (theme != null ? theme.getTitle() : "null"));
-            } catch (Exception e) {
-                System.err.println("Erreur lors du chargement du thème: " + e.getMessage());
-                e.printStackTrace();
+            // Récupérer le thème pour ce jour
+            if (game instanceof AdventCalendarGame) {
+                AdventCalendarGame adventGame = (AdventCalendarGame) game;
+                
+                try {
+                    theme = loadTheme(dayId);
+                    System.out.println("Thème chargé: " + (theme != null ? theme.getTitle() : "null"));
+                } catch (Exception e) {
+                    System.err.println("Erreur lors du chargement du thème: " + e.getMessage());
+                    e.printStackTrace();
+                }
+                
+                // Définir un score initial de 0 si non défini
+                if (adventGame.getScore(dayId) == 0) {
+                    adventGame.setScore(dayId, 0);
+                }
             }
             
-            // Définir un score initial de 0 si non défini
-            if (adventGame.getScore(dayId) == 0) {
-                adventGame.setScore(dayId, 0);
-            }
+            // Initialiser le jeu
+            initializeGame();
+            
+            isInitialized = true;
+            System.out.println("Initialisation de l'écran de jeu terminée");
         }
         
-        // Initialiser le jeu
-        initializeGame();
+        // Activation légère de l'écran (à chaque show())
+        onScreenActivated();
     }
 
     @Override
@@ -160,6 +190,9 @@ public abstract class GameScreen implements Screen {
     @Override
     public void hide() {
         System.out.println("Méthode hide de GameScreen appelée pour le jour " + dayId);
+        
+        // Désactivation de l'écran
+        onScreenDeactivated();
     }
 
     @Override

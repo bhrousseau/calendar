@@ -11,6 +11,7 @@ import com.badlogic.gdx.utils.ObjectMap;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.Gdx;
 import com.widedot.calendar.screens.SlidingPuzzleGameScreen;
+import com.widedot.calendar.screens.QuestionAnswerGameScreen;
 
 /**
  * Implémentation dynamique de la fabrique d'écrans de jeu qui utilise la réflexion
@@ -132,6 +133,7 @@ class GameScreenRegistry {
     static {
         // Associer le nom du jeu à son loader
         registry.put("slidingPuzzle", (dayId, game, theme, parameters) -> new SlidingPuzzleGameScreen(dayId, game, theme, parameters));
+        registry.put("questionAnswer", (dayId, game, theme, parameters) -> new QuestionAnswerGameScreen(dayId, game, theme, parameters));
         // Ajouter ici d'autres jeux si besoin
     }
     public static GameScreenLoader getLoader(String name) {

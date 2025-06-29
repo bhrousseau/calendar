@@ -1,0 +1,124 @@
+{
+  "themeQuestions": {
+    "composition_1916": {
+      "question": "Qui est l'auteur de cette composition de 1916 ?",
+      "answer": "Piet Mondrian",
+      "alternatives": ["Mondrian", "mondrian", "piet mondrian"]
+    },
+    "guernica": {
+      "question": "Qui a peint Guernica ?",
+      "answer": "Pablo Picasso",
+      "alternatives": ["Picasso", "picasso", "pablo picasso"]
+    },
+    "starry_night": {
+      "question": "Qui a peint La Nuit étoilée ?",
+      "answer": "Vincent van Gogh",
+      "alternatives": ["Van Gogh", "van gogh", "vincent van gogh", "Van gogh"]
+    },
+    "mona_lisa": {
+      "question": "Qui est l'auteur de la Joconde ?",
+      "answer": "Leonardo da Vinci",
+      "alternatives": ["Léonard de Vinci", "leonardo da vinci", "da vinci", "vinci", "léonard de vinci"]
+    },
+    "pearl": {
+      "question": "Qui a peint La Jeune Fille à la perle ?",
+      "answer": "Johannes Vermeer",
+      "alternatives": ["Vermeer", "vermeer", "johannes vermeer"]
+    },
+    "kiss": {
+      "question": "Qui est l'auteur du Baiser ?",
+      "answer": "Gustav Klimt",
+      "alternatives": ["Klimt", "klimt", "gustav klimt"]
+    },
+    "on_white_ii": {
+      "question": "Qui a peint Sur blanc II ?",
+      "answer": "Wassily Kandinsky",
+      "alternatives": ["Kandinsky", "kandinsky", "wassily kandinsky"]
+    },
+    "impression": {
+      "question": "Qui a peint Impression, soleil levant ?",
+      "answer": "Claude Monet",
+      "alternatives": ["Monet", "monet", "claude monet"]
+    },
+    "nympheas": {
+      "question": "Qui est l'auteur des Nymphéas ?",
+      "answer": "Claude Monet",
+      "alternatives": ["Monet", "monet", "claude monet"]
+    },
+    "the_false_mirror": {
+      "question": "Qui a peint Le Faux Miroir ?",
+      "answer": "René Magritte",
+      "alternatives": ["Magritte", "magritte", "rené magritte", "rene magritte"]
+    },
+    "composition_viii": {
+      "question": "Qui a peint Composition VIII ?",
+      "answer": "Wassily Kandinsky",
+      "alternatives": ["Kandinsky", "kandinsky", "wassily kandinsky"]
+    },
+    "wave": {
+      "question": "Qui a créé La Grande Vague de Kanagawa ?",
+      "answer": "Hokusai",
+      "alternatives": ["hokusai", "Katsushika Hokusai", "katsushika hokusai"]
+    },
+    "broadway": {
+      "question": "Qui a peint Broadway Boogie-Woogie ?",
+      "answer": "Piet Mondrian",
+      "alternatives": ["Mondrian", "mondrian", "piet mondrian"]
+    },
+    "son_of_man": {
+      "question": "Qui a peint Le Fils de l'homme ?",
+      "answer": "René Magritte",
+      "alternatives": ["Magritte", "magritte", "rené magritte", "rene magritte"]
+    },
+    "vertumnus": {
+      "question": "Qui a peint Vertumnus ?",
+      "answer": "Giuseppe Arcimboldo",
+      "alternatives": ["Arcimboldo", "arcimboldo", "giuseppe arcimboldo"]
+    },
+    "blue_fiddler": {
+      "question": "Qui a peint Le Violoniste bleu ?",
+      "answer": "Marc Chagall",
+      "alternatives": ["Chagall", "chagall", "marc chagall"]
+    },
+    "three_musicians": {
+      "question": "Qui a peint Les Trois Musiciens ?",
+      "answer": "Pablo Picasso",
+      "alternatives": ["Picasso", "picasso", "pablo picasso"]
+    },
+    "i_and_village": {
+      "question": "Qui a peint Moi et le Village ?",
+      "answer": "Marc Chagall",
+      "alternatives": ["Chagall", "chagall", "marc chagall"]
+    },
+    "sea_of_ice": {
+      "question": "Qui a peint La Mer de glace ?",
+      "answer": "Caspar David Friedrich",
+      "alternatives": ["Friedrich", "friedrich", "caspar david friedrich", "caspar friedrich"]
+    },
+    "numbers_constellations": {
+      "question": "Qui a créé Nombres et constellations ?",
+      "answer": "Joan Miró",
+      "alternatives": ["Miró", "miro", "joan miro", "joan miró"]
+    },
+    "card_players": {
+      "question": "Qui a peint Les Joueurs de cartes ?",
+      "answer": "Paul Cézanne",
+      "alternatives": ["Cézanne", "cezanne", "paul cézanne", "paul cezanne"]
+    },
+    "scapigliata": {
+      "question": "Qui a peint La Scapigliata ?",
+      "answer": "Leonardo da Vinci",
+      "alternatives": ["Léonard de Vinci", "leonardo da vinci", "da vinci", "vinci", "léonard de vinci"]
+    },
+    "the_milkmaid": {
+      "question": "Qui a peint La Laitière ?",
+      "answer": "Johannes Vermeer",
+      "alternatives": ["Vermeer", "vermeer", "johannes vermeer"]
+    },
+    "tree_of_life": {
+      "question": "Qui a créé L'Arbre de vie ?",
+      "answer": "Gustav Klimt",
+      "alternatives": ["Klimt", "klimt", "gustav klimt"]
+    }
+  }
+} 

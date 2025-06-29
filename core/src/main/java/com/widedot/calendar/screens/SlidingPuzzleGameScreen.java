@@ -183,9 +183,6 @@ public class SlidingPuzzleGameScreen extends GameScreen {
 
     private final TileAnimation tileAnimation = new TileAnimation();
 
-    // Flag pour éviter la double initialisation du puzzle
-    private boolean isInitialized = false;
-
     private boolean isAdjacent(int tileIndex1, int tileIndex2) {
         // Convertir les indices linéaires en coordonnées de grille
         int row1 = tileIndex1 / gridSize;
@@ -408,12 +405,6 @@ public class SlidingPuzzleGameScreen extends GameScreen {
 
     @Override
     protected void initializeGame() {
-        // Si le jeu est déjà initialisé, ne pas le refaire
-        if (isInitialized) {
-            System.out.println("Le puzzle a déjà été initialisé, on ne le refait pas");
-            return;
-        }
-        
         System.out.println("Initialisation du puzzle coulissant pour le jour " + dayId);
 
         // Vérifier que la texture est chargée
@@ -472,10 +463,6 @@ public class SlidingPuzzleGameScreen extends GameScreen {
         solveButton.setPosition(viewport.getWorldWidth() - 120, 20);
         infoButton.setPosition(viewport.getWorldWidth() - 70, viewport.getWorldHeight() - 70);
         closeButton.setPosition(viewport.getWorldWidth() - 50, viewport.getWorldHeight() - 50);
-        
-        // Marquer le jeu comme initialisé
-        isInitialized = true;
-        System.out.println("Initialisation du puzzle terminée");
     }
 
     @Override

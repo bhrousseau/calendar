@@ -212,7 +212,6 @@ public class AdventCalendarScreen implements Screen {
     private Texture getThemeIconForDay(int dayId) {
         // Vérifier si la texture est déjà dans le cache
         if (themeIconTextures.containsKey(String.valueOf(dayId))) {
-            Gdx.app.log("AdventCalendarScreen", "Returning cached theme icon for day " + dayId);
             return themeIconTextures.get(String.valueOf(dayId));
         }
         Gdx.app.log("AdventCalendarScreen", "Attempting to load theme icon for day " + dayId);
@@ -249,7 +248,6 @@ public class AdventCalendarScreen implements Screen {
 
     @Override
     public void render(float delta) {
-        Gdx.app.log("AdventCalendarScreen", "render() called");
         // Effacer l'écran avec une couleur de fond
         Gdx.gl.glClearColor(0.1f, 0.3f, 0.1f, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
@@ -259,7 +257,6 @@ public class AdventCalendarScreen implements Screen {
         batch.setProjectionMatrix(camera.combined);
 
         // Dessiner les boîtes
-        Gdx.app.log("AdventCalendarScreen", "Before batch.begin()");
         batch.begin();
         for (int i = 1; i <= 24; i++) {
             Rectangle box = boxes.get(i);
@@ -287,7 +284,6 @@ public class AdventCalendarScreen implements Screen {
             batch.draw(texture, box.x, box.y, box.width, box.height);
         }
         batch.end();
-        Gdx.app.log("AdventCalendarScreen", "After batch.end()");
 
         // Gérer les entrées utilisateur
         handleInput();

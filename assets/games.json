@@ -130,6 +130,39 @@
       "reference": "SPZ_tree_of_life",
       "gameTemplate": "SPZ",
       "theme": "tree_of_life"
+    },
+    {
+      "reference": "QNA_general_knowledge",
+      "gameTemplate": "QNA",
+      "theme": "composition_1916",
+      "parameters": {
+        "questionsFile": "questions.json"
+      }
+    },
+    {
+      "reference": "QNA_case_sensitive",
+      "gameTemplate": "QNA",
+      "theme": "guernica",
+      "parameters": {
+        "questionsFile": "questions.json",
+        "caseSensitive": true
+      },
+      "presets": ["darkTheme"]
+    },
+    {
+      "reference": "QNA_light_theme",
+      "gameTemplate": "QNA",
+      "theme": "starry_night",
+      "presets": ["lightTheme"]
+    },
+    {
+      "reference": "QNA_art_questions",
+      "gameTemplate": "QNA",
+      "theme": "mona_lisa",
+      "parameters": {
+        "questionsFile": "art_questions.json"
+      },
+      "presets": ["darkTheme"]
     }
   ]
 }

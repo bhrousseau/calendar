@@ -31,6 +31,36 @@
           "bgColor": "255,255,255"
         }
       }
+    },
+    "QNA": {
+      "name": "questionAnswer",
+      "defaultParameters": {
+        "questionsFile": "questions.json",
+        "caseSensitive": false,
+        "bgColor": "25,25,50",
+        "textColor": "255,255,255",
+        "totalQuestions": 10
+      },
+      "parameterTypes": {
+        "questionsFile": "string",
+        "caseSensitive": "boolean",
+        "bgColor": "string",
+        "textColor": "string",
+        "totalQuestions": "int"
+      },
+      "presets": {
+        "caseSensitive": {
+          "caseSensitive": true
+        },
+        "darkTheme": {
+          "bgColor": "10,10,20",
+          "textColor": "200,200,255"
+        },
+        "lightTheme": {
+          "bgColor": "240,240,250",
+          "textColor": "50,50,100"
+        }
+      }
     }
   }
 } 
