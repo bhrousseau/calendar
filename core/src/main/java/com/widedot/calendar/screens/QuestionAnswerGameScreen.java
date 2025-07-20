@@ -8,6 +8,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
@@ -17,6 +18,9 @@ import com.badlogic.gdx.utils.JsonReader;
 import com.badlogic.gdx.utils.JsonValue;
 import com.badlogic.gdx.utils.ObjectMap;
 import com.badlogic.gdx.audio.Sound;
+import java.util.Random;
+import java.util.HashSet;
+import java.util.Set;
 import com.widedot.calendar.AdventCalendarGame;
 import com.widedot.calendar.data.Theme;
 import com.widedot.calendar.config.Config;
@@ -81,6 +85,14 @@ public class QuestionAnswerGameScreen extends GameScreen {
     private Sound correctSound;
     private Sound incorrectSound;
     private Sound winSound;
+    
+    // Image fragments for final phase
+    private static final int TOTAL_IMAGE_SQUARES = 100;
+    private static final int GRID_ROWS = 10;
+    private static final int GRID_COLS = 10;
+    private TextureRegion[][] imageSquares;
+    private Set<Integer> visibleSquares;
+    private Random random;
     
     // Constants
     private static final String CORRECT_SOUND_PATH = "audio/win.mp3";
@@ -214,6 +226,11 @@ public class QuestionAnswerGameScreen extends GameScreen {
         
         // Charger les sons
         loadSounds();
+        
+        // Initialiser le générateur de nombres aléatoires et les variables d'image
+        this.random = new Random();
+        this.visibleSquares = new HashSet<>();
+        this.imageSquares = null;
         
         // Créer l'input processor pour la saisie de texte
         createInputProcessor();
@@ -355,10 +372,60 @@ public class QuestionAnswerGameScreen extends GameScreen {
             if (fullImagePath != null && !fullImagePath.isEmpty()) {
                 try {
                     fullImageTexture = new Texture(Gdx.files.internal(fullImagePath));
+                    // Découper l'image en carrés une fois qu'elle est chargée
+                    createImageSquares();
                 } catch (Exception e) {
                     System.err.println("Erreur lors du chargement de la texture du thème: " + e.getMessage());
                 }
             }
+        }
+    }
+    
+    /**
+     * Découpe l'image en carrés pour l'affichage progressif
+     */
+    private void createImageSquares() {
+        if (fullImageTexture == null) {
+            return;
+        }
+        
+        imageSquares = new TextureRegion[GRID_ROWS][GRID_COLS];
+        int squareWidth = fullImageTexture.getWidth() / GRID_COLS;
+        int squareHeight = fullImageTexture.getHeight() / GRID_ROWS;
+        
+        for (int row = 0; row < GRID_ROWS; row++) {
+            for (int col = 0; col < GRID_COLS; col++) {
+                int x = col * squareWidth;
+                int y = row * squareHeight;
+                imageSquares[row][col] = new TextureRegion(fullImageTexture, x, y, squareWidth, squareHeight);
+            }
+        }
+    }
+    
+    /**
+     * Calcule quels carrés doivent être visibles basé sur le pourcentage de bonnes réponses
+     * Maximum 50% de l'image révélée (50 carrés sur 100)
+     */
+    private void calculateVisibleSquares() {
+        visibleSquares.clear();
+        
+        // Calculer le pourcentage de bonnes réponses
+        float scorePercentage = (float) correctAnswers / totalQuestions;
+        
+        // Calculer le nombre de carrés à afficher (minimum 1, maximum 50 carrés = 50% de l'image)
+        int maxSquares = TOTAL_IMAGE_SQUARES / 2; // 50 carrés maximum
+        int squaresToShow = Math.max(1, (int) (scorePercentage * maxSquares));
+        
+        // Créer une liste de tous les indices de carrés possibles (0-99)
+        Array<Integer> availableSquares = new Array<>();
+        for (int i = 0; i < TOTAL_IMAGE_SQUARES; i++) {
+            availableSquares.add(i);
+        }
+        
+        // Mélanger et sélectionner aléatoirement les carrés à afficher
+        availableSquares.shuffle();
+        for (int i = 0; i < squaresToShow; i++) {
+            visibleSquares.add(availableSquares.get(i));
         }
     }
     
@@ -402,6 +469,9 @@ public class QuestionAnswerGameScreen extends GameScreen {
         // Charger la question finale spécifique au thème
         loadFinalQuestion();
         
+        // Calculer quels carrés de l'image doivent être visibles basé sur le score
+        calculateVisibleSquares();
+        
         // Réinitialiser l'état pour la question finale
         inputText = "";
         statusMessage = "";
@@ -423,6 +493,8 @@ public class QuestionAnswerGameScreen extends GameScreen {
             if (fullImageTexture == null && fullImagePath != null && !fullImagePath.isEmpty()) {
                 try {
                     fullImageTexture = new Texture(Gdx.files.internal(fullImagePath));
+                    // Découper l'image en carrés après rechargement
+                    createImageSquares();
                 } catch (Exception e) {
                     System.err.println("Erreur rechargement texture: " + e.getMessage());
                 }
@@ -570,10 +642,17 @@ public class QuestionAnswerGameScreen extends GameScreen {
         // Calculer la position de la zone de saisie dans la phase finale
         float inputBoxWidth = 400;
         float inputBoxHeight = 50;
-        float centerX = viewport.getWorldWidth() / 2;
-        float centerY = viewport.getWorldHeight() / 2;
-        float inputBoxX = centerX - inputBoxWidth / 2;
-        float inputBoxY = (centerY - 150) - inputBoxHeight / 2; // centerY - 150 comme dans drawFinalPhase
+        float screenWidth = viewport.getWorldWidth();
+        float screenHeight = viewport.getWorldHeight();
+        
+        // Calculer la position Y de la zone de saisie selon la nouvelle disposition
+        float currentY = screenHeight - 30; // Score
+        currentY -= (font.getLineHeight() + 15); // Après le score
+        if (finalQuestion != null) {
+            currentY -= (font.getLineHeight() + 15); // Après la question
+        }
+        float inputBoxY = currentY - inputBoxHeight / 2; // Position de la zone de saisie
+        float inputBoxX = (screenWidth - inputBoxWidth) / 2;
         
         // Définir la taille du bouton send (carré basé sur la hauteur de la zone de saisie)
         float sendButtonSize = inputBoxHeight;
@@ -586,7 +665,7 @@ public class QuestionAnswerGameScreen extends GameScreen {
         submitButton.setSize(sendButtonSize, sendButtonSize);
         
         // Positionner le bouton Résoudre en bas à droite
-        solveButton.setPosition(viewport.getWorldWidth() - 120, 20);
+        solveButton.setPosition(screenWidth - 120, 20);
     }
     
     @Override
@@ -795,38 +874,60 @@ public class QuestionAnswerGameScreen extends GameScreen {
     }
     
     private void drawFinalPhase(float questionY, float inputY, float statusY) {
-        float centerX = viewport.getWorldWidth() / 2;
-        float centerY = viewport.getWorldHeight() / 2;
+        float screenWidth = viewport.getWorldWidth();
+        float screenHeight = viewport.getWorldHeight();
         
         // Calculer le pourcentage pour l'affichage
         float scorePercentage = (correctAnswers * 100.0f) / totalQuestions;
         
-        // Afficher le score des questions générales en haut
+        // Variables pour le positionnement vertical depuis le haut
+        float currentY = screenHeight - 30; // Commencer 30px du haut
+        float spacing = 15; // Espacement entre les éléments
+        
+        // 1. Afficher le score des questions générales en haut
         font.setColor(textColor);
         String scoreText = "Score : " + correctAnswers + "/" + totalQuestions + " (" + (int)scorePercentage + "%)";
         layout.setText(font, scoreText);
         font.draw(batch, layout, 
-            (viewport.getWorldWidth() - layout.width) / 2,
-            viewport.getWorldHeight() * 0.95f);
+            (screenWidth - layout.width) / 2,
+            currentY);
+        currentY -= (layout.height + spacing);
         
-        // Afficher l'image du thème au centre
-        if (fullImageTexture != null) {
-            drawImageCentered(centerY + 80); // Légèrement au-dessus du centre
+        // 2. Afficher la question finale
+        if (finalQuestion != null) {
+            font.setColor(textColor);
+            layout.setText(font, finalQuestion.question);
+            font.draw(batch, layout, 
+                (screenWidth - layout.width) / 2,
+                currentY);
+            currentY -= (layout.height + spacing);
         }
         
-        // Dessiner la zone de saisie pour la réponse finale sous la question
-        drawInputAreaCentered(centerY - 150);
+        // 3. Dessiner la zone de saisie
+        float inputBoxHeight = 50;
+        drawInputAreaCenteredAt(currentY - inputBoxHeight / 2);
+        currentY -= (inputBoxHeight + spacing);
         
-        // Message de statut juste en dessous de la zone de saisie
+        // 4. Message de statut
         if (!statusMessage.isEmpty()) {
             font.setColor(statusColor);
             layout.setText(font, statusMessage);
             font.draw(batch, layout, 
-                (viewport.getWorldWidth() - layout.width) / 2,
-                centerY - 190); // 40 pixels sous la zone de saisie
+                (screenWidth - layout.width) / 2,
+                currentY);
+            currentY -= (layout.height + spacing);
         }
         
-        // Dessiner les boutons
+        // 5. Calculer l'espace disponible pour l'image
+        float bottomMargin = 80; // Marge en bas pour les boutons
+        float availableHeight = currentY - bottomMargin;
+        
+        // 6. Afficher l'image adaptative
+        if (fullImageTexture != null && availableHeight > 100) { // Minimum 100px de hauteur
+            drawAdaptiveImage(availableHeight);
+        }
+        
+        // 7. Dessiner les boutons en bas
         drawButton(backButton, "Retour", textColor);
         drawSendButton(submitButton);
         // Dessiner le bouton Résoudre (en mode test uniquement)
@@ -835,8 +936,77 @@ public class QuestionAnswerGameScreen extends GameScreen {
         }
     }
     
+    /**
+     * Dessine l'image adaptative qui s'ajuste à l'espace disponible tout en conservant le ratio
+     */
+    private void drawAdaptiveImage(float availableHeight) {
+        if (fullImageTexture == null || imageSquares == null) {
+            return;
+        }
+        
+        // Obtenir les dimensions originales de l'image
+        float originalWidth = fullImageTexture.getWidth();
+        float originalHeight = fullImageTexture.getHeight();
+        float aspectRatio = originalWidth / originalHeight;
+        
+        // Calculer les dimensions adaptatives
+        float screenWidth = viewport.getWorldWidth();
+        float maxWidth = screenWidth * 0.8f; // Maximum 80% de la largeur de l'écran
+        
+        float imageHeight = Math.min(availableHeight, maxWidth / aspectRatio);
+        float imageWidth = imageHeight * aspectRatio;
+        
+        // Si l'image est trop large, ajuster par la largeur
+        if (imageWidth > maxWidth) {
+            imageWidth = maxWidth;
+            imageHeight = imageWidth / aspectRatio;
+        }
+        
+        // Centrer l'image horizontalement
+        float imageX = (screenWidth - imageWidth) / 2;
+        
+        // Positionner l'image verticalement dans l'espace disponible
+        float imageY = availableHeight - imageHeight + 40; // 40px de marge en bas de l'espace
+        
+        // Calculer la taille de chaque carré
+        float squareWidth = imageWidth / GRID_COLS;
+        float squareHeight = imageHeight / GRID_ROWS;
+        
+        // Dessiner un fond noir pour l'image
+        batch.setColor(0f, 0f, 0f, 1f);
+        batch.draw(whiteTexture, imageX, imageY, imageWidth, imageHeight);
+        
+        // Dessiner seulement les carrés visibles
+        batch.setColor(1f, 1f, 1f, 1f);
+        
+        int squareIndex = 0;
+        for (int row = 0; row < GRID_ROWS; row++) {
+            for (int col = 0; col < GRID_COLS; col++) {
+                // Arrêter après 100 carrés
+                if (squareIndex >= TOTAL_IMAGE_SQUARES) {
+                    break;
+                }
+                
+                // Dessiner le carré seulement s'il est dans la liste des carrés visibles
+                if (visibleSquares.contains(squareIndex)) {
+                    float squareX = imageX + col * squareWidth;
+                    float squareY = imageY + (GRID_ROWS - 1 - row) * squareHeight; // Inverser Y pour LibGDX
+                    
+                    batch.draw(imageSquares[row][col], squareX, squareY, squareWidth, squareHeight);
+                }
+                
+                squareIndex++;
+            }
+            
+            // Arrêter après 100 carrés
+            if (squareIndex >= TOTAL_IMAGE_SQUARES) {
+                break;
+            }
+        }
+    }
+    
     private void drawImageCentered(float centerY) {
-        if (fullImageTexture == null) {
+        if (fullImageTexture == null || imageSquares == null) {
             return;
         }
         
@@ -846,9 +1016,41 @@ public class QuestionAnswerGameScreen extends GameScreen {
         float imageX = (viewport.getWorldWidth() - imageWidth) / 2;
         float imageY = centerY - imageHeight / 2;
         
-        // Dessiner l'image
+        // Calculer la taille de chaque carré
+        float squareWidth = imageWidth / GRID_COLS;
+        float squareHeight = imageHeight / GRID_ROWS;
+        
+        // Dessiner un fond noir pour l'image
+        batch.setColor(0f, 0f, 0f, 1f);
+        batch.draw(whiteTexture, imageX, imageY, imageWidth, imageHeight);
+        
+        // Dessiner seulement les carrés visibles
         batch.setColor(1f, 1f, 1f, 1f);
-        batch.draw(fullImageTexture, imageX, imageY, imageWidth, imageHeight);
+        
+        int squareIndex = 0;
+        for (int row = 0; row < GRID_ROWS; row++) {
+            for (int col = 0; col < GRID_COLS; col++) {
+                // Arrêter après 100 carrés
+                if (squareIndex >= TOTAL_IMAGE_SQUARES) {
+                    break;
+                }
+                
+                // Dessiner le carré seulement s'il est dans la liste des carrés visibles
+                if (visibleSquares.contains(squareIndex)) {
+                    float squareX = imageX + col * squareWidth;
+                    float squareY = imageY + (GRID_ROWS - 1 - row) * squareHeight; // Inverser Y pour LibGDX
+                    
+                    batch.draw(imageSquares[row][col], squareX, squareY, squareWidth, squareHeight);
+                }
+                
+                squareIndex++;
+            }
+            
+            // Arrêter après 100 carrés
+            if (squareIndex >= TOTAL_IMAGE_SQUARES) {
+                break;
+            }
+        }
     }
     
     private void drawInputArea(float inputY) {
@@ -885,18 +1087,11 @@ public class QuestionAnswerGameScreen extends GameScreen {
             inputBoxY + inputBoxHeight / 2 + layout.height / 2);
     }
     
-    private void drawInputAreaCentered(float centerY) {
+    private void drawInputAreaCenteredAt(float centerY) {
         float inputBoxWidth = 400;
         float inputBoxHeight = 50;
         float inputBoxX = (viewport.getWorldWidth() - inputBoxWidth) / 2;
         float inputBoxY = centerY - inputBoxHeight / 2;
-        
-        // Instruction au-dessus de la zone de saisie
-        font.setColor(textColor);
-        layout.setText(font, finalQuestion.question);
-        font.draw(batch, layout, 
-            (viewport.getWorldWidth() - layout.width) / 2,
-            centerY + 40);
         
         // Fond de la zone de saisie
         batch.setColor(0.2f, 0.2f, 0.3f, 1);
@@ -1131,5 +1326,11 @@ public class QuestionAnswerGameScreen extends GameScreen {
         if (correctSound != null) correctSound.dispose();
         if (incorrectSound != null) incorrectSound.dispose();
         if (winSound != null) winSound.dispose();
+        
+        // Nettoyer les ressources d'image découpée
+        imageSquares = null;
+        if (visibleSquares != null) {
+            visibleSquares.clear();
+        }
     }
 } 

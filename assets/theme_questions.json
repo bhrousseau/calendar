@@ -1,124 +1,124 @@
 {
   "themeQuestions": {
     "composition_1916": {
-      "question": "Qui est l'auteur de cette composition de 1916 ?",
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur",
       "answer": "Piet Mondrian",
-      "alternatives": ["Mondrian", "mondrian", "piet mondrian"]
+      "alternatives": ["Mondrian", "mondrian", "piet mondrian", "Composition 1916", "composition 1916", "Composition en rouge, jaune, bleu et noir", "composition en rouge, jaune, bleu et noir"]
     },
     "guernica": {
-      "question": "Qui a peint Guernica ?",
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur",
       "answer": "Pablo Picasso",
-      "alternatives": ["Picasso", "picasso", "pablo picasso"]
+      "alternatives": ["Picasso", "picasso", "pablo picasso", "Guernica", "guernica"]
     },
     "starry_night": {
-      "question": "Qui a peint La Nuit étoilée ?",
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur",
       "answer": "Vincent van Gogh",
-      "alternatives": ["Van Gogh", "van gogh", "vincent van gogh", "Van gogh"]
+      "alternatives": ["Van Gogh", "van gogh", "vincent van gogh", "Van gogh", "La Nuit étoilée", "la nuit étoilée", "Nuit étoilée", "nuit étoilée", "Starry Night", "starry night"]
     },
     "mona_lisa": {
-      "question": "Qui est l'auteur de la Joconde ?",
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur",
       "answer": "Leonardo da Vinci",
-      "alternatives": ["Léonard de Vinci", "leonardo da vinci", "da vinci", "vinci", "léonard de vinci"]
+      "alternatives": ["Léonard de Vinci", "leonardo da vinci", "da vinci", "vinci", "léonard de vinci", "La Joconde", "la joconde", "Joconde", "joconde", "Mona Lisa", "mona lisa"]
     },
     "pearl": {
-      "question": "Qui a peint La Jeune Fille à la perle ?",
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur",
       "answer": "Johannes Vermeer",
-      "alternatives": ["Vermeer", "vermeer", "johannes vermeer"]
+      "alternatives": ["Vermeer", "vermeer", "johannes vermeer", "La Jeune Fille à la perle", "la jeune fille à la perle", "Jeune Fille à la perle", "jeune fille à la perle", "Girl with a Pearl Earring", "girl with a pearl earring"]
     },
     "kiss": {
-      "question": "Qui est l'auteur du Baiser ?",
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur",
       "answer": "Gustav Klimt",
-      "alternatives": ["Klimt", "klimt", "gustav klimt"]
+      "alternatives": ["Klimt", "klimt", "gustav klimt", "Le Baiser", "le baiser", "Baiser", "baiser", "The Kiss", "the kiss"]
     },
     "on_white_ii": {
-      "question": "Qui a peint Sur blanc II ?",
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur",
       "answer": "Wassily Kandinsky",
-      "alternatives": ["Kandinsky", "kandinsky", "wassily kandinsky"]
+      "alternatives": ["Kandinsky", "kandinsky", "wassily kandinsky", "Sur blanc II", "sur blanc ii", "Sur blanc 2", "sur blanc 2", "On White II", "on white ii"]
     },
     "impression": {
-      "question": "Qui a peint Impression, soleil levant ?",
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur",
       "answer": "Claude Monet",
-      "alternatives": ["Monet", "monet", "claude monet"]
+      "alternatives": ["Monet", "monet", "claude monet", "Impression, soleil levant", "impression, soleil levant", "Impression soleil levant", "impression soleil levant", "Soleil levant", "soleil levant"]
     },
     "nympheas": {
-      "question": "Qui est l'auteur des Nymphéas ?",
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur",
       "answer": "Claude Monet",
-      "alternatives": ["Monet", "monet", "claude monet"]
+      "alternatives": ["Monet", "monet", "claude monet", "Les Nymphéas", "les nymphéas", "Nymphéas", "nymphéas", "Nénuphars", "nénuphars", "Water Lilies", "water lilies"]
     },
     "the_false_mirror": {
-      "question": "Qui a peint Le Faux Miroir ?",
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur",
       "answer": "René Magritte",
-      "alternatives": ["Magritte", "magritte", "rené magritte", "rene magritte"]
+      "alternatives": ["Magritte", "magritte", "rené magritte", "rene magritte", "Le Faux Miroir", "le faux miroir", "Faux Miroir", "faux miroir", "The False Mirror", "the false mirror"]
     },
     "composition_viii": {
-      "question": "Qui a peint Composition VIII ?",
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur",
       "answer": "Wassily Kandinsky",
-      "alternatives": ["Kandinsky", "kandinsky", "wassily kandinsky"]
+      "alternatives": ["Kandinsky", "kandinsky", "wassily kandinsky", "Composition VIII", "composition viii", "Composition 8", "composition 8"]
     },
     "wave": {
-      "question": "Qui a créé La Grande Vague de Kanagawa ?",
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur",
       "answer": "Hokusai",
-      "alternatives": ["hokusai", "Katsushika Hokusai", "katsushika hokusai"]
+      "alternatives": ["hokusai", "Katsushika Hokusai", "katsushika hokusai", "La Grande Vague de Kanagawa", "la grande vague de kanagawa", "Grande Vague", "grande vague", "The Great Wave", "the great wave"]
     },
     "broadway": {
-      "question": "Qui a peint Broadway Boogie-Woogie ?",
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur",
       "answer": "Piet Mondrian",
-      "alternatives": ["Mondrian", "mondrian", "piet mondrian"]
+      "alternatives": ["Mondrian", "mondrian", "piet mondrian", "Broadway Boogie-Woogie", "broadway boogie-woogie", "Broadway Boogie Woogie", "broadway boogie woogie"]
     },
     "son_of_man": {
-      "question": "Qui a peint Le Fils de l'homme ?",
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur",
       "answer": "René Magritte",
-      "alternatives": ["Magritte", "magritte", "rené magritte", "rene magritte"]
+      "alternatives": ["Magritte", "magritte", "rené magritte", "rene magritte", "Le Fils de l'homme", "le fils de l'homme", "Fils de l'homme", "fils de l'homme", "The Son of Man", "the son of man"]
     },
     "vertumnus": {
-      "question": "Qui a peint Vertumnus ?",
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur",
       "answer": "Giuseppe Arcimboldo",
-      "alternatives": ["Arcimboldo", "arcimboldo", "giuseppe arcimboldo"]
+      "alternatives": ["Arcimboldo", "arcimboldo", "giuseppe arcimboldo", "Vertumnus", "vertumnus", "Vertumne", "vertumne"]
     },
     "blue_fiddler": {
-      "question": "Qui a peint Le Violoniste bleu ?",
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur",
       "answer": "Marc Chagall",
-      "alternatives": ["Chagall", "chagall", "marc chagall"]
+      "alternatives": ["Chagall", "chagall", "marc chagall", "Le Violoniste bleu", "le violoniste bleu", "Violoniste bleu", "violoniste bleu", "Blue Fiddler", "blue fiddler"]
     },
     "three_musicians": {
-      "question": "Qui a peint Les Trois Musiciens ?",
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur",
       "answer": "Pablo Picasso",
-      "alternatives": ["Picasso", "picasso", "pablo picasso"]
+      "alternatives": ["Picasso", "picasso", "pablo picasso", "Les Trois Musiciens", "les trois musiciens", "Trois Musiciens", "trois musiciens", "Three Musicians", "three musicians"]
     },
     "i_and_village": {
-      "question": "Qui a peint Moi et le Village ?",
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur",
       "answer": "Marc Chagall",
-      "alternatives": ["Chagall", "chagall", "marc chagall"]
+      "alternatives": ["Chagall", "chagall", "marc chagall", "Moi et le Village", "moi et le village", "I and the Village", "i and the village"]
     },
     "sea_of_ice": {
-      "question": "Qui a peint La Mer de glace ?",
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur",
       "answer": "Caspar David Friedrich",
-      "alternatives": ["Friedrich", "friedrich", "caspar david friedrich", "caspar friedrich"]
+      "alternatives": ["Friedrich", "friedrich", "caspar david friedrich", "caspar friedrich", "La Mer de glace", "la mer de glace", "Mer de glace", "mer de glace", "Sea of Ice", "sea of ice"]
     },
     "numbers_constellations": {
-      "question": "Qui a créé Nombres et constellations ?",
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur",
       "answer": "Joan Miró",
-      "alternatives": ["Miró", "miro", "joan miro", "joan miró"]
+      "alternatives": ["Miró", "miro", "joan miro", "joan miró", "Nombres et constellations", "nombres et constellations", "Numbers and Constellations", "numbers and constellations"]
     },
     "card_players": {
-      "question": "Qui a peint Les Joueurs de cartes ?",
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur",
       "answer": "Paul Cézanne",
-      "alternatives": ["Cézanne", "cezanne", "paul cézanne", "paul cezanne"]
+      "alternatives": ["Cézanne", "cezanne", "paul cézanne", "paul cezanne", "Les Joueurs de cartes", "les joueurs de cartes", "Joueurs de cartes", "joueurs de cartes", "Card Players", "card players"]
     },
     "scapigliata": {
-      "question": "Qui a peint La Scapigliata ?",
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur",
       "answer": "Leonardo da Vinci",
-      "alternatives": ["Léonard de Vinci", "leonardo da vinci", "da vinci", "vinci", "léonard de vinci"]
+      "alternatives": ["Léonard de Vinci", "leonardo da vinci", "da vinci", "vinci", "léonard de vinci", "La Scapigliata", "la scapigliata", "Scapigliata", "scapigliata"]
     },
     "the_milkmaid": {
-      "question": "Qui a peint La Laitière ?",
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur",
       "answer": "Johannes Vermeer",
-      "alternatives": ["Vermeer", "vermeer", "johannes vermeer"]
+      "alternatives": ["Vermeer", "vermeer", "johannes vermeer", "La Laitière", "la laitière", "Laitière", "laitière", "The Milkmaid", "the milkmaid"]
     },
     "tree_of_life": {
-      "question": "Qui a créé L'Arbre de vie ?",
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur",
       "answer": "Gustav Klimt",
-      "alternatives": ["Klimt", "klimt", "gustav klimt"]
+      "alternatives": ["Klimt", "klimt", "gustav klimt", "L'Arbre de vie", "l'arbre de vie", "Arbre de vie", "arbre de vie", "Tree of Life", "tree of life"]
     }
   }
 } 

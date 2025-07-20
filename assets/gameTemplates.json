@@ -61,6 +61,84 @@
           "textColor": "50,50,100"
         }
       }
+    },
+    "MMD": {
+      "name": "mastermind",
+      "defaultParameters": {
+        "codeLength": 4,
+        "numberOfSymbols": 6,
+        "maxAttempts": 10,
+        "bgColor": "20,20,40",
+        "textColor": "255,255,255",
+        "symbolImages": "rouge01_triangle.png,vert01_carre.png,bleu01_pyramyde.png,jaune01_rond.png,orange01_octogone.png,violet01_etoile.png,bleu05_cercle.png,rouge04_triangle.png"
+      },
+      "parameterTypes": {
+        "codeLength": "int",
+        "numberOfSymbols": "int",
+        "maxAttempts": "int",
+        "bgColor": "string",
+        "textColor": "string",
+        "symbolImages": "string"
+      },
+      "presets": {
+        "beginner": {
+          "codeLength": 3,
+          "numberOfSymbols": 3,
+          "maxAttempts": 12
+        },
+        "easy": {
+          "codeLength": 4,
+          "numberOfSymbols": 4,
+          "maxAttempts": 12
+        },
+        "medium": {
+          "codeLength": 4,
+          "numberOfSymbols": 6,
+          "maxAttempts": 10
+        },
+        "hard": {
+          "codeLength": 5,
+          "numberOfSymbols": 8,
+          "maxAttempts": 8
+        },
+        "expert": {
+          "codeLength": 6,
+          "numberOfSymbols": 8,
+          "maxAttempts": 10
+        },
+        "darkTheme": {
+          "bgColor": "10,10,20",
+          "textColor": "200,200,255"
+        },
+        "lightTheme": {
+          "bgColor": "240,240,250",
+          "textColor": "50,50,100"
+        },
+        "formes_mixtes": {
+          "symbolImages": "rouge01_triangle.png,vert01_carre.png,bleu01_pyramyde.png,jaune01_rond.png,orange01_octogone.png,violet01_etoile.png,bleu05_cercle.png,rouge04_triangle.png"
+        },
+        "ronds_colores": {
+          "symbolImages": "jaune01_rond.png,jaune02_rond.png,jaune03_rond.png,jaune04_rond.png,bleu04_rond.png,bleu06_rond.png,bleu07_rond.png,bleu08_rond.png"
+        },
+        "carres_verts": {
+          "symbolImages": "vert01_carre.png,vert02_carre.png,vert03_carre.png,vert04_carre.png,vert05_carre.png,rouge01_triangle.png,bleu01_pyramyde.png,orange01_octogone.png"
+        },
+        "triangles_rouges": {
+          "symbolImages": "rouge01_triangle.png,rouge02_triangle.png,rouge03_triangle.png,rouge04_triangle.png,rouge05_triangle.png,vert01_carre.png,bleu01_pyramyde.png,jaune01_rond.png"
+        },
+        "etoiles_violettes": {
+          "symbolImages": "violet01_etoile.png,violet03_etoile.png,violet04_etoile.png,violet02_pyramyde.png,rouge01_triangle.png,vert01_carre.png,bleu01_pyramyde.png,jaune01_rond.png"
+        },
+        "octogones_oranges": {
+          "symbolImages": "orange01_octogone.png,orange02_octogone.png,orange03_octogone.png,orange04_hexagone.png,rouge01_triangle.png,vert01_carre.png,bleu01_pyramyde.png,jaune01_rond.png"
+        },
+        "pyramides_bleues": {
+          "symbolImages": "bleu01_pyramyde.png,bleu02_pyramyde.png,bleu03_pyramyde.png,bleu05_cercle.png,rouge01_triangle.png,vert01_carre.png,jaune01_rond.png,orange01_octogone.png"
+        },
+        "formes_geometriques": {
+          "symbolImages": "rouge01_triangle.png,vert01_carre.png,bleu05_cercle.png,orange04_hexagone.png,orange01_octogone.png,bleu09_losange.png,violet01_etoile.png,bleu01_pyramyde.png"
+        }
+      }
     }
   }
 } 

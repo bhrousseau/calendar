@@ -134,7 +134,7 @@
     {
       "reference": "QNA_general_knowledge",
       "gameTemplate": "QNA",
-      "theme": "composition_1916",
+      "theme": "vertumnus",
       "parameters": {
         "questionsFile": "questions.json"
       }
@@ -163,6 +163,35 @@
         "questionsFile": "art_questions.json"
       },
       "presets": ["darkTheme"]
+    },
+    {
+      "reference": "MMD_classic",
+      "gameTemplate": "MMD",
+      "theme": "composition_1916"
+    },
+    {
+      "reference": "MMD_beginner",
+      "gameTemplate": "MMD",
+      "theme": "mona_lisa",
+      "presets": ["beginner", "formes_mixtes"]
+    },
+    {
+      "reference": "MMD_easy",
+      "gameTemplate": "MMD",
+      "theme": "starry_night",
+      "presets": ["easy", "formes_mixtes"]
+    },
+    {
+      "reference": "MMD_hard",
+      "gameTemplate": "MMD",
+      "theme": "guernica",
+      "presets": ["hard", "darkTheme"]
+    },
+    {
+      "reference": "MMD_expert",
+      "gameTemplate": "MMD",
+      "theme": "mona_lisa",
+      "presets": ["expert"]
     }
   ]
 }
