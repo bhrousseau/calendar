@@ -17,6 +17,7 @@ import com.badlogic.gdx.utils.ObjectMap;
 import com.badlogic.gdx.utils.JsonReader;
 import com.badlogic.gdx.utils.JsonValue;
 import com.badlogic.gdx.audio.Sound;
+import com.badlogic.gdx.files.FileHandle;
 import java.util.Random;
 import java.util.HashSet;
 import java.util.Set;
@@ -46,6 +47,7 @@ public class MastermindGameScreen extends GameScreen {
     private Texture fullImageTexture;
     private Texture sendButtonTexture;
     private Texture infoButtonTexture;
+    private Texture backgroundTexture;
     private Theme theme;
     
     // Game data
@@ -103,6 +105,106 @@ public class MastermindGameScreen extends GameScreen {
     private static final String WIN_SOUND_PATH = "audio/win.mp3";
     private static final float SYMBOL_SIZE = 40f;
     private static final float CURSOR_BLINK_SPEED = 1.0f;
+    
+    // Nouvelles variables pour les cases
+    private Texture boxTexture;
+    private Array<AnimatedColumn> gridPositions;
+    
+    // Animation constants
+    private static final float FRAME_DURATION = 1f/60f;
+    private static final float ANIMATION_DELAY = 0.0f;
+    private static final int ANIMATION_VARIANTS = 6;
+    private static final int DEFAULT_ANIMATION_VARIANT = 2;
+    
+    // Animation state
+    private static class BoxAnimation {
+        int currentFrame;
+        float timer;
+        float delay;
+        boolean isPlaying;
+        static Array<Texture> sharedFrames; // Frames partagées entre toutes les animations
+        
+        BoxAnimation(float delay) {
+            this.currentFrame = 0;
+            this.timer = 0;
+            this.delay = delay;
+            this.isPlaying = false;
+        }
+        
+        static void loadSharedFrames(int variant) {
+            if (sharedFrames != null) {
+                // Nettoyer les anciennes frames si elles existent
+                for (Texture frame : sharedFrames) {
+                    frame.dispose();
+                }
+                sharedFrames.clear();
+            } else {
+                sharedFrames = new Array<>();
+            }
+            
+            String variantFolder = String.format("%02d", variant + 1);
+            FileHandle[] frameFiles = Gdx.files.internal("images/games/mmd/anim/opening/" + variantFolder).list();
+            
+            // Trier les fichiers par nom pour assurer l'ordre correct
+            Array<FileHandle> sortedFiles = new Array<>(frameFiles);
+            sortedFiles.sort((f1, f2) -> f1.name().compareTo(f2.name()));
+            
+            for (FileHandle frame : sortedFiles) {
+                if (frame.extension().equalsIgnoreCase("png")) {
+                    Texture frameTexture = new Texture(frame);
+                    frameTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+                    sharedFrames.add(frameTexture);
+                }
+            }
+        }
+        
+        static void disposeSharedFrames() {
+            if (sharedFrames != null) {
+                for (Texture frame : sharedFrames) {
+                    frame.dispose();
+                }
+                sharedFrames.clear();
+                sharedFrames = null;
+            }
+        }
+    }
+    
+    private static class Column {
+        int col;
+        Array<Rectangle> rectangles;
+        
+        Column(int col) {
+            this.col = col;
+            this.rectangles = new Array<>();
+        }
+    }
+    
+    private static class AnimatedColumn extends Column {
+        Array<BoxAnimation> animations;
+        boolean isAnimating;
+        
+        AnimatedColumn(int col) {
+            super(col);
+            this.animations = new Array<>();
+            this.isAnimating = false;
+        }
+        
+        void startAnimations() {
+            if (!isAnimating) {
+                isAnimating = true;
+                
+                // Créer une animation pour chaque case de la colonne
+                for (int i = 0; i < rectangles.size; i++) {
+                    BoxAnimation anim = new BoxAnimation(i * ANIMATION_DELAY);
+                    animations.add(anim);
+                }
+            }
+        }
+        
+        void dispose() {
+            animations.clear();
+        }
+    }
     
     /**
      * Classe interne pour représenter une question
@@ -235,6 +337,15 @@ public class MastermindGameScreen extends GameScreen {
             System.err.println("Erreur lors du chargement du bouton info: " + e.getMessage());
             this.infoButtonTexture = null;
         }
+
+        // Charger la texture du fond d'écran
+        try {
+            this.backgroundTexture = new Texture(Gdx.files.internal("images/games/mmd/background/background.png"));
+            this.backgroundTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+        } catch (Exception e) {
+            System.err.println("Erreur lors du chargement du fond d'écran: " + e.getMessage());
+            this.backgroundTexture = null;
+        }
         
         // Initialiser les variables de jeu
         this.secretCode = new Array<>();
@@ -284,6 +395,21 @@ public class MastermindGameScreen extends GameScreen {
         System.out.println("Création de l'input processor...");
         createInputProcessor();
         System.out.println("Input processor créé");
+        
+        // Charger la texture de la case
+        try {
+            this.boxTexture = new Texture(Gdx.files.internal("images/games/mmd/box/box-close.png"));
+            this.boxTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+        } catch (Exception e) {
+            System.err.println("Erreur lors du chargement de la texture box-close: " + e.getMessage());
+            this.boxTexture = null;
+        }
+        
+        // Charger les positions des cases depuis le JSON
+        loadGridPositions();
+        
+        // Charger les frames d'animation partagées
+        BoxAnimation.loadSharedFrames(DEFAULT_ANIMATION_VARIANT);
         
         System.out.println("Constructeur MastermindGameScreen terminé avec succès");
     }
@@ -365,7 +491,7 @@ public class MastermindGameScreen extends GameScreen {
                     if (i < imageNames.length) {
                         String imageName = imageNames[i].trim();
                         if (!imageName.isEmpty()) {
-                            String imagePath = "images/symbols/mmd/" + imageName;
+                            String imagePath = "images/games/mmd/symbol/" + imageName;
                             System.out.println("Chargement symbole " + i + ": " + imagePath);
                             
                             // Vérifier que le fichier existe
@@ -549,6 +675,9 @@ public class MastermindGameScreen extends GameScreen {
         
         // Charger la texture du thème
         loadThemeTexture();
+
+        // Démarrer l'animation de la première colonne
+        startColumnAnimation(0);
     }
     
     private void generateSecretCode() {
@@ -771,6 +900,9 @@ public class MastermindGameScreen extends GameScreen {
     private void submitGuess() {
         if (gameFinished) return;
         
+        // Démarrer l'animation de la prochaine colonne
+        startColumnAnimation(attempts.size);
+        
         // Créer une copie de la tentative courante
         Array<Integer> guess = new Array<>();
         for (int symbol : currentGuess) {
@@ -902,14 +1034,127 @@ public class MastermindGameScreen extends GameScreen {
                 transitionTimer = 0;
             }
         }
+        
+        // Mettre à jour les animations
+        if (gridPositions != null) {
+            for (AnimatedColumn column : gridPositions) {
+                if (column.isAnimating) {
+                    boolean allFinished = true;
+                    
+                    for (int i = 0; i < column.animations.size; i++) {
+                        BoxAnimation anim = column.animations.get(i);
+                        
+                        // Mettre à jour le timer
+                        anim.timer += delta;
+                        
+                        // Vérifier si l'animation doit commencer (après le délai)
+                        if (anim.timer >= anim.delay && !anim.isPlaying) {
+                            anim.isPlaying = true;
+                            anim.timer = 0;
+                        }
+                        
+                        // Si l'animation est en cours
+                        if (anim.isPlaying) {
+                            // Avancer l'animation
+                            if (anim.timer >= FRAME_DURATION) {
+                                anim.currentFrame++;
+                                anim.timer = 0;
+                                
+                                // Vérifier si l'animation est terminée
+                                if (anim.currentFrame >= anim.sharedFrames.size) {
+                                    anim.currentFrame = anim.sharedFrames.size - 1; // Rester sur la dernière frame
+                                } else {
+                                    allFinished = false;
+                                }
+                            } else {
+                                allFinished = false;
+                            }
+                        } else {
+                            allFinished = false;
+                        }
+                    }
+                    
+                    // Si toutes les animations de la colonne sont terminées
+                    if (allFinished) {
+                        column.isAnimating = false;
+                    }
+                }
+            }
+        }
     }
     
     @Override
     protected void renderGame() {
-        // Dessiner le fond
-        batch.setColor(backgroundColor);
-        batch.draw(whiteTexture, 0, 0, viewport.getWorldWidth(), viewport.getWorldHeight());
-        
+        // Dessiner le fond d'écran
+        if (backgroundTexture != null) {
+            batch.setColor(1, 1, 1, 1);
+            float screenWidth = viewport.getWorldWidth();
+            float screenHeight = viewport.getWorldHeight();
+            
+            // Calculer les dimensions pour que l'image soit entièrement visible
+            float bgRatio = (float)backgroundTexture.getWidth() / backgroundTexture.getHeight();
+            float screenRatio = screenWidth / screenHeight;
+            
+            float bgWidth, bgHeight;
+            float bgX, bgY;
+            
+            if (screenRatio > bgRatio) {
+                // L'écran est plus large que l'image : adapter à la hauteur
+                bgHeight = screenHeight * 0.9f; // 90% de la hauteur pour laisser une marge
+                bgWidth = bgHeight * bgRatio;
+            } else {
+                // L'écran est plus haut que l'image : adapter à la largeur
+                bgWidth = screenWidth * 0.9f; // 90% de la largeur pour laisser une marge
+                bgHeight = bgWidth / bgRatio;
+            }
+            
+            // Centrer le fond d'écran
+            bgX = (screenWidth - bgWidth) / 2;
+            bgY = (screenHeight - bgHeight) / 2;
+            
+            // Dessiner d'abord un fond uni
+            batch.setColor(backgroundColor);
+            batch.draw(whiteTexture, 0, 0, viewport.getWorldWidth(), viewport.getWorldHeight());
+            
+            // Puis dessiner le plateau de jeu centré
+            batch.setColor(1, 1, 1, 1);
+            batch.draw(backgroundTexture, bgX, bgY, bgWidth, bgHeight);
+            
+            // Modifier la partie de rendu des cases
+            if (gridPositions != null) {
+                float scaleX = bgWidth / backgroundTexture.getWidth();
+                float scaleY = bgHeight / backgroundTexture.getHeight();
+                
+                for (AnimatedColumn column : gridPositions) {
+                    for (int i = 0; i < column.rectangles.size; i++) {
+                        Rectangle rect = column.rectangles.get(i);
+                        float boxX = bgX + rect.x * scaleX;
+                        float boxY = bgY + rect.y * scaleY;
+                        float boxWidth = rect.width * scaleX;
+                        float boxHeight = rect.height * scaleY;
+                        
+                        // Choisir la texture à afficher
+                        Texture textureToRender = boxTexture;
+                        
+                        if (i < column.animations.size) {
+                            BoxAnimation anim = column.animations.get(i);
+                            // Si l'animation a démarré, on utilise soit la frame courante soit la dernière frame
+                            if (anim.isPlaying && BoxAnimation.sharedFrames != null && BoxAnimation.sharedFrames.size > 0) {
+                                int frameIndex = Math.min(anim.currentFrame, BoxAnimation.sharedFrames.size - 1);
+                                textureToRender = BoxAnimation.sharedFrames.get(frameIndex);
+                            }
+                        }
+                        
+                        batch.draw(textureToRender, boxX, boxY, boxWidth, boxHeight);
+                    }
+                }
+            }
+        } else {
+            // Fallback : fond uni si la texture n'est pas chargée
+            batch.setColor(backgroundColor);
+            batch.draw(whiteTexture, 0, 0, viewport.getWorldWidth(), viewport.getWorldHeight());
+        }
+
         if (isTransitioning) {
             drawTransition();
         } else if (finalQuestionPhase && !gameFinished) {
@@ -1738,6 +1983,7 @@ public class MastermindGameScreen extends GameScreen {
         if (fullImageTexture != null) fullImageTexture.dispose();
         if (sendButtonTexture != null) sendButtonTexture.dispose();
         if (infoButtonTexture != null) infoButtonTexture.dispose();
+        if (backgroundTexture != null) backgroundTexture.dispose(); // Dispose the new texture
         if (correctSound != null) correctSound.dispose();
         if (incorrectSound != null) incorrectSound.dispose();
         if (winSound != null) winSound.dispose();
@@ -1757,6 +2003,17 @@ public class MastermindGameScreen extends GameScreen {
         if (visibleSquares != null) {
             visibleSquares.clear();
         }
+        if (boxTexture != null) boxTexture.dispose();
+        
+        // Nettoyer les animations
+        if (gridPositions != null) {
+            for (AnimatedColumn column : gridPositions) {
+                column.dispose();
+            }
+        }
+        
+        // Nettoyer les frames d'animation partagées
+        BoxAnimation.disposeSharedFrames();
     }
     
     /**
@@ -1797,5 +2054,46 @@ public class MastermindGameScreen extends GameScreen {
         inputText = ""; // Vider le champ de saisie
     }
     
+    private void loadGridPositions() {
+        gridPositions = new Array<>();
+        try {
+            String jsonContent = Gdx.files.internal("images/games/mmd/background/background-mask.json").readString();
+            JsonReader jsonReader = new JsonReader();
+            JsonValue root = jsonReader.parse(jsonContent);
+            
+            for (JsonValue columnValue = root.child; columnValue != null; columnValue = columnValue.next) {
+                int colIndex = columnValue.getInt("col");
+                AnimatedColumn column = new AnimatedColumn(colIndex);
+                
+                JsonValue rectanglesArray = columnValue.get("rectangles");
+                for (JsonValue rectValue = rectanglesArray.child; rectValue != null; rectValue = rectValue.next) {
+                    Rectangle rect = new Rectangle(
+                        rectValue.getInt("x"),
+                        rectValue.getInt("y"),
+                        rectValue.getInt("width"),
+                        rectValue.getInt("height")
+                    );
+                    column.rectangles.add(rect);
+                }
+                
+                gridPositions.add(column);
+            }
+            
+            // Trier les colonnes par index
+            gridPositions.sort((c1, c2) -> Integer.compare(c1.col, c2.col));
+            
+        } catch (Exception e) {
+            System.err.println("Erreur lors du chargement des positions: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    // Ajouter une méthode pour démarrer l'animation d'une colonne
+    private void startColumnAnimation(int columnIndex) {
+        if (gridPositions != null && columnIndex >= 0 && columnIndex < gridPositions.size) {
+            AnimatedColumn column = gridPositions.get(columnIndex);
+            column.startAnimations();
+        }
+    }
 
 } 

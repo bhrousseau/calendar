@@ -68,7 +68,7 @@
         "codeLength": 4,
         "numberOfSymbols": 6,
         "maxAttempts": 10,
-        "bgColor": "20,20,40",
+        "bgColor": "0,0,0",
         "textColor": "255,255,255",
         "symbolImages": "rouge01_triangle.png,vert01_carre.png,bleu01_pyramyde.png,jaune01_rond.png,orange01_octogone.png,violet01_etoile.png,bleu05_cercle.png,rouge04_triangle.png"
       },
@@ -107,7 +107,7 @@
           "maxAttempts": 10
         },
         "darkTheme": {
-          "bgColor": "10,10,20",
+          "bgColor": "0,0,0",
           "textColor": "200,200,255"
         },
         "lightTheme": {
