@@ -182,16 +182,26 @@ public class MastermindGameScreen extends GameScreen {
     private static class AnimatedColumn extends Column {
         Array<BoxAnimation> animations;
         boolean isAnimating;
+        boolean animationComplete;
+        boolean tokensFadeStarted;
+        float tokensFadeTimer;
+        static final float TOKENS_FADE_DURATION = 1.0f; // 1 seconde pour le fade-in
         
         AnimatedColumn(int col) {
             super(col);
             this.animations = new Array<>();
             this.isAnimating = false;
+            this.animationComplete = false;
+            this.tokensFadeStarted = false;
+            this.tokensFadeTimer = 0;
         }
         
         void startAnimations() {
             if (!isAnimating) {
                 isAnimating = true;
+                animationComplete = false;
+                tokensFadeStarted = false;
+                tokensFadeTimer = 0;
                 
                 // Créer une animation pour chaque case de la colonne
                 for (int i = 0; i < rectangles.size; i++) {
@@ -199,6 +209,30 @@ public class MastermindGameScreen extends GameScreen {
                     animations.add(anim);
                 }
             }
+        }
+        
+        void updateTokensFade(float delta) {
+            if (animationComplete && !tokensFadeStarted) {
+                tokensFadeStarted = true;
+                tokensFadeTimer = 0;
+            }
+            
+            if (tokensFadeStarted) {
+                tokensFadeTimer += delta;
+            }
+        }
+        
+        float getTokensAlpha() {
+            if (!animationComplete || !tokensFadeStarted) {
+                return 0f; // Invisible avant la fin de l'animation
+            }
+            
+            if (tokensFadeTimer >= TOKENS_FADE_DURATION) {
+                return 1f; // Complètement visible après 1 seconde
+            }
+            
+            // Fade progressif de 0 à 1 sur 1 seconde
+            return tokensFadeTimer / TOKENS_FADE_DURATION;
         }
         
         void dispose() {
@@ -246,6 +280,11 @@ public class MastermindGameScreen extends GameScreen {
             this.correctSymbol = correctSymbol;
         }
     }
+    
+    // Tokens
+    private Array<Texture> tokenTextures;
+    private static final int TOTAL_TOKENS = 8;
+    private static final int TOKENS_IN_COMBINATION = 6;
     
     /**
      * Constructeur avec paramètres dynamiques
@@ -410,6 +449,9 @@ public class MastermindGameScreen extends GameScreen {
         
         // Charger les frames d'animation partagées
         BoxAnimation.loadSharedFrames(DEFAULT_ANIMATION_VARIANT);
+        
+        // Charger les textures des tokens
+        loadTokenTextures();
         
         System.out.println("Constructeur MastermindGameScreen terminé avec succès");
     }
@@ -668,9 +710,10 @@ public class MastermindGameScreen extends GameScreen {
         // Générer le code secret
         generateSecretCode();
         
-        // Initialiser la première tentative 
-        for (int i = 0; i < codeLength; i++) {
-            currentGuess.add(i % numberOfSymbols); // Commence avec les premiers symboles
+        // Initialiser la première tentative avec les premiers tokens
+        currentGuess.clear();
+        for (int i = 0; i < TOKENS_IN_COMBINATION; i++) {
+            currentGuess.add(i); // Commence avec les 6 premiers tokens
         }
         
         // Charger la texture du thème
@@ -683,23 +726,23 @@ public class MastermindGameScreen extends GameScreen {
     private void generateSecretCode() {
         secretCode.clear();
         
-        // Générer un code avec des symboles uniques
-        Array<Integer> availableSymbols = new Array<>();
-        for (int i = 0; i < numberOfSymbols; i++) {
-            availableSymbols.add(i);
+        // Générer un code avec des tokens uniques
+        Array<Integer> availableTokens = new Array<>();
+        for (int i = 0; i < TOTAL_TOKENS; i++) {
+            availableTokens.add(i);
         }
         
-        // Mélanger et prendre les premiers symboles pour garantir l'unicité
-        availableSymbols.shuffle();
-        for (int i = 0; i < codeLength; i++) {
-            secretCode.add(availableSymbols.get(i));
+        // Mélanger et prendre les premiers tokens pour le code
+        availableTokens.shuffle();
+        for (int i = 0; i < TOKENS_IN_COMBINATION; i++) {
+            secretCode.add(availableTokens.get(i));
         }
         
         // Debug - afficher le code secret en mode test
         if (isTestMode) {
-            System.out.print("Code secret: ");
-            for (int symbol : secretCode) {
-                System.out.print(symbolNames[symbol] + " ");
+            System.out.print("Code secret (tokens): ");
+            for (int token : secretCode) {
+                System.out.print(token + " ");
             }
             System.out.println();
         }
@@ -875,22 +918,50 @@ public class MastermindGameScreen extends GameScreen {
 
     
     private void handleCurrentGuessClick(float x, float y) {
-        // Position de la tentative en cours
-        float guessY = 200;
-        float guessStartX = (viewport.getWorldWidth() - codeLength * (SYMBOL_SIZE + 10)) / 2;
-        
-        for (int i = 0; i < codeLength; i++) {
-            float symbolX = guessStartX + i * (SYMBOL_SIZE + 10);
-            
-            if (x >= symbolX && x <= symbolX + SYMBOL_SIZE && 
-                y >= guessY && y <= guessY + SYMBOL_SIZE) {
+        // Vérifier les clics sur la colonne active pour faire défiler les tokens
+        if (gridPositions != null && attempts.size < gridPositions.size) {
+            AnimatedColumn activeColumn = gridPositions.get(attempts.size);
+            if (activeColumn.animationComplete) {
+                float bgWidth, bgHeight, bgX, bgY;
+                float screenWidth = viewport.getWorldWidth();
+                float screenHeight = viewport.getWorldHeight();
                 
-                // Faire cycler le symbole à cette position (toutes les couleurs disponibles)
-                int currentSymbol = currentGuess.get(i);
-                int nextSymbol = (currentSymbol + 1) % numberOfSymbols;
+                // Calculer les dimensions du fond d'écran
+                float bgRatio = (float)backgroundTexture.getWidth() / backgroundTexture.getHeight();
+                float screenRatio = screenWidth / screenHeight;
                 
-                currentGuess.set(i, nextSymbol);
+                if (screenRatio > bgRatio) {
+                    bgHeight = screenHeight * 0.9f;
+                    bgWidth = bgHeight * bgRatio;
+                } else {
+                    bgWidth = screenWidth * 0.9f;
+                    bgHeight = bgWidth / bgRatio;
+                }
+                
+                bgX = (screenWidth - bgWidth) / 2;
+                bgY = (screenHeight - bgHeight) / 2;
+                
+                float scaleX = bgWidth / backgroundTexture.getWidth();
+                float scaleY = bgHeight / backgroundTexture.getHeight();
+                
+                // Vérifier les clics sur les cases de la colonne active
+                for (int i = 0; i < Math.min(activeColumn.rectangles.size, TOKENS_IN_COMBINATION); i++) {
+                    Rectangle rect = activeColumn.rectangles.get(i);
+                    float boxX = bgX + rect.x * scaleX;
+                    float boxY = bgY + rect.y * scaleY;
+                    float boxWidth = rect.width * scaleX;
+                    float boxHeight = rect.height * scaleY;
+                    
+                    if (x >= boxX && x <= boxX + boxWidth && 
+                        y >= boxY && y <= boxY + boxHeight) {
+                        
+                        // Faire défiler le token à cette position
+                        int currentToken = currentGuess.get(i);
+                        int nextToken = (currentToken + 1) % TOTAL_TOKENS;
+                        currentGuess.set(i, nextToken);
                 return;
+                    }
+                }
             }
         }
     }
@@ -899,9 +970,6 @@ public class MastermindGameScreen extends GameScreen {
     
     private void submitGuess() {
         if (gameFinished) return;
-        
-        // Démarrer l'animation de la prochaine colonne
-        startColumnAnimation(attempts.size);
         
         // Créer une copie de la tentative courante
         Array<Integer> guess = new Array<>();
@@ -916,8 +984,13 @@ public class MastermindGameScreen extends GameScreen {
         GuessResult result = calculateResult(guess);
         results.add(result);
         
+        // Démarrer l'animation de la prochaine colonne AVANT de vérifier la fin de jeu
+        if (attempts.size < gridPositions.size) {
+            startColumnAnimation(attempts.size);
+        }
+        
         // Vérifier si le jeu est gagné
-        if (result.correctPosition == codeLength) {
+        if (result.correctPosition == TOKENS_IN_COMBINATION) {
             gameWon = true;
             finalQuestionPhase = true;
             
@@ -1038,6 +1111,9 @@ public class MastermindGameScreen extends GameScreen {
         // Mettre à jour les animations
         if (gridPositions != null) {
             for (AnimatedColumn column : gridPositions) {
+                // Mettre à jour le fade des tokens
+                column.updateTokensFade(delta);
+                
                 if (column.isAnimating) {
                     boolean allFinished = true;
                     
@@ -1061,8 +1137,8 @@ public class MastermindGameScreen extends GameScreen {
                                 anim.timer = 0;
                                 
                                 // Vérifier si l'animation est terminée
-                                if (anim.currentFrame >= anim.sharedFrames.size) {
-                                    anim.currentFrame = anim.sharedFrames.size - 1; // Rester sur la dernière frame
+                                if (anim.currentFrame >= BoxAnimation.sharedFrames.size) {
+                                    anim.currentFrame = BoxAnimation.sharedFrames.size - 1; // Rester sur la dernière frame
                                 } else {
                                     allFinished = false;
                                 }
@@ -1077,6 +1153,7 @@ public class MastermindGameScreen extends GameScreen {
                     // Si toutes les animations de la colonne sont terminées
                     if (allFinished) {
                         column.isAnimating = false;
+                        column.animationComplete = true;
                     }
                 }
             }
@@ -1120,7 +1197,7 @@ public class MastermindGameScreen extends GameScreen {
             batch.setColor(1, 1, 1, 1);
             batch.draw(backgroundTexture, bgX, bgY, bgWidth, bgHeight);
             
-            // Modifier la partie de rendu des cases
+            // Dessiner les cases d'abord
             if (gridPositions != null) {
                 float scaleX = bgWidth / backgroundTexture.getWidth();
                 float scaleY = bgHeight / backgroundTexture.getHeight();
@@ -1133,19 +1210,59 @@ public class MastermindGameScreen extends GameScreen {
                         float boxWidth = rect.width * scaleX;
                         float boxHeight = rect.height * scaleY;
                         
-                        // Choisir la texture à afficher
+                        // Choisir la texture à afficher pour la case
                         Texture textureToRender = boxTexture;
                         
                         if (i < column.animations.size) {
                             BoxAnimation anim = column.animations.get(i);
-                            // Si l'animation a démarré, on utilise soit la frame courante soit la dernière frame
                             if (anim.isPlaying && BoxAnimation.sharedFrames != null && BoxAnimation.sharedFrames.size > 0) {
                                 int frameIndex = Math.min(anim.currentFrame, BoxAnimation.sharedFrames.size - 1);
                                 textureToRender = BoxAnimation.sharedFrames.get(frameIndex);
                             }
                         }
                         
+                        // Dessiner la case
+                        batch.setColor(1, 1, 1, 1);
                         batch.draw(textureToRender, boxX, boxY, boxWidth, boxHeight);
+                    }
+                }
+                
+                // Dessiner les tokens par-dessus les cases
+                for (AnimatedColumn column : gridPositions) {
+                    float tokensAlpha = 0f;
+                    Array<Integer> tokensToShow = null;
+                    
+                    if (column.col < attempts.size) {
+                        // Colonne d'une tentative précédente : afficher les tokens de cette tentative
+                        tokensAlpha = 1f; // Complètement visible
+                        tokensToShow = attempts.get(column.col);
+                    } else if (column.col == attempts.size) {
+                        // Colonne active : afficher les tokens actuels avec fade-in
+                        tokensAlpha = column.getTokensAlpha();
+                        tokensToShow = currentGuess;
+                    }
+                    
+                    // Afficher les tokens seulement s'ils ont une transparence > 0 et qu'on a des tokens à afficher
+                    if (tokensAlpha > 0 && tokensToShow != null) {
+                        for (int i = 0; i < Math.min(column.rectangles.size, TOKENS_IN_COMBINATION); i++) {
+                            Rectangle rect = column.rectangles.get(i);
+                            float boxX = bgX + rect.x * scaleX;
+                            float boxY = bgY + rect.y * scaleY;
+                            float boxWidth = rect.width * scaleX;
+                            float boxHeight = rect.height * scaleY;
+                            
+                            // Dessiner le token correspondant
+                            if (i < tokensToShow.size && tokenTextures != null && tokensToShow.get(i) < tokenTextures.size) {
+                                Texture tokenTexture = tokenTextures.get(tokensToShow.get(i));
+                                
+                                if (tokenTexture != null) {
+                                    // Afficher le token avec la transparence appropriée
+                                    batch.setColor(1, 1, 1, tokensAlpha);
+                                    batch.draw(tokenTexture, boxX, boxY, boxWidth, boxHeight);
+                                    batch.setColor(1, 1, 1, 1); // Remettre l'alpha à 1
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -1191,14 +1308,8 @@ public class MastermindGameScreen extends GameScreen {
             (screenWidth - layout.width) / 2,
             screenHeight - 80);
         
-        // Dessiner les tentatives précédentes
-        drawPreviousAttempts();
-        
-        // Dessiner la tentative en cours
-        drawCurrentGuess();
-        
-        // Dessiner les symboles de sélection
-        drawSymbolPalette();
+        // Dessiner les résultats des tentatives précédentes
+        drawAttemptResults();
         
         // Dessiner les boutons
         drawButtons();
@@ -1212,88 +1323,78 @@ public class MastermindGameScreen extends GameScreen {
         }
     }
     
-    private void drawPreviousAttempts() {
-        float startY = viewport.getWorldHeight() - 150;
+    private void drawAttemptResults() {
+        if (gridPositions == null || results.size == 0) return;
         
-        for (int i = 0; i < attempts.size; i++) {
-            float y = startY - i * GUESS_SPACING;
-            Array<Integer> attempt = attempts.get(i);
-            GuessResult result = results.get(i);
-            
-            drawGuess(attempt, y, false);
-            drawResultNextToGuess(result, y);
-        }
-    }
-    
-    private void drawCurrentGuess() {
-        if (!gameFinished) {
-            float y = 200;
-            drawGuess(currentGuess, y, true);
-        }
-    }
-    
-    private void drawGuess(Array<Integer> guess, float y, boolean isCurrent) {
-        float startX = (viewport.getWorldWidth() - codeLength * (SYMBOL_SIZE + 10)) / 2;
+        float bgWidth, bgHeight, bgX, bgY;
+        float screenWidth = viewport.getWorldWidth();
+        float screenHeight = viewport.getWorldHeight();
         
-        for (int i = 0; i < codeLength; i++) {
-            float x = startX + i * (SYMBOL_SIZE + 10);
-            int symbolIndex = guess.get(i);
-            
-            // Dessiner l'image du symbole
-            if (isCurrent) {
-                batch.setColor(1f, 1f, 1f, 0.8f); // Légèrement transparent pour la tentative courante
-            } else {
-                batch.setColor(1f, 1f, 1f, 1f); // Couleur normale
+        // Calculer les dimensions du fond d'écran
+        float bgRatio = (float)backgroundTexture.getWidth() / backgroundTexture.getHeight();
+        float screenRatio = screenWidth / screenHeight;
+        
+        if (screenRatio > bgRatio) {
+            bgHeight = screenHeight * 0.9f;
+            bgWidth = bgHeight * bgRatio;
+        } else {
+            bgWidth = screenWidth * 0.9f;
+            bgHeight = bgWidth / bgRatio;
+        }
+        
+        bgX = (screenWidth - bgWidth) / 2;
+        bgY = (screenHeight - bgHeight) / 2;
+        
+        float scaleX = bgWidth / backgroundTexture.getWidth();
+        float scaleY = bgHeight / backgroundTexture.getHeight();
+        
+        // Afficher les résultats pour chaque tentative terminée
+        for (int attemptIndex = 0; attemptIndex < results.size; attemptIndex++) {
+            if (attemptIndex < gridPositions.size) {
+                AnimatedColumn column = gridPositions.get(attemptIndex);
+                GuessResult result = results.get(attemptIndex);
+                
+                // Afficher le résultat à côté de la première case de la colonne
+                if (column.rectangles.size > 0) {
+                    Rectangle firstRect = column.rectangles.get(0);
+                    float boxX = bgX + firstRect.x * scaleX;
+                    float boxY = bgY + firstRect.y * scaleY;
+                    float boxHeight = firstRect.height * scaleY;
+                    
+                    // Position du feedback à droite de la colonne
+                    float feedbackX = boxX + (firstRect.width * scaleX) + 20;
+                    float feedbackY = boxY + boxHeight / 2;
+                    
+                    drawResultFeedback(result, feedbackX, feedbackY);
+                }
             }
-            
-            if (symbolTextures != null && symbolIndex < symbolTextures.length && symbolTextures[symbolIndex] != null) {
-                batch.draw(symbolTextures[symbolIndex], x, y, SYMBOL_SIZE, SYMBOL_SIZE);
-            } else {
-                // Fallback: dessiner un carré rouge en cas d'erreur
-                batch.setColor(1f, 0f, 0f, 1f);
-                batch.draw(whiteTexture, x, y, SYMBOL_SIZE, SYMBOL_SIZE);
-            }
         }
     }
     
-
-    
-
-    
-
-    
-    private void drawResultNextToGuess(GuessResult result, float y) {
-        // Calculer la position à droite du code
-        float guessStartX = (viewport.getWorldWidth() - codeLength * (SYMBOL_SIZE + 10)) / 2;
-        float guessEndX = guessStartX + codeLength * (SYMBOL_SIZE + 10);
-        float resultX = guessEndX + 20; // 20 pixels d'espacement
-        
-        // Dessiner les indicateurs de feedback sous forme de petits ronds
+    private void drawResultFeedback(GuessResult result, float x, float y) {
         float feedbackRadius = 6f;
         float feedbackSpacing = 15f;
         
         // Dessiner les ronds pour les positions exactes (vert foncé)
         for (int i = 0; i < result.correctPosition; i++) {
-            float feedbackX = resultX + i * feedbackSpacing;
-            float feedbackY = y + SYMBOL_SIZE/2;
-            drawSmallCircle(feedbackX, feedbackY, feedbackRadius, new Color(0.2f, 0.7f, 0.2f, 1)); // Vert foncé
+            float feedbackX = x + i * feedbackSpacing;
+            drawSmallCircle(feedbackX, y, feedbackRadius, new Color(0.2f, 0.7f, 0.2f, 1));
         }
         
         // Dessiner les cercles pour les couleurs correctes mais mal placées (gris clair)
         for (int i = 0; i < result.correctSymbol; i++) {
-            float feedbackX = resultX + (result.correctPosition + i) * feedbackSpacing;
-            float feedbackY = y + SYMBOL_SIZE/2;
-            drawSmallCircle(feedbackX, feedbackY, feedbackRadius, new Color(0.5f, 0.5f, 0.5f, 1)); // gris clair
+            float feedbackX = x + (result.correctPosition + i) * feedbackSpacing;
+            drawSmallCircle(feedbackX, y, feedbackRadius, new Color(0.5f, 0.5f, 0.5f, 1));
         }
     }
     
     /**
-     * Dessine un petit cercle pour le feedback (méthode adaptée de QuestionAnswer)
+     * Dessine un petit cercle pour le feedback
      */
     private void drawSmallCircle(float centerX, float centerY, float radius, Color color) {
         batch.setColor(color);
         
-        // Dessiner le cercle rempli ligne par ligne (plus efficace et plus beau)
+        // Dessiner le cercle rempli ligne par ligne
         for (float py = centerY - radius; py <= centerY + radius; py += 1f) {
             float dy = py - centerY;
             float distanceFromCenter = Math.abs(dy);
@@ -1318,53 +1419,6 @@ public class MastermindGameScreen extends GameScreen {
             float borderX = centerX + (float) Math.cos(radians) * (radius - 1);
             float borderY = centerY + (float) Math.sin(radians) * (radius - 1);
             batch.draw(whiteTexture, borderX - 0.5f, borderY - 0.5f, 1f, 1f);
-        }
-    }
-    
-
-    
-    /**
-     * Dessine un petit cercle vide (contour seulement) pour le feedback
-     */
-    private void drawSmallCircleOutline(float centerX, float centerY, float radius, Color color) {
-        batch.setColor(color);
-        int segments = 16;
-        float angleStep = 360f / segments;
-        
-        for (int i = 0; i < segments; i++) {
-            float angle = i * angleStep;
-            float x = centerX + (float) Math.cos(Math.toRadians(angle)) * radius;
-            float y = centerY + (float) Math.sin(Math.toRadians(angle)) * radius;
-            
-            // Dessiner des points plus épais pour le contour
-            batch.draw(whiteTexture, x - 1.5f, y - 1.5f, 3f, 3f);
-        }
-    }
-    
-    private void drawSymbolPalette() {
-        float symbolY = 120;
-        float symbolStartX = (viewport.getWorldWidth() - numberOfSymbols * (SYMBOL_SIZE + 10)) / 2;
-        
-        // Titre de la palette
-        font.setColor(textColor);
-        String paletteTitle = "Cliquez pour sélectionner:";
-        layout.setText(font, paletteTitle);
-        font.draw(batch, layout, 
-            (viewport.getWorldWidth() - layout.width) / 2,
-            symbolY + SYMBOL_SIZE + 20);
-        
-        for (int i = 0; i < numberOfSymbols; i++) {
-            float symbolX = symbolStartX + i * (SYMBOL_SIZE + 10);
-            
-            // Dessiner l'image du symbole
-            batch.setColor(1f, 1f, 1f, 1f);
-            if (symbolTextures != null && i < symbolTextures.length && symbolTextures[i] != null) {
-                batch.draw(symbolTextures[i], symbolX, symbolY, SYMBOL_SIZE, SYMBOL_SIZE);
-            } else {
-                // Fallback: dessiner un carré rouge en cas d'erreur
-                batch.setColor(1f, 0f, 0f, 1f);
-                batch.draw(whiteTexture, symbolX, symbolY, SYMBOL_SIZE, SYMBOL_SIZE);
-            }
         }
     }
     
@@ -2014,6 +2068,14 @@ public class MastermindGameScreen extends GameScreen {
         
         // Nettoyer les frames d'animation partagées
         BoxAnimation.disposeSharedFrames();
+
+        // Nettoyer les textures des tokens
+        if (tokenTextures != null) {
+            for (Texture texture : tokenTextures) {
+                texture.dispose();
+            }
+            tokenTextures.clear();
+        }
     }
     
     /**
@@ -2093,6 +2155,20 @@ public class MastermindGameScreen extends GameScreen {
         if (gridPositions != null && columnIndex >= 0 && columnIndex < gridPositions.size) {
             AnimatedColumn column = gridPositions.get(columnIndex);
             column.startAnimations();
+        }
+    }
+
+    private void loadTokenTextures() {
+        tokenTextures = new Array<>();
+        for (int i = 1; i <= TOTAL_TOKENS; i++) {
+            try {
+                String tokenPath = String.format("images/games/mmd/token/%02d.png", i);
+                Texture tokenTexture = new Texture(Gdx.files.internal(tokenPath));
+                tokenTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+                tokenTextures.add(tokenTexture);
+            } catch (Exception e) {
+                System.err.println("Erreur lors du chargement du token " + i + ": " + e.getMessage());
+            }
         }
     }
 
