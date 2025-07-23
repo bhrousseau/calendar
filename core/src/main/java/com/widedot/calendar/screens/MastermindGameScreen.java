@@ -811,12 +811,6 @@ public class MastermindGameScreen extends GameScreen {
             }
             
         } else {
-            // Continuer le jeu - préparer la prochaine tentative
-            // Réinitialiser la tentative courante
-            for (int i = 0; i < codeLength; i++) {
-                currentGuess.set(i, i % numberOfSymbols);
-            }
-            
             if (correctSound != null) {
                 correctSound.play();
             }
@@ -1040,11 +1034,11 @@ public class MastermindGameScreen extends GameScreen {
             drawSmallCircle(feedbackX, feedbackY, feedbackRadius, new Color(0.2f, 0.7f, 0.2f, 1)); // Vert foncé
         }
         
-        // Dessiner les cercles pour les couleurs correctes mais mal placées (vert clair)
+        // Dessiner les cercles pour les couleurs correctes mais mal placées (gris clair)
         for (int i = 0; i < result.correctSymbol; i++) {
             float feedbackX = resultX + (result.correctPosition + i) * feedbackSpacing;
             float feedbackY = y + SYMBOL_SIZE/2;
-            drawSmallCircleOutline(feedbackX, feedbackY, feedbackRadius, new Color(0.5f, 0.9f, 0.5f, 1)); // Vert clair
+            drawSmallCircle(feedbackX, feedbackY, feedbackRadius, new Color(0.5f, 0.5f, 0.5f, 1)); // gris clair
         }
     }
     
