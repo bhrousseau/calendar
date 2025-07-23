@@ -298,7 +298,6 @@ public class MastermindGameScreen extends GameScreen {
         // Initialiser les paramètres avec des valeurs par défaut
         this.codeLength = 4;
         this.numberOfSymbols = 6;
-        this.maxAttempts = 10;
         this.backgroundColor = new Color(0.1f, 0.1f, 0.2f, 1);
         this.textColor = new Color(1, 1, 1, 1);
         this.correctColor = new Color(0.7f, 0.9f, 0.7f, 1);
@@ -316,10 +315,6 @@ public class MastermindGameScreen extends GameScreen {
             if (parameters.containsKey("numberOfSymbols")) {
                 this.numberOfSymbols = ((Number) parameters.get("numberOfSymbols")).intValue();
                 this.numberOfSymbols = Math.max(4, Math.min(8, this.numberOfSymbols)); // Limiter entre 4 et 8
-            }
-            if (parameters.containsKey("maxAttempts")) {
-                this.maxAttempts = ((Number) parameters.get("maxAttempts")).intValue();
-                this.maxAttempts = Math.max(8, Math.min(15, this.maxAttempts)); // Limiter entre 8 et 15
             }
             if (parameters.containsKey("bgColor")) {
                 String bgColor = (String) parameters.get("bgColor");
@@ -2122,6 +2117,14 @@ public class MastermindGameScreen extends GameScreen {
             String jsonContent = Gdx.files.internal("images/games/mmd/background/background-mask.json").readString();
             JsonReader jsonReader = new JsonReader();
             JsonValue root = jsonReader.parse(jsonContent);
+            
+            // Compter le nombre de colonnes pour définir maxAttempts
+            int columnCount = 0;
+            for (JsonValue columnValue = root.child; columnValue != null; columnValue = columnValue.next) {
+                columnCount++;
+            }
+            // Mettre à jour maxAttempts avec le nombre de colonnes
+            this.maxAttempts = columnCount;
             
             for (JsonValue columnValue = root.child; columnValue != null; columnValue = columnValue.next) {
                 int colIndex = columnValue.getInt("col");
