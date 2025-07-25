@@ -4,19 +4,13 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-        
         {
-            "type": "java",
-            "name": "Current File",
+            "type": "node",
+            "name": "Run Calendar Game",
             "request": "launch",
-            "mainClass": "${file}"
-        },
-        {
-            "type": "java",
-            "name": "Lwjgl3Launcher",
-            "request": "launch",
-            "mainClass": "com.widedot.calendar.lwjgl3.Lwjgl3Launcher",
-            "projectName": "lwjgl3"
+            "runtimeExecutable": "cmd.exe",
+            "runtimeArgs": ["/c", ".\\gradlew", "lwjgl3:run"],
+            "cwd": "${workspaceFolder}"
         }
     ]
 }

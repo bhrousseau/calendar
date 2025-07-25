@@ -165,33 +165,22 @@
       "presets": ["darkTheme"]
     },
     {
-      "reference": "MMD_classic",
-      "gameTemplate": "MMD",
-      "theme": "composition_1916"
-    },
-    {
-      "reference": "MMD_beginner",
+      "reference": "MMD_mona_lisa",
       "gameTemplate": "MMD",
       "theme": "mona_lisa",
-      "presets": ["beginner", "formes_mixtes"]
+      "presets": ["easy"]
     },
     {
-      "reference": "MMD_easy",
+      "reference": "MMD_composition_1916",
       "gameTemplate": "MMD",
-      "theme": "starry_night",
-      "presets": ["easy", "formes_mixtes"]
+      "theme": "composition_1916",
+      "presets": ["medium"]
     },
     {
-      "reference": "MMD_hard",
+      "reference": "MMD_guernica",
       "gameTemplate": "MMD",
       "theme": "guernica",
-      "presets": ["hard", "darkTheme"]
-    },
-    {
-      "reference": "MMD_expert",
-      "gameTemplate": "MMD",
-      "theme": "mona_lisa",
-      "presets": ["expert"]
+      "presets": ["hard"]
     }
   ]
 }

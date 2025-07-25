@@ -99,13 +99,6 @@ public class MastermindGameScreen extends GameScreen {
     private static final float FADE_TO_BLACK_DURATION = 1.0f; // 1 seconde pour fondu vers noir
     private static final float FADE_TO_IMAGE_DURATION = 2.0f; // 2 secondes pour fondu vers image
     
-    // Constants
-    private static final String CORRECT_SOUND_PATH = "audio/win.mp3";
-    private static final String INCORRECT_SOUND_PATH = "audio/sliding.mp3";
-    private static final String WIN_SOUND_PATH = "audio/win.mp3";
-    private static final float SYMBOL_SIZE = 40f;
-    private static final float CURSOR_BLINK_SPEED = 1.0f;
-    
     // Nouvelles variables pour les cases
     private Texture boxTexture;
     private Array<AnimatedColumn> gridPositions;
@@ -283,8 +276,28 @@ public class MastermindGameScreen extends GameScreen {
     
     // Tokens
     private Array<Texture> tokenTextures;
-    private static final int TOTAL_TOKENS = 8;
-    private static final int TOKENS_IN_COMBINATION = 6;
+    private static final int TOKENS_IN_COMBINATION = 4; // Nombre fixe de jetons dans la combinaison
+    private static final int MAX_TOTAL_TOKENS = 6; // Maximum de jetons disponibles (pour le niveau hard)
+    
+    // Nouvelles variables pour la transition vers la question finale
+    private boolean isTransitioningToQuestion;
+    private float questionTransitionTimer;
+    private static final float WAIT_BEFORE_TRANSITION = 1.0f; // Attente d'une seconde avant la transition
+    private static final float FADE_TO_BG_DURATION = 1.0f;
+    private static final float FADE_FROM_BG_DURATION = 1.0f;
+    private static final float QUESTION_TRANSITION_DURATION = WAIT_BEFORE_TRANSITION + FADE_TO_BG_DURATION + FADE_FROM_BG_DURATION;
+    
+    // Constants
+    private static final String CORRECT_SOUND_PATH = "audio/win.mp3";
+    private static final String INCORRECT_SOUND_PATH = "audio/sliding.mp3";
+    private static final String WIN_SOUND_PATH = "audio/win.mp3";
+    private static final float SYMBOL_SIZE = 40f;
+    private static final float CURSOR_BLINK_SPEED = 1.0f;
+    
+    private boolean gameElementsDisabled = false;
+    
+    // Couleur de fond pour la phase de question finale
+    private static final Color QUESTION_PHASE_BG_COLOR = new Color(0.15f, 0.15f, 0.2f, 1);
     
     /**
      * Constructeur avec paramètres dynamiques
@@ -296,8 +309,8 @@ public class MastermindGameScreen extends GameScreen {
         this.theme = theme;
         
         // Initialiser les paramètres avec des valeurs par défaut
-        this.codeLength = 4;
-        this.numberOfSymbols = 6;
+        this.codeLength = TOKENS_IN_COMBINATION; // Toujours 4 jetons à deviner
+        this.numberOfSymbols = 6; // Valeur par défaut si aucun paramètre n'est fourni
         this.backgroundColor = new Color(0.1f, 0.1f, 0.2f, 1);
         this.textColor = new Color(1, 1, 1, 1);
         this.correctColor = new Color(0.7f, 0.9f, 0.7f, 1);
@@ -308,13 +321,11 @@ public class MastermindGameScreen extends GameScreen {
         
         // Appliquer les paramètres spécifiques s'ils existent
         if (parameters != null) {
-            if (parameters.containsKey("codeLength")) {
-                this.codeLength = ((Number) parameters.get("codeLength")).intValue();
-                this.codeLength = Math.max(4, Math.min(6, this.codeLength)); // Limiter entre 4 et 6
-            }
             if (parameters.containsKey("numberOfSymbols")) {
                 this.numberOfSymbols = ((Number) parameters.get("numberOfSymbols")).intValue();
-                this.numberOfSymbols = Math.max(4, Math.min(8, this.numberOfSymbols)); // Limiter entre 4 et 8
+                // S'assurer que le nombre de symboles est entre 4 et 6
+                this.numberOfSymbols = Math.max(4, Math.min(6, this.numberOfSymbols));
+                System.out.println("Nombre de symboles défini à : " + this.numberOfSymbols);
             }
             if (parameters.containsKey("bgColor")) {
                 String bgColor = (String) parameters.get("bgColor");
@@ -723,7 +734,7 @@ public class MastermindGameScreen extends GameScreen {
         
         // Générer un code avec des tokens uniques
         Array<Integer> availableTokens = new Array<>();
-        for (int i = 0; i < TOTAL_TOKENS; i++) {
+        for (int i = 0; i < numberOfSymbols; i++) { // Utiliser numberOfSymbols au lieu de MAX_TOTAL_TOKENS
             availableTokens.add(i);
         }
         
@@ -740,6 +751,7 @@ public class MastermindGameScreen extends GameScreen {
                 System.out.print(token + " ");
             }
             System.out.println();
+            System.out.println("Nombre total de symboles disponibles: " + numberOfSymbols);
         }
     }
     
@@ -952,9 +964,9 @@ public class MastermindGameScreen extends GameScreen {
                         
                         // Faire défiler le token à cette position
                         int currentToken = currentGuess.get(i);
-                        int nextToken = (currentToken + 1) % TOTAL_TOKENS;
+                        int nextToken = (currentToken + 1) % numberOfSymbols; // Utiliser numberOfSymbols au lieu de MAX_TOTAL_TOKENS
                         currentGuess.set(i, nextToken);
-                return;
+                        return;
                     }
                 }
             }
@@ -979,15 +991,13 @@ public class MastermindGameScreen extends GameScreen {
         GuessResult result = calculateResult(guess);
         results.add(result);
         
-        // Démarrer l'animation de la prochaine colonne AVANT de vérifier la fin de jeu
-        if (attempts.size < gridPositions.size) {
-            startColumnAnimation(attempts.size);
-        }
-        
         // Vérifier si le jeu est gagné
         if (result.correctPosition == TOKENS_IN_COMBINATION) {
             gameWon = true;
-            finalQuestionPhase = true;
+            
+            // Démarrer la transition vers la question finale
+            isTransitioningToQuestion = true;
+            questionTransitionTimer = 0;
             
             // Charger la question finale spécifique au thème
             loadFinalQuestion();
@@ -999,9 +1009,6 @@ public class MastermindGameScreen extends GameScreen {
                 winSound.play();
             }
             
-            // Passer à la phase finale avec l'image
-            startFinalPhase();
-            
         } else if (attempts.size >= maxAttempts) {
             // Jeu perdu
             gameFinished = true;
@@ -1011,6 +1018,11 @@ public class MastermindGameScreen extends GameScreen {
             }
             
         } else {
+            // Démarrer l'animation de la prochaine colonne seulement si le jeu n'est pas gagné
+            if (attempts.size < gridPositions.size) {
+                startColumnAnimation(attempts.size);
+            }
+            
             if (correctSound != null) {
                 correctSound.play();
             }
@@ -1102,6 +1114,23 @@ public class MastermindGameScreen extends GameScreen {
                 transitionTimer = 0;
             }
         }
+
+        // Mettre à jour la transition vers la question finale
+        if (isTransitioningToQuestion) {
+            questionTransitionTimer += delta;
+            
+            // Vérifier si on doit désactiver les éléments du jeu
+            if (!gameElementsDisabled && questionTransitionTimer > WAIT_BEFORE_TRANSITION + FADE_TO_BG_DURATION) {
+                disableGameElements();
+            }
+            
+            if (questionTransitionTimer >= QUESTION_TRANSITION_DURATION) {
+                // Transition terminée, passer à la phase de question
+                isTransitioningToQuestion = false;
+                finalQuestionPhase = true;
+                questionTransitionTimer = 0;
+            }
+        }
         
         // Mettre à jour les animations
         if (gridPositions != null) {
@@ -1157,123 +1186,65 @@ public class MastermindGameScreen extends GameScreen {
     
     @Override
     protected void renderGame() {
-        // Dessiner le fond d'écran
-        if (backgroundTexture != null) {
-            batch.setColor(1, 1, 1, 1);
-            float screenWidth = viewport.getWorldWidth();
-            float screenHeight = viewport.getWorldHeight();
-            
-            // Calculer les dimensions pour que l'image soit entièrement visible
-            float bgRatio = (float)backgroundTexture.getWidth() / backgroundTexture.getHeight();
-            float screenRatio = screenWidth / screenHeight;
-            
-            float bgWidth, bgHeight;
-            float bgX, bgY;
-            
-            if (screenRatio > bgRatio) {
-                // L'écran est plus large que l'image : adapter à la hauteur
-                bgHeight = screenHeight * 0.9f; // 90% de la hauteur pour laisser une marge
-                bgWidth = bgHeight * bgRatio;
+        // Ne dessiner le fond d'écran et les éléments du jeu que s'ils ne sont pas désactivés
+        if (!gameElementsDisabled) {
+            // Dessiner le fond d'écran
+            if (backgroundTexture != null) {
+                batch.setColor(1, 1, 1, 1);
+                float screenWidth = viewport.getWorldWidth();
+                float screenHeight = viewport.getWorldHeight();
+                
+                // Calculer les dimensions pour que l'image soit entièrement visible
+                float bgRatio = (float)backgroundTexture.getWidth() / backgroundTexture.getHeight();
+                float screenRatio = screenWidth / screenHeight;
+                
+                float bgWidth, bgHeight;
+                float bgX, bgY;
+                
+                if (screenRatio > bgRatio) {
+                    bgHeight = screenHeight * 0.9f;
+                    bgWidth = bgHeight * bgRatio;
+                } else {
+                    bgWidth = screenWidth * 0.9f;
+                    bgHeight = bgWidth / bgRatio;
+                }
+                
+                bgX = (screenWidth - bgWidth) / 2;
+                bgY = (screenHeight - bgHeight) / 2;
+                
+                // Dessiner d'abord un fond uni
+                batch.setColor(backgroundColor);
+                batch.draw(whiteTexture, 0, 0, viewport.getWorldWidth(), viewport.getWorldHeight());
+                
+                // Puis dessiner le plateau de jeu centré
+                batch.setColor(1, 1, 1, 1);
+                batch.draw(backgroundTexture, bgX, bgY, bgWidth, bgHeight);
+                
+                // Dessiner les cases et les jetons seulement si on n'est pas dans la phase finale
+                if (gridPositions != null) {
+                    float scaleX = bgWidth / backgroundTexture.getWidth();
+                    float scaleY = bgHeight / backgroundTexture.getHeight();
+                    
+                    // Dessiner les cases et les jetons
+                    drawGridAndTokens(bgX, bgY, scaleX, scaleY);
+                }
             } else {
-                // L'écran est plus haut que l'image : adapter à la largeur
-                bgWidth = screenWidth * 0.9f; // 90% de la largeur pour laisser une marge
-                bgHeight = bgWidth / bgRatio;
+                // Fallback : fond uni si la texture n'est pas chargée
+                batch.setColor(backgroundColor);
+                batch.draw(whiteTexture, 0, 0, viewport.getWorldWidth(), viewport.getWorldHeight());
             }
-            
-            // Centrer le fond d'écran
-            bgX = (screenWidth - bgWidth) / 2;
-            bgY = (screenHeight - bgHeight) / 2;
-            
-            // Dessiner d'abord un fond uni
-            batch.setColor(backgroundColor);
-            batch.draw(whiteTexture, 0, 0, viewport.getWorldWidth(), viewport.getWorldHeight());
-            
-            // Puis dessiner le plateau de jeu centré
-            batch.setColor(1, 1, 1, 1);
-            batch.draw(backgroundTexture, bgX, bgY, bgWidth, bgHeight);
-            
-            // Dessiner les cases d'abord
-            if (gridPositions != null) {
-                float scaleX = bgWidth / backgroundTexture.getWidth();
-                float scaleY = bgHeight / backgroundTexture.getHeight();
-                
-                for (AnimatedColumn column : gridPositions) {
-                    for (int i = 0; i < column.rectangles.size; i++) {
-                        Rectangle rect = column.rectangles.get(i);
-                        float boxX = bgX + rect.x * scaleX;
-                        float boxY = bgY + rect.y * scaleY;
-                        float boxWidth = rect.width * scaleX;
-                        float boxHeight = rect.height * scaleY;
-                        
-                        // Choisir la texture à afficher pour la case
-                        Texture textureToRender = boxTexture;
-                        
-                        if (i < column.animations.size) {
-                            BoxAnimation anim = column.animations.get(i);
-                            if (anim.isPlaying && BoxAnimation.sharedFrames != null && BoxAnimation.sharedFrames.size > 0) {
-                                int frameIndex = Math.min(anim.currentFrame, BoxAnimation.sharedFrames.size - 1);
-                                textureToRender = BoxAnimation.sharedFrames.get(frameIndex);
-                            }
-                        }
-                        
-                        // Dessiner la case
-                        batch.setColor(1, 1, 1, 1);
-                        batch.draw(textureToRender, boxX, boxY, boxWidth, boxHeight);
-                    }
-                }
-                
-                // Dessiner les tokens par-dessus les cases
-                for (AnimatedColumn column : gridPositions) {
-                    float tokensAlpha = 0f;
-                    Array<Integer> tokensToShow = null;
-                    
-                    if (column.col < attempts.size) {
-                        // Colonne d'une tentative précédente : afficher les tokens de cette tentative
-                        tokensAlpha = 1f; // Complètement visible
-                        tokensToShow = attempts.get(column.col);
-                    } else if (column.col == attempts.size) {
-                        // Colonne active : afficher les tokens actuels avec fade-in
-                        tokensAlpha = column.getTokensAlpha();
-                        tokensToShow = currentGuess;
-                    }
-                    
-                    // Afficher les tokens seulement s'ils ont une transparence > 0 et qu'on a des tokens à afficher
-                    if (tokensAlpha > 0 && tokensToShow != null) {
-                        for (int i = 0; i < Math.min(column.rectangles.size, TOKENS_IN_COMBINATION); i++) {
-                            Rectangle rect = column.rectangles.get(i);
-                            float boxX = bgX + rect.x * scaleX;
-                            float boxY = bgY + rect.y * scaleY;
-                            float boxWidth = rect.width * scaleX;
-                            float boxHeight = rect.height * scaleY;
-                            
-                            // Dessiner le token correspondant
-                            if (i < tokensToShow.size && tokenTextures != null && tokensToShow.get(i) < tokenTextures.size) {
-                                Texture tokenTexture = tokenTextures.get(tokensToShow.get(i));
-                                
-                                if (tokenTexture != null) {
-                                    // Afficher le token avec la transparence appropriée
-                                    batch.setColor(1, 1, 1, tokensAlpha);
-                                    batch.draw(tokenTexture, boxX, boxY, boxWidth, boxHeight);
-                                    batch.setColor(1, 1, 1, 1); // Remettre l'alpha à 1
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        } else {
-            // Fallback : fond uni si la texture n'est pas chargée
-            batch.setColor(backgroundColor);
-            batch.draw(whiteTexture, 0, 0, viewport.getWorldWidth(), viewport.getWorldHeight());
         }
 
-        if (isTransitioning) {
+        // Toujours dessiner l'interface appropriée
+        if (isTransitioningToQuestion) {
+            drawTransitionToQuestion();
+        } else if (isTransitioning) {
             drawTransition();
         } else if (finalQuestionPhase && !gameFinished) {
             drawFinalQuestionPhase();
         } else if (finalPhase && showWinImage) {
             drawFinalPhase();
-        } else {
+        } else if (!gameElementsDisabled) {
             drawGameInterface();
         }
         
@@ -2163,16 +2134,166 @@ public class MastermindGameScreen extends GameScreen {
 
     private void loadTokenTextures() {
         tokenTextures = new Array<>();
-        for (int i = 1; i <= TOTAL_TOKENS; i++) {
+        for (int i = 1; i <= MAX_TOTAL_TOKENS; i++) {
             try {
                 String tokenPath = String.format("images/games/mmd/token/%02d.png", i);
-                Texture tokenTexture = new Texture(Gdx.files.internal(tokenPath));
-                tokenTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
-                tokenTextures.add(tokenTexture);
+                if (Gdx.files.internal(tokenPath).exists()) {
+                    Texture tokenTexture = new Texture(Gdx.files.internal(tokenPath));
+                    tokenTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+                    tokenTextures.add(tokenTexture);
+                } else {
+                    System.err.println("Token texture non trouvée: " + tokenPath);
+                    // Créer une texture de remplacement
+                    Pixmap pixmap = new Pixmap(64, 64, Pixmap.Format.RGBA8888);
+                    pixmap.setColor(1, 0, 0, 1);
+                    pixmap.fill();
+                    Texture fallbackTexture = new Texture(pixmap);
+                    tokenTextures.add(fallbackTexture);
+                    pixmap.dispose();
+                }
             } catch (Exception e) {
                 System.err.println("Erreur lors du chargement du token " + i + ": " + e.getMessage());
+                // Créer une texture de remplacement en cas d'erreur
+                Pixmap pixmap = new Pixmap(64, 64, Pixmap.Format.RGBA8888);
+                pixmap.setColor(1, 0, 0, 1);
+                pixmap.fill();
+                Texture fallbackTexture = new Texture(pixmap);
+                tokenTextures.add(fallbackTexture);
+                pixmap.dispose();
             }
         }
     }
 
+    private void drawTransitionToQuestion() {
+        float screenWidth = viewport.getWorldWidth();
+        float screenHeight = viewport.getWorldHeight();
+
+        if (questionTransitionTimer <= WAIT_BEFORE_TRANSITION) {
+            // Phase 1: Attente, afficher simplement l'interface du jeu
+            batch.setColor(1, 1, 1, 1);
+            drawGameInterface();
+        } else if (questionTransitionTimer <= WAIT_BEFORE_TRANSITION + FADE_TO_BG_DURATION) {
+            // Phase 2: Fondu du jeu vers la couleur de fond de la question
+            float fadeProgress = (questionTransitionTimer - WAIT_BEFORE_TRANSITION) / FADE_TO_BG_DURATION;
+            
+            // Dessiner l'interface du jeu qui disparaît seulement si les éléments ne sont pas désactivés
+            if (!gameElementsDisabled) {
+                batch.setColor(1, 1, 1, 1 - fadeProgress);
+                drawGameInterface();
+            }
+            
+            // Superposer la couleur de fond qui apparaît
+            batch.setColor(
+                QUESTION_PHASE_BG_COLOR.r,
+                QUESTION_PHASE_BG_COLOR.g,
+                QUESTION_PHASE_BG_COLOR.b,
+                fadeProgress
+            );
+            batch.draw(whiteTexture, 0, 0, screenWidth, screenHeight);
+            
+        } else {
+            // Phase 3: Fondu de la couleur de fond vers l'interface de question
+            float fadeProgress = (questionTransitionTimer - (WAIT_BEFORE_TRANSITION + FADE_TO_BG_DURATION)) / FADE_FROM_BG_DURATION;
+            
+            // Dessiner uniquement le fond plein
+            batch.setColor(QUESTION_PHASE_BG_COLOR);
+            batch.draw(whiteTexture, 0, 0, screenWidth, screenHeight);
+            
+            // Dessiner l'interface de question qui apparaît progressivement
+            batch.setColor(1, 1, 1, fadeProgress);
+            drawFinalQuestionPhase();
+        }
+    }
+
+    // Nouvelle méthode pour extraire la logique de dessin des cases et jetons
+    private void drawGridAndTokens(float bgX, float bgY, float scaleX, float scaleY) {
+        for (AnimatedColumn column : gridPositions) {
+            for (int i = 0; i < column.rectangles.size; i++) {
+                Rectangle rect = column.rectangles.get(i);
+                float boxX = bgX + rect.x * scaleX;
+                float boxY = bgY + rect.y * scaleY;
+                float boxWidth = rect.width * scaleX;
+                float boxHeight = rect.height * scaleY;
+                
+                // Choisir la texture à afficher pour la case
+                Texture textureToRender = boxTexture;
+                
+                if (i < column.animations.size) {
+                    BoxAnimation anim = column.animations.get(i);
+                    if (anim.isPlaying && BoxAnimation.sharedFrames != null && BoxAnimation.sharedFrames.size > 0) {
+                        int frameIndex = Math.min(anim.currentFrame, BoxAnimation.sharedFrames.size - 1);
+                        textureToRender = BoxAnimation.sharedFrames.get(frameIndex);
+                    }
+                }
+                
+                // Dessiner la case
+                batch.setColor(1, 1, 1, 1);
+                batch.draw(textureToRender, boxX, boxY, boxWidth, boxHeight);
+            }
+        }
+
+        // Dessiner les tokens par-dessus les cases
+        for (AnimatedColumn column : gridPositions) {
+            float tokensAlpha = 0f;
+            Array<Integer> tokensToShow = null;
+            
+            if (column.col < attempts.size) {
+                tokensAlpha = 1f;
+                tokensToShow = attempts.get(column.col);
+            } else if (column.col == attempts.size) {
+                tokensAlpha = column.getTokensAlpha();
+                tokensToShow = currentGuess;
+            }
+            
+            if (tokensAlpha > 0 && tokensToShow != null) {
+                for (int i = 0; i < Math.min(column.rectangles.size, TOKENS_IN_COMBINATION); i++) {
+                    Rectangle rect = column.rectangles.get(i);
+                    float boxX = bgX + rect.x * scaleX;
+                    float boxY = bgY + rect.y * scaleY;
+                    float boxWidth = rect.width * scaleX;
+                    float boxHeight = rect.height * scaleY;
+                    
+                    if (i < tokensToShow.size && tokenTextures != null && tokensToShow.get(i) < tokenTextures.size) {
+                        Texture tokenTexture = tokenTextures.get(tokensToShow.get(i));
+                        
+                        if (tokenTexture != null) {
+                            batch.setColor(1, 1, 1, tokensAlpha);
+                            batch.draw(tokenTexture, boxX, boxY, boxWidth, boxHeight);
+                            batch.setColor(1, 1, 1, 1);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private void disableGameElements() {
+        gameElementsDisabled = true;
+        // Libérer les ressources du jeu
+        if (backgroundTexture != null) {
+            backgroundTexture.dispose();
+            backgroundTexture = null;
+        }
+        if (boxTexture != null) {
+            boxTexture.dispose();
+            boxTexture = null;
+        }
+        if (tokenTextures != null) {
+            for (Texture texture : tokenTextures) {
+                if (texture != null) {
+                    texture.dispose();
+                }
+            }
+            tokenTextures.clear();
+        }
+        // Nettoyer les animations
+        if (gridPositions != null) {
+            for (AnimatedColumn column : gridPositions) {
+                column.dispose();
+            }
+            gridPositions.clear();
+        }
+        // Nettoyer les frames d'animation partagées
+        BoxAnimation.disposeSharedFrames();
+    }
 } 

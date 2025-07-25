@@ -68,36 +68,26 @@
         "codeLength": 4,
         "numberOfSymbols": 6,
         "bgColor": "0,0,0",
-        "textColor": "255,255,255",
-        "symbolImages": "rouge01_triangle.png,vert01_carre.png,bleu01_pyramyde.png,jaune01_rond.png,orange01_octogone.png,violet01_etoile.png,bleu05_cercle.png,rouge04_triangle.png"
+        "textColor": "255,255,255"
       },
       "parameterTypes": {
         "codeLength": "int",
         "numberOfSymbols": "int",
         "bgColor": "string",
-        "textColor": "string",
-        "symbolImages": "string"
+        "textColor": "string"
       },
       "presets": {
-        "beginner": {
-          "codeLength": 3,
-          "numberOfSymbols": 3
-        },
         "easy": {
           "codeLength": 4,
           "numberOfSymbols": 4
         },
         "medium": {
           "codeLength": 4,
-          "numberOfSymbols": 6
+          "numberOfSymbols": 5
         },
         "hard": {
-          "codeLength": 5,
-          "numberOfSymbols": 8
-        },
-        "expert": {
-          "codeLength": 6,
-          "numberOfSymbols": 8
+          "codeLength": 4,
+          "numberOfSymbols": 6
         },
         "darkTheme": {
           "bgColor": "0,0,0",
@@ -106,12 +96,6 @@
         "lightTheme": {
           "bgColor": "240,240,250",
           "textColor": "50,50,100"
-        },
-        "formes_mixtes": {
-          "symbolImages": "rouge01_triangle.png,vert01_carre.png,bleu01_pyramyde.png,jaune01_rond.png,orange01_octogone.png,violet01_etoile.png,bleu05_cercle.png,rouge04_triangle.png"
-        },
-        "ronds_colores": {
-          "symbolImages": "jaune01_rond.png,jaune02_rond.png,jaune03_rond.png,jaune04_rond.png,bleu04_rond.png,bleu06_rond.png,bleu07_rond.png,bleu08_rond.png"
         }
       }
     }
