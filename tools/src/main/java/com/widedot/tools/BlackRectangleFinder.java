@@ -10,6 +10,7 @@ public class BlackRectangleFinder {
     private static final int MIN_RECT_WIDTH = 10;  // Minimum width to consider as a rectangle
     private static final int MIN_RECT_HEIGHT = 10; // Minimum height to consider as a rectangle
     private static final double COLUMN_GROUPING_THRESHOLD = 20.0; // Pixels tolerance for grouping into columns
+    private static final double ROW_GROUPING_THRESHOLD = 20.0; // Pixels tolerance for grouping into rows
 
     static class Rectangle {
         int x;
@@ -53,29 +54,66 @@ public class BlackRectangleFinder {
         }
     }
 
+    static class Row {
+        int y;
+        int index; // Row index (0-based)
+        List<Rectangle> rectangles;
+
+        Row(int y) {
+            this.y = y;
+            this.rectangles = new ArrayList<>();
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append("{\"row\":").append(index).append(",\"rectangles\":[");
+            for (int i = 0; i < rectangles.size(); i++) {
+                if (i > 0) sb.append(",");
+                sb.append(rectangles.get(i).toString());
+            }
+            sb.append("]}");
+            return sb.toString();
+        }
+    }
+
     public static void main(String[] args) {
-        if (args.length != 1) {
-            System.err.println("Usage: java BlackRectangleFinder <input_image.png>");
+        if (args.length < 1 || args.length > 2) {
+            System.err.println("Usage: java BlackRectangleFinder <input_image.png> [mode]");
+            System.err.println("  mode: 'columns' (default) or 'rows'");
             System.exit(1);
         }
 
         try {
             String inputPath = args[0];
-            List<Column> columns = findBlackRectangles(inputPath);
-            String jsonOutput = generateJson(columns);
+            String mode = args.length > 1 ? args[1].toLowerCase() : "columns";
+            
+            if (!mode.equals("columns") && !mode.equals("rows")) {
+                System.err.println("Error: mode must be 'columns' or 'rows'");
+                System.exit(1);
+            }
+            
+            String jsonOutput;
+            if (mode.equals("rows")) {
+                List<Row> rows = findBlackRectanglesRows(inputPath);
+                jsonOutput = generateJsonRows(rows);
+            } else {
+                List<Column> columns = findBlackRectanglesColumns(inputPath);
+                jsonOutput = generateJsonColumns(columns);
+            }
             
             // Generate output file path by replacing .png with .json
             String outputPath = inputPath.substring(0, inputPath.lastIndexOf('.')) + ".json";
             saveToFile(jsonOutput, outputPath);
             
-            System.out.println("JSON data saved to: " + outputPath);
+            System.out.println("JSON data saved to: " + outputPath + " (mode: " + mode + ")");
         } catch (IOException e) {
             System.err.println("Error processing image: " + e.getMessage());
             System.exit(1);
         }
     }
 
-    private static List<Column> findBlackRectangles(String imagePath) throws IOException {
+    private static List<Column> findBlackRectanglesColumns(String imagePath) throws IOException {
         BufferedImage image = ImageIO.read(new File(imagePath));
         List<Rectangle> rectangles = new ArrayList<>();
         boolean[][] visited = new boolean[image.getHeight()][image.getWidth()];
@@ -166,12 +204,79 @@ public class BlackRectangleFinder {
         return new ArrayList<>(columnMap.values());
     }
 
-    private static String generateJson(List<Column> columns) {
+    private static List<Row> findBlackRectanglesRows(String imagePath) throws IOException {
+        BufferedImage image = ImageIO.read(new File(imagePath));
+        List<Rectangle> rectangles = new ArrayList<>();
+        boolean[][] visited = new boolean[image.getHeight()][image.getWidth()];
+
+        // Find all black rectangles
+        for (int y = 0; y < image.getHeight(); y++) {
+            for (int x = 0; x < image.getWidth(); x++) {
+                if (!visited[y][x] && isBlack(image.getRGB(x, y))) {
+                    Rectangle rect = expandRectangle(image, x, y, visited);
+                    if (rect.width >= MIN_RECT_WIDTH && rect.height >= MIN_RECT_HEIGHT) {
+                        rectangles.add(rect);
+                    }
+                }
+            }
+        }
+
+        // Group rectangles into rows
+        List<Row> rows = groupIntoRows(rectangles);
+        
+        // Assign row indices from top to bottom
+        for (int i = 0; i < rows.size(); i++) {
+            rows.get(i).index = i;
+        }
+        
+        return rows;
+    }
+
+    private static List<Row> groupIntoRows(List<Rectangle> rectangles) {
+        Map<Integer, Row> rowMap = new TreeMap<>();
+
+        // Group rectangles by their y coordinate (with tolerance)
+        for (Rectangle rect : rectangles) {
+            boolean added = false;
+            for (Row row : rowMap.values()) {
+                if (Math.abs(row.y - rect.y) <= ROW_GROUPING_THRESHOLD) {
+                    row.rectangles.add(rect);
+                    added = true;
+                    break;
+                }
+            }
+            if (!added) {
+                Row newRow = new Row(rect.y);
+                newRow.rectangles.add(rect);
+                rowMap.put(rect.y, newRow);
+            }
+        }
+
+        // Sort rectangles in each row by x coordinate (left to right)
+        for (Row row : rowMap.values()) {
+            row.rectangles.sort((r1, r2) -> Integer.compare(r1.x, r2.x));
+        }
+
+        return new ArrayList<>(rowMap.values());
+    }
+
+    private static String generateJsonColumns(List<Column> columns) {
         StringBuilder sb = new StringBuilder();
         sb.append("[\n");
         for (int i = 0; i < columns.size(); i++) {
             if (i > 0) sb.append(",\n");
             sb.append("  ").append(columns.get(i).toString());
+        }
+        sb.append("\n]");
+        return sb.toString();
+    }
+
+    private static String generateJsonRows(List<Row> rows) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("[\n");
+        for (int i = 0; i < rows.size(); i++) {
+            if (i > 0) sb.append(",\n");
+            sb.append("  ").append(rows.get(i).toString());
         }
         sb.append("\n]");
         return sb.toString();

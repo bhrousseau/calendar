@@ -358,6 +358,15 @@ public class AdventCalendarGame extends Game {
     public void setVisited(int day, boolean visited) {
         visitedPaintings.put(day, visited);
         
+        // Si le jour est marqué comme visité (jeu terminé), déverrouiller le jour suivant
+        if (visited) {
+            int nextDay = day + 1;
+            if (nextDay <= 24 && !isUnlocked(nextDay)) {
+                System.out.println("Jeu du jour " + day + " terminé, déverrouillage automatique du jour " + nextDay);
+                unlock(nextDay);
+            }
+        }
+        
         // Sauvegarder l'état après modification de visite
         saveGameState();
     }

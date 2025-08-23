@@ -44,17 +44,36 @@ find-rectangles.bat
 #### Utilisation avec une image spécifique :
 
 ```batch
-find-rectangles.bat chemin/vers/image.png
+find-rectangles.bat chemin/vers/image.png [mode]
+```
+
+Paramètres :
+- `chemin/vers/image.png` : chemin vers l'image à analyser
+- `mode` : mode d'organisation des rectangles (optionnel)
+  - `columns` (par défaut) : groupe les rectangles par colonnes
+  - `rows` : groupe les rectangles par lignes
+
+#### Exemples :
+
+```batch
+# Mode colonnes (par défaut)
+find-rectangles.bat image.png
+find-rectangles.bat image.png columns
+
+# Mode lignes
+find-rectangles.bat image.png rows
 ```
 
 Le fichier JSON sera créé au même endroit que l'image source, avec le même nom mais avec l'extension `.json`.
 
 ### Format de sortie JSON
 
+#### Mode colonnes (par défaut)
+
 ```json
 [
   {
-    "x": 100,
+    "col": 0,
     "rectangles": [
       {
         "x": 100,
@@ -68,8 +87,33 @@ Le fichier JSON sera créé au même endroit que l'image source, avec le même n
 ```
 
 - Chaque objet du tableau principal représente une colonne
-- `x` : position horizontale de la colonne
+- `col` : index de la colonne (0-based)
 - `rectangles` : liste des rectangles dans la colonne, triés de bas en haut
+- Pour chaque rectangle :
+  - `x`, `y` : coordonnées du coin supérieur gauche
+  - `width`, `height` : dimensions du rectangle
+
+#### Mode lignes
+
+```json
+[
+  {
+    "row": 0,
+    "rectangles": [
+      {
+        "x": 100,
+        "y": 500,
+        "width": 30,
+        "height": 30
+      }
+    ]
+  }
+]
+```
+
+- Chaque objet du tableau principal représente une ligne
+- `row` : index de la ligne (0-based)
+- `rectangles` : liste des rectangles dans la ligne, triés de gauche à droite
 - Pour chaque rectangle :
   - `x`, `y` : coordonnées du coin supérieur gauche
   - `width`, `height` : dimensions du rectangle 

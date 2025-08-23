@@ -3,442 +3,680 @@ package com.widedot.calendar;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.glutils.HdpiUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.audio.Sound;
+import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.JsonReader;
+import com.badlogic.gdx.utils.JsonValue;
+import com.badlogic.gdx.utils.ObjectMap;
 import com.widedot.calendar.config.ThemeManager;
 import com.widedot.calendar.data.Theme;
 import com.widedot.calendar.screens.TransitionScreen;
-import com.badlogic.gdx.utils.Array;
-import com.badlogic.gdx.utils.ObjectMap;
-import com.badlogic.gdx.graphics.Pixmap;
 
 /**
  * Écran principal du calendrier de l'Avent
  * Affiche la grille de 24 cases et gère les interactions
  */
 public class AdventCalendarScreen implements Screen {
-    private final Game game;
-    private final AdventCalendarGame adventGame;
-    private final OrthographicCamera camera;
-    private final SpriteBatch batch;
-    private final BitmapFont font;
-    private final Texture lockedTexture;
-    private final Texture defaultUnlockedTexture;
-    private final ObjectMap<String, Texture> themeIconTextures;
-    private final ObjectMap<String, Texture> unlockedTextures;
-    private final ObjectMap<Integer, Rectangle> boxes;
-    private final ThemeManager themeManager;
 
-    // Sons
-    private Sound lockedSound;
-    private Sound openSound;
-    private Sound enterSound;
-
-    // Constantes pour les noms de fichiers d'images
-    private static final String LOCKED_TEXTURE_PATH = "images/locked.png";
-    private static final String UNLOCKED_TEXTURE_PATH = "images/unlocked.png";
+    // Constants
+    private static final float WORLD_WIDTH = 800f;
+    private static final float WORLD_HEIGHT = 600f;
+    private static final float DOOR_SLIDE_SPEED = 2.0f;
+    private static final float DRAG_THRESHOLD = 10f;
+    private static final int FALLBACK_TEXTURE_SIZE = 64;
     
-    // Constantes pour les noms de fichiers audio
+    // Resource paths
+    private static final String FOREGROUND_TEXTURE_PATH = "images/calendar/foreground.png";
+    private static final String SHADOW_TEXTURE_PATH = "images/calendar/shadow.png";
+    private static final String MASK_JSON_PATH = "images/calendar/mask.json";
+    private static final String DOOR_IMAGE_PATH_PREFIX = "images/calendar/door-";
     private static final String LOCKED_SOUND_PATH = "audio/locked.mp3";
     private static final String OPEN_SOUND_PATH = "audio/open2.mp3";
     private static final String ENTER_SOUND_PATH = "audio/enter.mp3";
 
-    // Dimensions de base du monde
-    private static final float WORLD_WIDTH = 800;
-    private static final float WORLD_HEIGHT = 600;
-    private static final float BOX_SIZE = 100;
-    private static final float BOX_SPACING = 20;
-    private static final int GRID_COLS = 6;
-    private static final int GRID_ROWS = 4;
+    // Core components
+    private final AdventCalendarGame adventGame;
+    private final OrthographicCamera camera;
+    private final SpriteBatch batch;
+    private final BitmapFont font;
+    private final ThemeManager themeManager;
 
-    // Dimensions actuelles de la fenêtre
-    private float currentWidth;
-    private float currentHeight;
-    private float boxSize;
-    private float boxSpacing;
-        
-    
-            /**
-             * Constructeur
-             * @param game L'instance du jeu
-             */
-            public AdventCalendarScreen(Game game) {
-                Gdx.app.log("AdventCalendarScreen", "Constructor(Game) called");
-                this.game = game;
-                this.adventGame = (AdventCalendarGame) game; // Cast en AdventCalendarGame
-    
-                this.camera = new OrthographicCamera();
-                this.camera.setToOrtho(false, WORLD_WIDTH, WORLD_HEIGHT);
-    
-                this.batch = new SpriteBatch();
-                this.font = new BitmapFont();
-                this.themeManager = ThemeManager.getInstance();
-                this.themeIconTextures = new ObjectMap<>();
-    
-                // Charger les textures avec Gdx.files.internal
-                try {
-                    Gdx.app.log("AdventCalendarScreen", "Loading lockedTexture: " + LOCKED_TEXTURE_PATH);
-                    this.lockedTexture = loadTextureSafe(LOCKED_TEXTURE_PATH);
-                    Gdx.app.log("AdventCalendarScreen", "lockedTexture loaded successfully.");
-                    Gdx.app.log("AdventCalendarScreen", "Loading defaultUnlockedTexture: " + UNLOCKED_TEXTURE_PATH);
-                    this.defaultUnlockedTexture = loadTextureSafe(UNLOCKED_TEXTURE_PATH);
-                    Gdx.app.log("AdventCalendarScreen", "defaultUnlockedTexture loaded successfully.");
-    
-                    // Charger les sons
-                    this.lockedSound = loadSoundSafe(LOCKED_SOUND_PATH);
-                    this.openSound   = loadSoundSafe(OPEN_SOUND_PATH);
-                    this.enterSound  = loadSoundSafe(ENTER_SOUND_PATH);
-                } catch (Exception e) {
-                    Gdx.app.error("AdventCalendarScreen", "Erreur lors du chargement des ressources: " + e.getMessage(), e);
-                    System.err.println("Erreur lors du chargement des ressources: " + e.getMessage());
-                    e.printStackTrace();
-                    throw e;
-                }
+    // Textures
+    private final Texture foregroundTexture;
+    private final Texture shadowTexture;
+    private final ObjectMap<String, Texture> themeIconTextures = new ObjectMap<>();
+    private final ObjectMap<Integer, Texture> doorTextures = new ObjectMap<>();
 
-            this.unlockedTextures = new ObjectMap<>();
-            this.boxes = new ObjectMap<>();
+    // Sounds
+    private Sound lockedSound;
+    private Sound openSound;
+    private Sound enterSound;
 
-            // Initialiser les dimensions
-            this.currentWidth = WORLD_WIDTH;
-            this.currentHeight = WORLD_HEIGHT;
-            this.boxSize = BOX_SIZE;
-            this.boxSpacing = BOX_SPACING;
+    // Door system
+    private final Array<DoorPosition> originalDoorPositions = new Array<>();
+    private final ObjectMap<Integer, Rectangle> boxes = new ObjectMap<>();
+    private final ObjectMap<Integer, Float> doorSlideProgress = new ObjectMap<>();
+    private final ObjectMap<Integer, Boolean> doorSliding = new ObjectMap<>();
 
-            // Initialiser les boîtes avec les dimensions par défaut
-            initializeBoxes();
-
-            // Appeler resize pour ajuster les dimensions à la taille de la fenêtre
-            resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-        }
+    // Camera and input
+    private float currentWidth = WORLD_WIDTH;
+    private float currentHeight = WORLD_HEIGHT;
+    private boolean isDragging = false;
+    private boolean touchProcessed = false;
+    private float lastTouchScreenX = 0f;
+    private float initialTouchScreenX = 0f;
+    private final Vector3 touchPos = new Vector3();
 
     /**
-     * Constructeur avec AdventCalendarGame
-     * @param adventGame L'instance du jeu de calendrier de l'Avent
+     * Door position data structure for JSON-based layout
+     */
+    private static class DoorPosition {
+        public final int dayId;
+        public final float originalX;
+        public final float originalY;
+        public final float originalWidth;
+        public final float originalHeight;
+
+        public DoorPosition(int dayId, float originalX, float originalY, float originalWidth, float originalHeight) {
+            this.dayId = dayId;
+            this.originalX = originalX;
+            this.originalY = originalY;
+            this.originalWidth = originalWidth;
+            this.originalHeight = originalHeight;
+        }
+    }
+
+    /**
+     * Constructor for AdventCalendarGame
      */
     public AdventCalendarScreen(AdventCalendarGame adventGame) {
-        Gdx.app.log("AdventCalendarScreen", "Constructor(AdventCalendarGame) called");
-        this.game = adventGame;
+        this(adventGame, adventGame);
+    }
+
+    /**
+     * Constructor for Game (with cast)
+     */
+    public AdventCalendarScreen(Game game) {
+        this(game, (AdventCalendarGame) game);
+    }
+
+    /**
+     * Main constructor - all initialization logic centralized here
+     */
+    private AdventCalendarScreen(Game game, AdventCalendarGame adventGame) {
+        Gdx.app.log("AdventCalendarScreen", "Initializing screen");
+        
         this.adventGame = adventGame;
+        this.themeManager = ThemeManager.getInstance();
+
+        // Initialize core components directly in constructor
         this.camera = new OrthographicCamera();
         this.camera.setToOrtho(false, WORLD_WIDTH, WORLD_HEIGHT);
+        this.camera.position.x = WORLD_WIDTH / 2;
+        this.camera.update();
+
         this.batch = new SpriteBatch();
         this.font = new BitmapFont();
-        this.themeManager = ThemeManager.getInstance();
-        this.themeIconTextures = new ObjectMap<>();
 
-        // Charger les textures avec Gdx.files.internal
-        try {
-            Gdx.app.log("AdventCalendarScreen", "Loading lockedTexture: " + LOCKED_TEXTURE_PATH);
-            this.lockedTexture = loadTextureSafe(LOCKED_TEXTURE_PATH);
-            Gdx.app.log("AdventCalendarScreen", "lockedTexture loaded successfully.");
-            Gdx.app.log("AdventCalendarScreen", "Loading defaultUnlockedTexture: " + UNLOCKED_TEXTURE_PATH);
-            this.defaultUnlockedTexture = loadTextureSafe(UNLOCKED_TEXTURE_PATH);
-            Gdx.app.log("AdventCalendarScreen", "defaultUnlockedTexture loaded successfully.");
+        // Load resources
+        this.foregroundTexture = loadTextureSafe(FOREGROUND_TEXTURE_PATH);
+        this.shadowTexture = loadTextureSafe(SHADOW_TEXTURE_PATH);
+        loadSounds();
 
-            // Charger les sons
-            this.lockedSound = loadSoundSafe(LOCKED_SOUND_PATH);
-            this.openSound   = loadSoundSafe(OPEN_SOUND_PATH);
-            this.enterSound  = loadSoundSafe(ENTER_SOUND_PATH);
-        } catch (Exception e) {
-            Gdx.app.error("AdventCalendarScreen", "Erreur lors du chargement des ressources: " + e.getMessage(), e);
-            System.err.println("Erreur lors du chargement des ressources: " + e.getMessage());
-            throw e;
-        }
+        // Initialize door system
+        initializeDoorSystem();
 
-        this.unlockedTextures = new ObjectMap<>();
-        this.boxes = new ObjectMap<>();
-
-        // Initialiser les dimensions
-        this.currentWidth = WORLD_WIDTH;
-        this.currentHeight = WORLD_HEIGHT;
-        this.boxSize = BOX_SIZE;
-        this.boxSpacing = BOX_SPACING;
-
-        // Initialiser les boîtes avec les dimensions par défaut
-        initializeBoxes();
-
-        // Appeler resize pour ajuster les dimensions à la taille de la fenêtre
+        // Set initial window size
         resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
     }
 
     /**
-     * Initialise la position et la taille des boîtes
+     * Load all sound resources
      */
-    private void initializeBoxes() {
-        // Calculer les dimensions de la grille
-        float gridWidth = GRID_COLS * (boxSize + boxSpacing) - boxSpacing;
-        float gridHeight = GRID_ROWS * (boxSize + boxSpacing) - boxSpacing;
-
-        // Centrer la grille
-        float startX = (currentWidth - gridWidth) / 2;
-        float startY = (currentHeight - gridHeight) / 2;
-
-        // Utiliser l'ordre des jours stocké dans le GameState
-        Array<Integer> days = adventGame.getGameState().getShuffledDays();
-
-        // Créer les boîtes avec les jours mélangés
-        for (int i = 0; i < 24; i++) {
-            int dayId = days.get(i);
-            int row = i / GRID_COLS;
-            int col = i % GRID_COLS;
-            float x = startX + col * (boxSize + boxSpacing);
-            float y = startY + (GRID_ROWS - 1 - row) * (boxSize + boxSpacing);
-            boxes.put(dayId, new Rectangle(x, y, boxSize, boxSize));
-        }
+    private void loadSounds() {
+        this.lockedSound = loadSoundSafe(LOCKED_SOUND_PATH);
+        this.openSound = loadSoundSafe(OPEN_SOUND_PATH);
+        this.enterSound = loadSoundSafe(ENTER_SOUND_PATH);
     }
 
     /**
-     * Charge la texture pour un jour déverrouillé
-     * @param dayId L'identifiant du jour
-     * @return La texture chargée ou la texture par défaut si le chargement échoue
+     * Initialize the door system from JSON data
      */
-    private Texture loadUnlockedTexture(int dayId) {
-        Texture texture = new Texture(Gdx.files.internal(UNLOCKED_TEXTURE_PATH));
-        unlockedTextures.put(String.valueOf(dayId), texture);
-        return texture;
-    }
-
-    /**
-     * Obtient la texture de l'icône pour un jour donné
-     * @param dayId L'identifiant du jour (1-24)
-     * @return La texture de l'icône correspondante ou null
-     */
-    private Texture getThemeIconForDay(int dayId) {
-        // Vérifier si la texture est déjà dans le cache
-        if (themeIconTextures.containsKey(String.valueOf(dayId))) {
-            return themeIconTextures.get(String.valueOf(dayId));
-        }
-        Gdx.app.log("AdventCalendarScreen", "Attempting to load theme icon for day " + dayId);
+    private void initializeDoorSystem() {
         try {
-            // Chercher d'abord le thème associé au jour via ThemeManager
-            Theme theme = themeManager.getThemeByDay(dayId);
-
-            // Si aucun thème n'est associé au jour, utiliser un thème cyclique
-            if (theme == null && themeManager.getThemeCount() > 0) {
-                // Utiliser l'index modulo pour distribuer cycliquement les thèmes
-                int themeIndex = (dayId - 1) % themeManager.getThemeCount();
-                theme = themeManager.getAllThemes().get(themeIndex);
+            JsonReader jsonReader = new JsonReader();
+            JsonValue maskData = jsonReader.parse(Gdx.files.internal(MASK_JSON_PATH));
+            
+            int doorNumber = 1;
+            Array<Integer> shuffledDays = adventGame.getGameState().getShuffledDays();
+            
+            for (JsonValue rowData = maskData.child; rowData != null; rowData = rowData.next) {
+                JsonValue rectangles = rowData.get("rectangles");
+                
+                for (JsonValue rectData = rectangles.child; rectData != null; rectData = rectData.next) {
+                    int dayId = shuffledDays.get(doorNumber - 1);
+                    
+                    // Convert absolute JSON coordinates to relative (0-1) coordinates
+                    float relativeX = (float) rectData.getInt("x") / foregroundTexture.getWidth();
+                    float relativeY = 1.0f - ((float) (rectData.getInt("y") + rectData.getInt("height")) / foregroundTexture.getHeight());
+                    float relativeWidth = (float) rectData.getInt("width") / foregroundTexture.getWidth();
+                    float relativeHeight = (float) rectData.getInt("height") / foregroundTexture.getHeight();
+                    
+                    // Store door position and initialize state
+                    originalDoorPositions.add(new DoorPosition(dayId, relativeX, relativeY, relativeWidth, relativeHeight));
+                    boxes.put(dayId, new Rectangle());
+                    doorSlideProgress.put(dayId, 0.0f);
+                    doorSliding.put(dayId, false);
+                    
+                    // Load door texture
+                    String doorPath = DOOR_IMAGE_PATH_PREFIX + doorNumber + ".png";
+                    doorTextures.put(dayId, loadTextureSafe(doorPath));
+                    
+                    doorNumber++;
+                }
             }
-
-            if (theme != null) {
-                // Construire le chemin de l'icône en remplaçant "full" par "icon" et .jpg par .png
-                String iconPath = theme.getFullImagePath().replace("full", "icon").replace(".jpg", ".png");
-                Gdx.app.log("AdventCalendarScreen", "Theme icon path for day " + dayId + ": " + iconPath);
-
-                // Charger et mettre en cache la texture
-                Texture iconTexture = new Texture(Gdx.files.internal(iconPath));
-                themeIconTextures.put(String.valueOf(dayId), iconTexture);
-                Gdx.app.log("AdventCalendarScreen", "Theme icon loaded for day " + dayId);
-                return iconTexture;
+            
+            updateDoorPositions();
+            
+            // Déverrouiller la première case (jour 1 - case de départ)
+            int startingDay = 1;
+            Gdx.app.log("AdventCalendarScreen", "Is day 1 unlocked before init: " + adventGame.isUnlocked(startingDay));
+            if (!adventGame.isUnlocked(startingDay)) {
+                adventGame.unlock(startingDay);
+                Gdx.app.log("AdventCalendarScreen", "Unlocked starting door (day " + startingDay + ")");
             }
+            Gdx.app.log("AdventCalendarScreen", "Is day 1 unlocked after init: " + adventGame.isUnlocked(startingDay));
+            
+            Gdx.app.log("AdventCalendarScreen", "Loaded " + doorTextures.size + " doors");
+            
         } catch (Exception e) {
-            Gdx.app.error("AdventCalendarScreen", "Erreur lors du chargement de l'icône pour le jour " + dayId + ": " + e.getMessage(), e);
-            System.err.println("Erreur lors du chargement de l'icône pour le jour " + dayId + ": " + e.getMessage());
+            Gdx.app.error("AdventCalendarScreen", "Failed to initialize door system", e);
         }
-
-        Gdx.app.log("AdventCalendarScreen", "No theme icon loaded for day " + dayId + ", returning null.");
-        return null;
     }
 
     @Override
     public void render(float delta) {
-        // Effacer l'écran avec une couleur de fond
-        Gdx.gl.glClearColor(0.1f, 0.3f, 0.1f, 1);
-        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-
-        // Mettre à jour la caméra
-        camera.update();
-        batch.setProjectionMatrix(camera.combined);
-
-        // Dessiner les boîtes
+        clearScreen();
+        updateDoorAnimations(delta);
+        updateCamera();
+        
         batch.begin();
-        for (int i = 1; i <= 24; i++) {
-            Rectangle box = boxes.get(i);
-
-            // Dessiner l'icône du thème derrière la case
-            Texture themeIcon = getThemeIconForDay(i);
-            if (themeIcon != null) {
-                // Réduire la taille de l'icône de 10% et la centrer
-                float iconWidth = box.width * 0.75f;
-                float iconHeight = box.height * 0.75f;
-                float iconX = box.x + (box.width - iconWidth) / 2; // Centrer horizontalement
-                float iconY = box.y + (box.height - iconHeight) / 2; // Centrer verticalement
-
-                batch.draw(themeIcon, iconX, iconY, iconWidth, iconHeight);
-            }
-
-            // Dessiner la case (verrouillée ou déverrouillée)
-            Texture texture;
-            if (adventGame != null && adventGame.isUnlocked(i)) {
-                texture = unlockedTextures.containsKey(String.valueOf(i)) ? unlockedTextures.get(String.valueOf(i)) : loadUnlockedTexture(i);
-            } else {
-                texture = lockedTexture;
-            }
-
-            batch.draw(texture, box.x, box.y, box.width, box.height);
-        }
+        renderPaintingIcons();
+        renderForegroundAndShadow();
+        renderDoors();
         batch.end();
-
-        // Gérer les entrées utilisateur
+        
         handleInput();
     }
 
     /**
-     * Gère les entrées utilisateur
+     * Clear the screen with black background
      */
-    private void handleInput() {
-        // Vérifier si une transition est en cours
-        if (TransitionScreen.isTransitionActive()) {
-            return; // Ne pas traiter les entrées pendant une transition
+    private void clearScreen() {
+        Gdx.gl.glClearColor(0.0f, 0.0f, 0.0f, 1);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+    }
+
+    /**
+     * Update camera state
+     */
+    private void updateCamera() {
+        camera.update();
+        batch.setProjectionMatrix(camera.combined);
+    }
+
+    /**
+     * Render painting icons in background
+     */
+    private void renderPaintingIcons() {
+        for (int dayId = 1; dayId <= 24; dayId++) {
+            Rectangle box = boxes.get(dayId);
+            if (box == null) continue;
+
+            Texture themeIcon = getThemeIconForDay(dayId);
+            if (themeIcon != null) {
+                renderScaledIcon(themeIcon, box);
+            }
+        }
+    }
+
+    /**
+     * Render an icon scaled to fill its box while maintaining aspect ratio
+     */
+    private void renderScaledIcon(Texture icon, Rectangle box) {
+        float iconAspectRatio = (float) icon.getWidth() / icon.getHeight();
+        float boxAspectRatio = box.width / box.height;
+        
+        float iconWidth, iconHeight;
+        if (iconAspectRatio > boxAspectRatio) {
+            iconHeight = box.height;
+            iconWidth = iconHeight * iconAspectRatio;
+        } else {
+            iconWidth = box.width;
+            iconHeight = iconWidth / iconAspectRatio;
         }
         
-        if (Gdx.input.justTouched()) {
-            System.out.println("Toucher détecté dans AdventCalendarScreen");
-            Vector3 touchPos = new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0);
-            camera.unproject(touchPos);
-            System.out.println("Position du toucher: (" + touchPos.x + ", " + touchPos.y + ")");
+        float iconX = box.x + (box.width - iconWidth) / 2;
+        float iconY = box.y + (box.height - iconHeight) / 2;
+        
+        batch.draw(icon, iconX, iconY, iconWidth, iconHeight);
+    }
 
-            for (int i = 1; i <= 24; i++) {
-                Rectangle box = boxes.get(i);
-                if (box.contains(touchPos.x, touchPos.y)) {
-                    System.out.println("Case cliquée : jour " + i);
+    /**
+     * Render foreground image and shadow overlay
+     */
+    private void renderForegroundAndShadow() {
+        ForegroundDimensions dims = calculateForegroundDimensions();
+        batch.draw(foregroundTexture, dims.x, dims.y, dims.width, dims.height);
+        batch.draw(shadowTexture, dims.x, dims.y, dims.width, dims.height);
+    }
 
-                    // Vérifier si la case est déverrouillée
-                    if (!adventGame.isUnlocked(i)) {
-                        System.out.println("Déverrouillage du jour " + i);
-                        adventGame.unlock(i);
-                    } else if (!adventGame.isVisited(i)) {
-                        System.out.println("Marquage du jour " + i + " comme visité et lancement du mini-jeu");
-                        adventGame.setVisited(i, true);
-                    }
+    /**
+     * Calculate foreground image dimensions and position
+     */
+    private ForegroundDimensions calculateForegroundDimensions() {
+        float aspectRatio = (float) foregroundTexture.getWidth() / foregroundTexture.getHeight();
+        float width = currentHeight * aspectRatio;
+        float x = (currentWidth - width) / 2;
+        return new ForegroundDimensions(x, 0, width, currentHeight);
+    }
 
-                    if (!adventGame.isUnlocked(i)) {
-                        // Jouer le son "locked" pour une case verrouillée
-                        lockedSound.play();
-                    } else if (!adventGame.isVisited(i)) {
-                        // Jouer le son "open" pour une case déverrouillée mais pas encore visitée
-                        openSound.play();
-                    } else {
-                        System.out.println("Lancement du mini-jeu pour le jour " + i);
-                        enterSound.play();
-                        adventGame.launchGame(i);
-                    }
-                    break;
+    /**
+     * Simple data structure for foreground dimensions
+     */
+    private static class ForegroundDimensions {
+        final float x, y, width, height;
+        
+        ForegroundDimensions(float x, float y, float width, float height) {
+            this.x = x; this.y = y; this.width = width; this.height = height;
+        }
+    }
+
+    /**
+     * Render doors with clipping animation
+     */
+    private void renderDoors() {
+        for (int dayId = 1; dayId <= 24; dayId++) {
+            Rectangle box = boxes.get(dayId);
+            Texture doorTexture = doorTextures.get(dayId);
+            
+            if (box == null || doorTexture == null) continue;
+            
+            DoorState state = getDoorState(dayId);
+            if (state.shouldRender()) {
+                if (state.isAnimating()) {
+                    renderDoorWithClipping(doorTexture, box, state.slideProgress);
+            } else {
+                    renderDoorNormal(doorTexture, box, state.slideProgress);
                 }
             }
+        }
+    }
+
+    /**
+     * Get current state of a door
+     */
+    private DoorState getDoorState(int dayId) {
+        boolean isLocked = !adventGame.isUnlocked(dayId);
+        boolean isVisited = adventGame.isVisited(dayId);
+        boolean isSliding = doorSliding.get(dayId, false);
+        float slideProgress = doorSlideProgress.get(dayId, 0.0f);
+        
+        return new DoorState(isLocked, isVisited, isSliding, slideProgress);
+    }
+
+    /**
+     * Door state encapsulation
+     */
+    private static class DoorState {
+        final boolean isLocked, isVisited, isSliding;
+        final float slideProgress;
+        
+        DoorState(boolean isLocked, boolean isVisited, boolean isSliding, float slideProgress) {
+            this.isLocked = isLocked;
+            this.isVisited = isVisited;
+            this.isSliding = isSliding;
+            this.slideProgress = slideProgress;
+        }
+        
+        boolean shouldRender() {
+            return isLocked || (!isVisited && (isSliding || slideProgress < 1.0f));
+        }
+        
+        boolean isAnimating() {
+            return isSliding && slideProgress > 0.0f && slideProgress < 1.0f;
+        }
+    }
+
+    /**
+     * Render door with clipping animation
+     */
+    private void renderDoorWithClipping(Texture doorTexture, Rectangle box, float slideProgress) {
+        batch.flush();
+        
+        float visibleHeight = box.height * (1.0f - slideProgress);
+        float clipTop = box.y + visibleHeight;
+        
+        Vector3 bottomLeft = new Vector3(box.x, box.y, 0);
+        Vector3 topRight = new Vector3(box.x + box.width, clipTop, 0);
+        camera.project(bottomLeft);
+        camera.project(topRight);
+        
+        int scissorX = (int) bottomLeft.x;
+        int scissorY = (int) bottomLeft.y;
+        int scissorWidth = (int) (topRight.x - bottomLeft.x);
+        int scissorHeight = (int) (topRight.y - bottomLeft.y);
+        
+        if (scissorHeight > 0) {
+            Gdx.gl.glEnable(GL20.GL_SCISSOR_TEST);
+            HdpiUtils.glScissor(scissorX, scissorY, scissorWidth, scissorHeight);
+            
+            batch.draw(doorTexture, box.x, box.y, box.width, box.height);
+            
+            batch.flush();
+            Gdx.gl.glDisable(GL20.GL_SCISSOR_TEST);
+        }
+    }
+
+    /**
+     * Render door normally (without clipping)
+     */
+    private void renderDoorNormal(Texture doorTexture, Rectangle box, float slideProgress) {
+        float slideOffset = box.height * slideProgress;
+        float doorY = box.y - slideOffset;
+        batch.draw(doorTexture, box.x, doorY, box.width, box.height);
+    }
+
+    /**
+     * Update door sliding animations
+     */
+    private void updateDoorAnimations(float delta) {
+        for (int dayId = 1; dayId <= 24; dayId++) {
+            if (doorSliding.get(dayId, false)) {
+                float progress = doorSlideProgress.get(dayId, 0.0f) + DOOR_SLIDE_SPEED * delta;
+                
+                if (progress >= 1.0f) {
+                    progress = 1.0f;
+                    doorSliding.put(dayId, false);
+                    // Marquer automatiquement comme visitée à la fin de l'animation
+                    adventGame.setVisited(dayId, true);
+                }
+                
+                doorSlideProgress.put(dayId, progress);
+            }
+        }
+    }
+
+    /**
+     * Handle user input (touch/mouse)
+     */
+    private void handleInput() {
+        if (TransitionScreen.isTransitionActive()) return;
+        
+        if (Gdx.input.justTouched()) {
+            handleTouchStart();
+        }
+        
+        if (Gdx.input.isTouched()) {
+            handleTouchContinue();
+        } else if (!touchProcessed) {
+            handleTouchEnd();
+        }
+    }
+
+    /**
+     * Handle start of touch
+     */
+    private void handleTouchStart() {
+        touchPos.set(Gdx.input.getX(), Gdx.input.getY(), 0);
+        camera.unproject(touchPos);
+        lastTouchScreenX = Gdx.input.getX();
+        initialTouchScreenX = Gdx.input.getX();
+        isDragging = false;
+        touchProcessed = false;
+    }
+
+    /**
+     * Handle continuing touch (drag detection and camera movement)
+     */
+    private void handleTouchContinue() {
+        float currentX = Gdx.input.getX();
+        float deltaX = Math.abs(currentX - lastTouchScreenX);
+        
+        if (!isDragging && deltaX > DRAG_THRESHOLD) {
+            isDragging = true;
+        }
+        
+        if (isDragging) {
+            float screenDelta = lastTouchScreenX - currentX;
+            float worldDelta = screenDelta * (camera.viewportWidth / Gdx.graphics.getWidth());
+            camera.position.x = constrainCameraX(camera.position.x + worldDelta);
+            camera.update();
+            lastTouchScreenX = currentX;
+        }
+    }
+
+    /**
+     * Handle end of touch (process clicks)
+     */
+    private void handleTouchEnd() {
+        // Vérifier si il y a eu un mouvement significatif depuis le début du toucher
+        float totalMovement = Math.abs(Gdx.input.getX() - initialTouchScreenX);
+        
+        // Ne traiter comme un clic que s'il n'y a pas eu de drag ET pas de mouvement significatif
+        if (!isDragging && totalMovement <= DRAG_THRESHOLD) {
+            processClick();
+        }
+        
+        touchProcessed = true;
+        isDragging = false;
+    }
+
+    /**
+     * Process click on doors
+     */
+    private void processClick() {
+        for (int dayId = 1; dayId <= 24; dayId++) {
+            Rectangle box = boxes.get(dayId);
+            if (box.contains(touchPos.x, touchPos.y)) {
+                handleDoorClick(dayId);
+                break;
+            }
+        }
+    }
+
+    /**
+     * Handle click on specific door with state machine logic
+     */
+    private void handleDoorClick(int dayId) {
+        DoorState state = getDoorState(dayId);
+        
+        // Debug: Afficher l'état complet de la porte
+        Gdx.app.log("AdventCalendarScreen", "Door " + dayId + " clicked - isLocked: " + state.isLocked + 
+                   ", isVisited: " + state.isVisited + ", isSliding: " + state.isSliding + 
+                   ", slideProgress: " + state.slideProgress);
+        
+        if (state.isLocked) {
+            // Porte verrouillée : Juste jouer le son, pas de déverrouillage par clic
+            Gdx.app.log("AdventCalendarScreen", "Door " + dayId + " is locked - playing locked sound");
+            playSound(lockedSound);
+        } else if (!state.isVisited && !state.isSliding) {
+            // Porte déverrouillée : Démarrer l'animation d'ouverture
+            Gdx.app.log("AdventCalendarScreen", "Starting opening animation for door " + dayId);
+            doorSliding.put(dayId, true);
+            playSound(openSound);
+        } else if (state.isVisited) {
+            // Porte ouverte : Lancer le jeu
+            Gdx.app.log("AdventCalendarScreen", "Launching game for door " + dayId);
+            playSound(enterSound);
+            adventGame.launchGame(dayId);
+        } else {
+            // Debug: État non géré
+            Gdx.app.log("AdventCalendarScreen", "Door " + dayId + " click ignored - unhandled state");
+        }
+    }
+
+    /**
+     * Get theme icon texture for a day
+     */
+    private Texture getThemeIconForDay(int dayId) {
+        String cacheKey = String.valueOf(dayId);
+        if (themeIconTextures.containsKey(cacheKey)) {
+            return themeIconTextures.get(cacheKey);
+        }
+        
+        Theme theme = getThemeForDay(dayId);
+        if (theme != null) {
+            try {
+                String iconPath = theme.getFullImagePath().replace("full", "icon").replace(".jpg", ".png");
+                Texture iconTexture = new Texture(Gdx.files.internal(iconPath));
+                themeIconTextures.put(cacheKey, iconTexture);
+                return iconTexture;
+            } catch (Exception e) {
+                Gdx.app.error("AdventCalendarScreen", "Failed to load icon for day " + dayId, e);
+            }
+        }
+        
+        return null;
+    }
+
+    /**
+     * Get theme for a specific day
+     */
+    private Theme getThemeForDay(int dayId) {
+        Theme theme = themeManager.getThemeByDay(dayId);
+        if (theme == null && themeManager.getThemeCount() > 0) {
+            int themeIndex = (dayId - 1) % themeManager.getThemeCount();
+            theme = themeManager.getAllThemes().get(themeIndex);
+        }
+        return theme;
+    }
+
+    /**
+     * Update door positions based on current foreground scaling
+     */
+    private void updateDoorPositions() {
+        ForegroundDimensions dims = calculateForegroundDimensions();
+        
+        for (DoorPosition doorPos : originalDoorPositions) {
+            float doorX = dims.x + (doorPos.originalX * dims.width);
+            float doorY = dims.y + (doorPos.originalY * dims.height);
+            float doorWidth = doorPos.originalWidth * dims.width;
+            float doorHeight = doorPos.originalHeight * dims.height;
+            
+            Rectangle doorRect = boxes.get(doorPos.dayId);
+            if (doorRect != null) {
+                doorRect.set(doorX, doorY, doorWidth, doorHeight);
+            }
+        }
+    }
+
+    /**
+     * Constrain camera X position within foreground bounds
+     */
+    private float constrainCameraX(float newCameraX) {
+        ForegroundDimensions dims = calculateForegroundDimensions();
+        float halfViewport = camera.viewportWidth / 2;
+        
+        if (dims.width <= camera.viewportWidth) {
+            return dims.x + dims.width / 2;
+        }
+        
+        float minX = dims.x + halfViewport;
+        float maxX = dims.x + dims.width - halfViewport;
+        return Math.max(minX, Math.min(maxX, newCameraX));
+    }
+
+    /**
+     * Safely play a sound
+     */
+    private void playSound(Sound sound) {
+        if (sound != null) {
+            sound.play();
+        }
+    }
+
+    /**
+     * Load texture with fallback
+     */
+    private Texture loadTextureSafe(String path) {
+        try {
+            return new Texture(Gdx.files.internal(path));
+        } catch (Exception e) {
+            Gdx.app.error("AdventCalendarScreen", "Failed to load texture: " + path, e);
+            return createFallbackTexture();
+        }
+    }
+
+    /**
+     * Create fallback texture for failed loads
+     */
+    private Texture createFallbackTexture() {
+        Pixmap pixmap = new Pixmap(FALLBACK_TEXTURE_SIZE, FALLBACK_TEXTURE_SIZE, Pixmap.Format.RGBA8888);
+        pixmap.setColor(1, 0, 0, 1);
+        pixmap.fill();
+        Texture texture = new Texture(pixmap);
+        pixmap.dispose();
+        return texture;
+    }
+
+    /**
+     * Load sound with error handling
+     */
+    private Sound loadSoundSafe(String path) {
+        try {
+            return Gdx.audio.newSound(Gdx.files.internal(path));
+        } catch (Exception e) {
+            Gdx.app.error("AdventCalendarScreen", "Failed to load sound: " + path, e);
+            return null;
         }
     }
 
     @Override
     public void resize(int width, int height) {
-        System.out.println("Méthode resize de AdventCalendarScreen appelée avec dimensions: " + width + "x" + height);
-        // Mettre à jour les dimensions actuelles
-        this.currentWidth = width;
-        this.currentHeight = height;
-
-        // Mettre à jour la caméra
+        currentWidth = width;
+        currentHeight = height;
         camera.setToOrtho(false, width, height);
-
-        // Calculer les nouvelles dimensions des boîtes en conservant les proportions
-        float aspectRatio = (float) GRID_COLS / GRID_ROWS;
-        float gridWidth, gridHeight;
-
-        if ((float) width / height > aspectRatio) {
-            // La hauteur est la contrainte
-            gridHeight = height * 0.9f; // Utiliser 90% de la hauteur
-            gridWidth = gridHeight * aspectRatio;
-        } else {
-            // La largeur est la contrainte
-            gridWidth = width * 0.9f; // Utiliser 90% de la largeur
-            gridHeight = gridWidth / aspectRatio;
-        }
-
-        // Calculer la taille des boîtes et l'espacement
-        this.boxSize = (gridWidth - (GRID_COLS - 1) * BOX_SPACING) / GRID_COLS;
-        this.boxSpacing = BOX_SPACING * (boxSize / BOX_SIZE); // Ajuster l'espacement proportionnellement
-
-        // Réinitialiser les boîtes avec les nouvelles dimensions
-        initializeBoxes();
-    }
-
-    @Override
-    public void show() {
-        // Non utilisé
-    }
-
-    @Override
-    public void hide() {
-        // Non utilisé
-    }
-
-    @Override
-    public void pause() {
-        // Non utilisé
-    }
-
-    @Override
-    public void resume() {
-        // Non utilisé
+        camera.position.x = constrainCameraX(width / 2f);
+        camera.update();
+        updateDoorPositions();
     }
 
     @Override
     public void dispose() {
+        // Dispose core components
         batch.dispose();
         font.dispose();
-        lockedTexture.dispose();
-        defaultUnlockedTexture.dispose();
+        foregroundTexture.dispose();
+        shadowTexture.dispose();
 
-        // Disposer des sons
-        lockedSound.dispose();
-        openSound.dispose();
-        enterSound.dispose();
+        // Dispose sounds
+        if (lockedSound != null) lockedSound.dispose();
+        if (openSound != null) openSound.dispose();
+        if (enterSound != null) enterSound.dispose();
 
-        // Disposer des textures déverrouillées
-        for (Texture texture : unlockedTextures.values()) {
-            if (texture != defaultUnlockedTexture) {
-                texture.dispose();
-            }
+        // Dispose door textures
+        for (Texture texture : doorTextures.values()) {
+            texture.dispose();
         }
 
-        // Disposer des textures des icônes de thèmes
+        // Dispose theme icon textures
         for (Texture texture : themeIconTextures.values()) {
             texture.dispose();
         }
     }
 
-    /**
-     * Charge une texture de manière sécurisée. Si le chargement échoue (par exemple sur la plateforme
-     * HTML à cause de la taille maximale de texture WebGL), une texture de secours unie est générée
-     * afin d'éviter l'annulation de la construction de l'écran.
-     */
-    private Texture loadTextureSafe(String internalPath) {
-        try {
-            return new Texture(Gdx.files.internal(internalPath));
-        } catch (Exception e) {
-            // Générer une texture de remplacement 64x64 rouge opaque
-            Pixmap fallback = new Pixmap(64, 64, Pixmap.Format.RGBA8888);
-            fallback.setColor(1, 0, 0, 1);
-            fallback.fill();
-            Texture tex = new Texture(fallback);
-            fallback.dispose();
-            Gdx.app.error("AdventCalendarScreen", "Impossible de charger " + internalPath + " : " + e.getMessage() + ". Utilisation d'une texture de secours.");
-            return tex;
-        }
-    }
-
-    private Sound loadSoundSafe(String internalPath) {
-        try {
-            return Gdx.audio.newSound(Gdx.files.internal(internalPath));
-        } catch (Exception e) {
-            Gdx.app.error("AdventCalendarScreen", "Erreur lors du chargement du son " + internalPath + ": " + e.getMessage(), e);
-            System.err.println("Erreur lors du chargement du son " + internalPath + ": " + e.getMessage());
-            return null;
-        }
-    }
+    @Override public void show() {}
+    @Override public void hide() {}
+    @Override public void pause() {}
+    @Override public void resume() {}
 }
