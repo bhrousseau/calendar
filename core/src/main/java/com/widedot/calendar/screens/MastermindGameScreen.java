@@ -16,6 +16,7 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ObjectMap;
 import com.badlogic.gdx.utils.JsonReader;
 import com.badlogic.gdx.utils.JsonValue;
+import com.badlogic.gdx.utils.Timer;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.files.FileHandle;
 import java.util.Random;
@@ -135,7 +136,7 @@ public class MastermindGameScreen extends GameScreen {
                 sharedFrames = new Array<>();
             }
             
-            String variantFolder = String.format("%02d", variant + 1);
+            String variantFolder = (variant + 1 < 10 ? "0" : "") + (variant + 1);
             FileHandle[] frameFiles = Gdx.files.internal("images/games/mmd/anim/opening/" + variantFolder).list();
             
             // Trier les fichiers par nom pour assurer l'ordre correct
@@ -274,10 +275,114 @@ public class MastermindGameScreen extends GameScreen {
         }
     }
     
+    /**
+     * Classe pour gérer les tokens animés avec trajectoires courbes
+     */
+    private static class AnimatedToken {
+        int tokenType; // Type de token (0-5)
+        float currentX, currentY; // Position actuelle
+        float startX, startY; // Position de départ
+        float targetX, targetY; // Position cible
+        boolean isAnimating;
+        float animationTime;
+        float animationDuration;
+        boolean isPlaced; // true si le token est placé sur la grille, false s'il est en position de départ
+        int gridSlot; // Slot sur la grille (-1 si pas placé)
+        boolean isVisible = true; // Pour masquer temporairement les tokens de départ
+        boolean curveUp = true; // true = courbe vers le haut, false = courbe vers le bas
+        Runnable onAnimationComplete; // Callback appelée à la fin de l'animation
+        
+        AnimatedToken(int tokenType, float startX, float startY) {
+            this.tokenType = tokenType;
+            this.startX = startX;
+            this.startY = startY;
+            this.currentX = startX;
+            this.currentY = startY;
+            this.isAnimating = false;
+            this.isPlaced = false;
+            this.gridSlot = -1;
+            this.animationDuration = 0.5f; // 0.5 seconde pour l'animation
+        }
+        
+        void startAnimationTo(float targetX, float targetY, boolean toGrid) {
+            this.targetX = targetX;
+            this.targetY = targetY;
+            this.isAnimating = true;
+            this.animationTime = 0f;
+            // Si on va vers la grille, on sera placé à la fin
+            // Si on revient au départ, on ne sera plus placé
+        }
+        
+        void startAnimationTo(float targetX, float targetY, boolean toGrid, Runnable onComplete) {
+            startAnimationTo(targetX, targetY, toGrid);
+            this.onAnimationComplete = onComplete;
+        }
+        
+        void startAnimationTo(float targetX, float targetY, boolean toGrid, boolean curveUp, Runnable onComplete) {
+            startAnimationTo(targetX, targetY, toGrid);
+            this.curveUp = curveUp;
+            this.onAnimationComplete = onComplete;
+        }
+        
+        void update(float delta) {
+            if (!isAnimating) return;
+            
+            animationTime += delta;
+            float progress = Math.min(animationTime / animationDuration, 1f);
+            
+            // Courbe de Bézier quadratique pour une trajectoire courbe
+            float midX = (startX + targetX) / 2;
+            float midY;
+            if (curveUp) {
+                midY = Math.max(startY, targetY) + 100; // Point de contrôle plus haut
+            } else {
+                midY = Math.min(startY, targetY) - 100; // Point de contrôle plus bas
+            }
+            
+            // Interpolation avec courbe de Bézier
+            float t = progress;
+            float invT = 1f - t;
+            
+            currentX = invT * invT * startX + 2 * invT * t * midX + t * t * targetX;
+            currentY = invT * invT * startY + 2 * invT * t * midY + t * t * targetY;
+            
+            if (progress >= 1f) {
+                currentX = targetX;
+                currentY = targetY;
+                isAnimating = false;
+                
+                // Mettre à jour les positions de départ/cible pour la prochaine animation
+                startX = currentX;
+                startY = currentY;
+                
+                // Exécuter le callback s'il existe
+                if (onAnimationComplete != null) {
+                    onAnimationComplete.run();
+                    onAnimationComplete = null;
+                }
+            }
+        }
+    }
+    
     // Tokens
     private Array<Texture> tokenTextures;
+    private Array<Texture> tokenPositionTextures; // Images de position de départ pour les tokens
     private static final int TOKENS_IN_COMBINATION = 4; // Nombre fixe de jetons dans la combinaison
     private static final int MAX_TOTAL_TOKENS = 6; // Maximum de jetons disponibles (pour le niveau hard)
+    
+    // Système de tokens simplifié
+    private Array<AnimatedToken> startPositionTokens; // Tokens statiques en position de départ
+    private Array<AnimatedToken> movingTokens; // Tokens en cours d'animation vers la grille
+    private Array<AnimatedToken> gridTokens; // Tokens placés définitivement sur la grille
+    private Array<Integer> placedTokens; // Tokens placés dans la colonne courante (-1 si vide)
+    
+    // Coordonnées des positions calculées une seule fois
+    private Array<Float> positionCentersX; // Coordonnées X des centres des positions
+    private Array<Float> positionCentersY; // Coordonnées Y des centres des positions
+    
+    // Variables de calcul du background mutualisées
+    private float currentBgX, currentBgY, currentBgWidth, currentBgHeight;
+    private float currentScaleX, currentScaleY;
     
     // Nouvelles variables pour la transition vers la question finale
     private boolean isTransitioningToQuestion;
@@ -402,6 +507,17 @@ public class MastermindGameScreen extends GameScreen {
         this.finalPhase = false;
         this.finalQuestionPhase = false;
         this.showWinImage = false;
+        
+        // Initialiser le système de tokens simplifié
+        this.startPositionTokens = new Array<>();
+        this.movingTokens = new Array<>();
+        this.gridTokens = new Array<>();
+        this.placedTokens = new Array<>();
+        this.positionCentersX = new Array<>();
+        this.positionCentersY = new Array<>();
+        for (int i = 0; i < TOKENS_IN_COMBINATION; i++) {
+            placedTokens.add(-1); // -1 signifie slot vide
+        }
         this.showInfoPanel = false;
         this.inputText = "";
         this.inputFocused = true;
@@ -716,17 +832,63 @@ public class MastermindGameScreen extends GameScreen {
         // Générer le code secret
         generateSecretCode();
         
-        // Initialiser la première tentative avec les premiers tokens
-        currentGuess.clear();
-        for (int i = 0; i < TOKENS_IN_COMBINATION; i++) {
-            currentGuess.add(i); // Commence avec les 6 premiers tokens
-        }
+        // Initialiser le système de tokens simplifié
+        initializeStartPositionTokens();
         
         // Charger la texture du thème
         loadThemeTexture();
 
         // Démarrer l'animation de la première colonne
         startColumnAnimation(0);
+    }
+    
+    /**
+     * Calcule les dimensions et l'échelle du background une seule fois
+     */
+    private void calculateBackgroundDimensions() {
+        float screenWidth = viewport.getWorldWidth();
+        float screenHeight = viewport.getWorldHeight();
+        
+        if (backgroundTexture != null) {
+            float bgRatio = (float)backgroundTexture.getWidth() / backgroundTexture.getHeight();
+            float screenRatio = screenWidth / screenHeight;
+            
+            if (screenRatio > bgRatio) {
+                currentBgHeight = screenHeight;
+                currentBgWidth = currentBgHeight * bgRatio;
+            } else {
+                currentBgHeight = screenHeight;
+                currentBgWidth = currentBgHeight * bgRatio;
+                if (currentBgWidth > screenWidth) {
+                    currentBgWidth = screenWidth;
+                    currentBgHeight = currentBgWidth / bgRatio;
+                }
+            }
+            
+            currentBgX = (screenWidth - currentBgWidth) / 2;
+            currentBgY = (screenHeight - currentBgHeight) / 2;
+            
+            currentScaleX = currentBgWidth / backgroundTexture.getWidth();
+            currentScaleY = currentBgHeight / backgroundTexture.getHeight();
+        }
+    }
+    
+    /**
+     * Initialise les tokens statiques en position de départ pour un nouveau tour
+     */
+    private void initializeStartPositionTokens() {
+        startPositionTokens.clear();
+        
+        // Réinitialiser les slots placés
+        for (int i = 0; i < placedTokens.size; i++) {
+            placedTokens.set(i, -1);
+        }
+        
+        // Créer les tokens statiques en position de départ
+        for (int i = 0; i < numberOfSymbols; i++) {
+            AnimatedToken token = new AnimatedToken(i, 0, 0); // Position sera définie au premier rendu
+            startPositionTokens.add(token);
+        }
     }
     
     private void generateSecretCode() {
@@ -899,14 +1061,7 @@ public class MastermindGameScreen extends GameScreen {
             return;
         }
         
-        if (submitButton.contains(x, y)) {
-            if (finalQuestionPhase) {
-                submitFinalAnswer();
-            } else {
-                submitGuess();
-            }
-            return;
-        }
+        // Le bouton de validation a été supprimé - validation automatique
         
         if (isTestMode && solveButton.contains(x, y)) {
             solveGame();
@@ -918,70 +1073,226 @@ public class MastermindGameScreen extends GameScreen {
             return;
         }
         
-        // Vérifier si c'est un clic sur la tentative en cours (la palette n'est plus cliquable)
-        handleCurrentGuessClick(x, y);
+        // Nouveau système de gestion des clics sur les tokens
+        handleTokenClick(x, y);
     }
     
 
     
-    private void handleCurrentGuessClick(float x, float y) {
-        // Vérifier les clics sur la colonne active pour faire défiler les tokens
-        if (gridPositions != null && attempts.size < gridPositions.size) {
-            AnimatedColumn activeColumn = gridPositions.get(attempts.size);
-            if (activeColumn.animationComplete) {
-                float bgWidth, bgHeight, bgX, bgY;
-                float screenWidth = viewport.getWorldWidth();
-                float screenHeight = viewport.getWorldHeight();
+    /**
+     * Nouvelle méthode pour gérer les clics sur les tokens avec le système d'animation
+     */
+    private void handleTokenClick(float x, float y) {
+        if (gameFinished || finalQuestionPhase) return;
+        
+        // Calculer les dimensions du fond d'écran pour les coordonnées
+        float screenWidth = viewport.getWorldWidth();
+        float screenHeight = viewport.getWorldHeight();
+        
+        if (backgroundTexture == null) return;
+        
+        float bgRatio = (float)backgroundTexture.getWidth() / backgroundTexture.getHeight();
+        float screenRatio = screenWidth / screenHeight;
+        
+        float bgWidth, bgHeight, bgX, bgY;
+        if (screenRatio > bgRatio) {
+            bgHeight = screenHeight;
+            bgWidth = bgHeight * bgRatio;
+        } else {
+            bgHeight = screenHeight;
+            bgWidth = bgHeight * bgRatio;
+            if (bgWidth > screenWidth) {
+                bgWidth = screenWidth;
+                bgHeight = bgWidth / bgRatio;
+            }
+        }
+        
+        bgX = (screenWidth - bgWidth) / 2;
+        bgY = (screenHeight - bgHeight) / 2;
+        float scaleX = bgWidth / backgroundTexture.getWidth();
+        float scaleY = bgHeight / backgroundTexture.getHeight();
+        
+        // 1. Vérifier les clics sur les tokens en position de départ
+        for (AnimatedToken token : startPositionTokens) {
+            float tokenSize = 50 * scaleX; // Taille approximative du token
+            if (x >= token.currentX - tokenSize/2 && x <= token.currentX + tokenSize/2 &&
+                y >= token.currentY - tokenSize/2 && y <= token.currentY + tokenSize/2) {
                 
-                // Calculer les dimensions du fond d'écran
-                float bgRatio = (float)backgroundTexture.getWidth() / backgroundTexture.getHeight();
-                float screenRatio = screenWidth / screenHeight;
-                
-                if (screenRatio > bgRatio) {
-                    bgHeight = screenHeight * 0.9f;
-                    bgWidth = bgHeight * bgRatio;
-                } else {
-                    bgWidth = screenWidth * 0.9f;
-                    bgHeight = bgWidth / bgRatio;
+                // Trouver le premier slot libre
+                int freeSlot = findNextFreeSlot();
+                if (freeSlot != -1) {
+                    createMovingToken(token.tokenType, freeSlot);
                 }
+                return;
+            }
+        }
+        
+        // 2. Vérifier les clics sur les tokens placés dans la grille
+        for (AnimatedToken token : gridTokens) {
+            float tokenSize = 50 * scaleX; // Taille approximative du token
+            if (x >= token.currentX - tokenSize/2 && x <= token.currentX + tokenSize/2 &&
+                y >= token.currentY - tokenSize/2 && y <= token.currentY + tokenSize/2) {
                 
-                bgX = (screenWidth - bgWidth) / 2;
-                bgY = (screenHeight - bgHeight) / 2;
-                
-                float scaleX = bgWidth / backgroundTexture.getWidth();
-                float scaleY = bgHeight / backgroundTexture.getHeight();
-                
-                // Vérifier les clics sur les cases de la colonne active
-                for (int i = 0; i < Math.min(activeColumn.rectangles.size, TOKENS_IN_COMBINATION); i++) {
-                    Rectangle rect = activeColumn.rectangles.get(i);
-                    float boxX = bgX + rect.x * scaleX;
-                    float boxY = bgY + rect.y * scaleY;
-                    float boxWidth = rect.width * scaleX;
-                    float boxHeight = rect.height * scaleY;
-                    
-                    if (x >= boxX && x <= boxX + boxWidth && 
-                        y >= boxY && y <= boxY + boxHeight) {
-                        
-                        // Faire défiler le token à cette position
-                        int currentToken = currentGuess.get(i);
-                        int nextToken = (currentToken + 1) % numberOfSymbols; // Utiliser numberOfSymbols au lieu de MAX_TOTAL_TOKENS
-                        currentGuess.set(i, nextToken);
-                        return;
-                    }
-                }
+                // Supprimer le token de la grille
+                removeTokenFromGrid(token);
+                return;
             }
         }
     }
     
+    /**
+     * Trouve le prochain slot libre dans la grille
+     */
+    private int findNextFreeSlot() {
+        for (int i = 0; i < placedTokens.size; i++) {
+            if (placedTokens.get(i) == -1) {
+                return i;
+            }
+        }
+        return -1; // Aucun slot libre
+    }
+    
+    /**
+     * Trouve un token par son type dans la grille
+     */
+    private AnimatedToken findTokenByType(int tokenType) {
+        for (AnimatedToken token : gridTokens) {
+            if (token.tokenType == tokenType) {
+                return token;
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * Crée un nouveau token en mouvement vers la grille
+     */
+    private void createMovingToken(int tokenType, int slot) {
+        if (gridPositions != null && attempts.size < gridPositions.size) {
+            AnimatedColumn activeColumn = gridPositions.get(attempts.size);
+            if (slot < activeColumn.rectangles.size) {
+                // Masquer temporairement le token de départ correspondant
+                for (AnimatedToken startToken : startPositionTokens) {
+                    if (startToken.tokenType == tokenType) {
+                        startToken.isVisible = false;
+                        break;
+                    }
+                }
+                
+                // Position de départ (copier depuis le token statique)
+                float startX = positionCentersX.get(tokenType);
+                float startY = positionCentersY.get(tokenType);
+                
+                // Position cible sur la grille
+                Rectangle rect = activeColumn.rectangles.get(slot);
+                float targetX = currentBgX + (rect.x + rect.width/2) * currentScaleX;
+                float targetY = currentBgY + (rect.y + rect.height/2) * currentScaleY;
+                
+                // Créer le token en mouvement
+                AnimatedToken movingToken = new AnimatedToken(tokenType, startX, startY);
+                movingToken.gridSlot = slot;
+                
+                // Marquer le slot comme réservé
+                placedTokens.set(slot, tokenType);
+                
+                // Démarrer l'animation avec callback
+                movingToken.startAnimationTo(targetX, targetY, true, () -> {
+                    // À la fin de l'animation, créer un token statique sur la grille
+                    AnimatedToken gridToken = new AnimatedToken(tokenType, targetX, targetY);
+                    gridToken.gridSlot = slot;
+                    gridToken.isPlaced = true;
+                    gridTokens.add(gridToken);
+                    
+                    // Vérifier la validation automatique
+                    checkAutoValidation();
+                });
+                
+                movingTokens.add(movingToken);
+            }
+        }
+    }
+    
+    /**
+     * Supprime un token de la grille (il disparaît simplement)
+     */
+    private void removeTokenFromGrid(AnimatedToken token) {
+        // Libérer le slot
+        if (token.gridSlot != -1) {
+            placedTokens.set(token.gridSlot, -1);
+        }
+        
+        // Supprimer le token de la grille immédiatement
+        gridTokens.removeValue(token, true);
+        
+        // Créer un token en mouvement pour l'animation de retour
+        AnimatedToken returningToken = new AnimatedToken(token.tokenType, token.currentX, token.currentY);
+        
+        // Position cible : position de départ
+        float targetX = positionCentersX.get(token.tokenType);
+        float targetY = positionCentersY.get(token.tokenType);
+        
+        // Démarrer l'animation de retour avec courbe vers le bas
+        returningToken.startAnimationTo(targetX, targetY, false, false, () -> {
+            // À la fin de l'animation, rendre visible le token de départ
+            for (AnimatedToken startToken : startPositionTokens) {
+                if (startToken.tokenType == token.tokenType) {
+                    startToken.isVisible = true;
+                    break;
+                }
+            }
+        });
+        
+        movingTokens.add(returningToken);
+    }
+    
+    /**
+     * Vérifie si tous les tokens sont placés et valide automatiquement
+     */
+    private void checkAutoValidation() {
+        boolean allPlaced = true;
+        
+        for (int slot : placedTokens) {
+            if (slot == -1) {
+                allPlaced = false;
+                break;
+            }
+        }
+        
+        if (allPlaced) {
+            // Validation automatique immédiate (appelée depuis le callback donc animation finie)
+            submitGuess();
+        }
+    }
+    
+    /**
+     * Prépare un nouveau tour en créant de nouveaux tokens de départ
+     */
+    private void resetTokensForNextAttempt() {
+        // Réinitialiser les slots placés
+        for (int i = 0; i < placedTokens.size; i++) {
+            placedTokens.set(i, -1);
+        }
+        
+        // Vider les tokens de la grille courante (ils restent dans l'historique via drawGridAndTokens)
+        gridTokens.clear();
+        
+        // Vider les tokens en mouvement (ne devrait pas arriver mais par sécurité)
+        movingTokens.clear();
+        
+        // Rendre tous les tokens de départ visibles à nouveau
+        for (AnimatedToken startToken : startPositionTokens) {
+            startToken.isVisible = true;
+        }
+    }
 
     
     private void submitGuess() {
         if (gameFinished) return;
         
-        // Créer une copie de la tentative courante
+        // Créer une copie de la tentative courante basée sur les tokens placés
         Array<Integer> guess = new Array<>();
-        for (int symbol : currentGuess) {
-            guess.add(symbol);
+        for (int tokenType : placedTokens) {
+            guess.add(tokenType);
         }
         
         // Ajouter aux tentatives
@@ -1021,6 +1332,8 @@ public class MastermindGameScreen extends GameScreen {
             // Démarrer l'animation de la prochaine colonne seulement si le jeu n'est pas gagné
             if (attempts.size < gridPositions.size) {
                 startColumnAnimation(attempts.size);
+                // Réinitialiser les tokens pour la prochaine tentative
+                resetTokensForNextAttempt();
             }
             
             if (correctSound != null) {
@@ -1096,6 +1409,22 @@ public class MastermindGameScreen extends GameScreen {
     
     @Override
     protected void updateGame(float delta) {
+        // Mettre à jour les animations des tokens en mouvement
+        for (AnimatedToken token : movingTokens) {
+            token.update(delta);
+        }
+        
+        // Supprimer les tokens qui ont fini leur animation
+        Array<AnimatedToken> tokensToRemove = new Array<>();
+        for (AnimatedToken token : movingTokens) {
+            if (!token.isAnimating) {
+                tokensToRemove.add(token);
+            }
+        }
+        for (AnimatedToken token : tokensToRemove) {
+            movingTokens.removeValue(token, true);
+        }
+        
         // Mettre à jour le clignotement du curseur dans la phase finale
         if (finalQuestionPhase && !gameFinished && !isTransitioning) {
             cursorBlinkTimer += delta * CURSOR_BLINK_SPEED;
@@ -1191,26 +1520,9 @@ public class MastermindGameScreen extends GameScreen {
             // Dessiner le fond d'écran
             if (backgroundTexture != null) {
                 batch.setColor(1, 1, 1, 1);
-                float screenWidth = viewport.getWorldWidth();
-                float screenHeight = viewport.getWorldHeight();
                 
-                // Calculer les dimensions pour que l'image soit entièrement visible
-                float bgRatio = (float)backgroundTexture.getWidth() / backgroundTexture.getHeight();
-                float screenRatio = screenWidth / screenHeight;
-                
-                float bgWidth, bgHeight;
-                float bgX, bgY;
-                
-                if (screenRatio > bgRatio) {
-                    bgHeight = screenHeight * 0.9f;
-                    bgWidth = bgHeight * bgRatio;
-                } else {
-                    bgWidth = screenWidth * 0.9f;
-                    bgHeight = bgWidth / bgRatio;
-                }
-                
-                bgX = (screenWidth - bgWidth) / 2;
-                bgY = (screenHeight - bgHeight) / 2;
+                // Calculer les dimensions du background une seule fois
+                calculateBackgroundDimensions();
                 
                 // Dessiner d'abord un fond uni
                 batch.setColor(backgroundColor);
@@ -1218,16 +1530,19 @@ public class MastermindGameScreen extends GameScreen {
                 
                 // Puis dessiner le plateau de jeu centré
                 batch.setColor(1, 1, 1, 1);
-                batch.draw(backgroundTexture, bgX, bgY, bgWidth, bgHeight);
+                batch.draw(backgroundTexture, currentBgX, currentBgY, currentBgWidth, currentBgHeight);
+                
+                // Dessiner la colonne des positions de tokens (utilise les variables calculées)
+                drawTokenPositions();
                 
                 // Dessiner les cases et les jetons seulement si on n'est pas dans la phase finale
                 if (gridPositions != null) {
-                    float scaleX = bgWidth / backgroundTexture.getWidth();
-                    float scaleY = bgHeight / backgroundTexture.getHeight();
-                    
                     // Dessiner les cases et les jetons
-                    drawGridAndTokens(bgX, bgY, scaleX, scaleY);
+                    drawGridAndTokens(currentBgX, currentBgY, currentScaleX, currentScaleY);
                 }
+                
+                // Dessiner tous les types de tokens
+                drawAllTokens(currentScaleX, currentScaleY);
             } else {
                 // Fallback : fond uni si la texture n'est pas chargée
                 batch.setColor(backgroundColor);
@@ -1391,11 +1706,7 @@ public class MastermindGameScreen extends GameScreen {
     private void drawButtons() {
         drawButton(backButton, "Retour", textColor);
         
-        if (!gameFinished) {
-            // Positionner le bouton send à droite de la zone de saisie de la réponse
-            updateSubmitButtonPosition();
-            drawSendButton(submitButton);
-        }
+        // Le bouton de validation a été supprimé - validation automatique
         
         // Dessiner le bouton Résoudre (en mode test uniquement)
         if (isTestMode && !gameFinished) {
@@ -1692,8 +2003,12 @@ public class MastermindGameScreen extends GameScreen {
         
         // 6. Dessiner les boutons en bas
         drawButton(backButton, "Retour", textColor);
-        updateSubmitButtonPosition();
-        drawSendButton(submitButton);
+        // Le bouton de validation a été supprimé pour la phase finale aussi
+        if (sendButtonTexture != null) {
+            // Garder le bouton send pour la phase finale seulement
+            updateSubmitButtonPosition();
+            drawSendButton(submitButton);
+        }
     }
     
     private void drawInputAreaCenteredAt(float centerY) {
@@ -2042,6 +2357,14 @@ public class MastermindGameScreen extends GameScreen {
             }
             tokenTextures.clear();
         }
+        
+        // Nettoyer les textures de position des tokens
+        if (tokenPositionTextures != null) {
+            for (Texture texture : tokenPositionTextures) {
+                texture.dispose();
+            }
+            tokenPositionTextures.clear();
+        }
     }
     
     /**
@@ -2134,9 +2457,12 @@ public class MastermindGameScreen extends GameScreen {
 
     private void loadTokenTextures() {
         tokenTextures = new Array<>();
+        tokenPositionTextures = new Array<>();
+        
         for (int i = 1; i <= MAX_TOTAL_TOKENS; i++) {
             try {
-                String tokenPath = String.format("images/games/mmd/token/%02d.png", i);
+                // Charger la texture du token
+                String tokenPath = "images/games/mmd/token/" + (i < 10 ? "0" : "") + i + ".png";
                 if (Gdx.files.internal(tokenPath).exists()) {
                     Texture tokenTexture = new Texture(Gdx.files.internal(tokenPath));
                     tokenTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
@@ -2151,15 +2477,154 @@ public class MastermindGameScreen extends GameScreen {
                     tokenTextures.add(fallbackTexture);
                     pixmap.dispose();
                 }
+                
+                // Charger la texture de position correspondante
+                String positionPath = "images/games/mmd/token/" + (i < 10 ? "0" : "") + i + "s.png";
+                if (Gdx.files.internal(positionPath).exists()) {
+                    Texture positionTexture = new Texture(Gdx.files.internal(positionPath));
+                    positionTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+                    tokenPositionTextures.add(positionTexture);
+                } else {
+                    System.err.println("Token position texture non trouvée: " + positionPath);
+                    // Créer une texture de remplacement transparente
+                    Pixmap pixmap = new Pixmap(64, 64, Pixmap.Format.RGBA8888);
+                    pixmap.setColor(0, 0, 0, 0.3f); // Gris semi-transparent
+                    pixmap.fill();
+                    Texture fallbackTexture = new Texture(pixmap);
+                    tokenPositionTextures.add(fallbackTexture);
+                    pixmap.dispose();
+                }
             } catch (Exception e) {
                 System.err.println("Erreur lors du chargement du token " + i + ": " + e.getMessage());
-                // Créer une texture de remplacement en cas d'erreur
+                // Créer une texture de remplacement en cas d'erreur pour le token
                 Pixmap pixmap = new Pixmap(64, 64, Pixmap.Format.RGBA8888);
                 pixmap.setColor(1, 0, 0, 1);
                 pixmap.fill();
                 Texture fallbackTexture = new Texture(pixmap);
                 tokenTextures.add(fallbackTexture);
                 pixmap.dispose();
+                
+                // Créer une texture de remplacement pour la position
+                Pixmap posPixmap = new Pixmap(64, 64, Pixmap.Format.RGBA8888);
+                posPixmap.setColor(0, 0, 0, 0.3f);
+                posPixmap.fill();
+                Texture fallbackPosTexture = new Texture(posPixmap);
+                tokenPositionTextures.add(fallbackPosTexture);
+                posPixmap.dispose();
+            }
+        }
+    }
+
+    /**
+     * Dessine la colonne des images de position des tokens à gauche de l'écran
+     */
+    private void drawTokenPositions() {
+        if (tokenPositionTextures == null || tokenPositionTextures.size == 0) {
+            return;
+        }
+        
+        batch.setColor(1, 1, 1, 1);
+        
+        // Position de base relative au fond d'écran (coordonnées dans l'image originale)
+        float baseX = 65;
+        float baseY = 840;
+        float spacing = 115f;
+        
+        // Convertir les coordonnées relatives au fond d'écran en coordonnées écran (utilise les variables calculées)
+        float startX = currentBgX + (baseX * currentScaleX);
+        float startY = currentBgY + (baseY * currentScaleY);
+        float scaledSpacing = spacing * currentScaleY;
+        
+        // Vider et recalculer les coordonnées des centres
+        positionCentersX.clear();
+        positionCentersY.clear();
+        
+        // Dessiner seulement les images de position correspondant au nombre de tokens en jeu
+        int tokensToDisplay = Math.min(numberOfSymbols, tokenPositionTextures.size);
+        for (int i = 0; i < tokensToDisplay; i++) {
+            Texture positionTexture = tokenPositionTextures.get(i);
+            if (positionTexture != null) {
+                // Calculer la taille de l'image en fonction de l'échelle
+                float imageWidth = positionTexture.getWidth() * currentScaleX;
+                float imageHeight = positionTexture.getHeight() * currentScaleY;
+                
+                // Calculer la position du centre de l'image
+                float centerX = startX;
+                float centerY = startY - (i * scaledSpacing);
+                
+                // Stocker les coordonnées du centre pour réutilisation
+                positionCentersX.add(centerX);
+                positionCentersY.add(centerY);
+                
+                // Convertir la position du centre en position du coin supérieur gauche
+                float posX = centerX - (imageWidth / 2);
+                float posY = centerY - (imageHeight / 2);
+                
+                batch.draw(positionTexture, posX, posY, imageWidth, imageHeight);
+            }
+        }
+        
+        // Mettre à jour les positions de départ des tokens animés
+        updateTokenStartPositions();
+    }
+    
+    /**
+     * Met à jour les positions des tokens de départ en utilisant les coordonnées calculées
+     */
+    private void updateTokenStartPositions() {
+        for (AnimatedToken token : startPositionTokens) {
+            if (token.tokenType < positionCentersX.size) {
+                // Utiliser exactement les mêmes coordonnées que l'image de position
+                token.currentX = positionCentersX.get(token.tokenType);
+                token.currentY = positionCentersY.get(token.tokenType);
+                token.startX = token.currentX;
+                token.startY = token.currentY;
+            }
+        }
+    }
+    
+    /**
+     * Dessine tous les types de tokens (position de départ, en mouvement, sur grille)
+     */
+    private void drawAllTokens(float scaleX, float scaleY) {
+        if (tokenTextures == null) return;
+        
+        batch.setColor(1, 1, 1, 1);
+        
+        // Dessiner les tokens en position de départ (statiques) seulement s'ils sont visibles
+        for (AnimatedToken token : startPositionTokens) {
+            if (token.isVisible) {
+                drawSingleToken(token, scaleX, scaleY);
+            }
+        }
+        
+        // Dessiner les tokens en mouvement
+        for (AnimatedToken token : movingTokens) {
+            drawSingleToken(token, scaleX, scaleY);
+        }
+        
+        // Dessiner les tokens placés sur la grille (colonne courante seulement)
+        for (AnimatedToken token : gridTokens) {
+            drawSingleToken(token, scaleX, scaleY);
+        }
+    }
+    
+    /**
+     * Dessine un token individuel
+     */
+    private void drawSingleToken(AnimatedToken token, float scaleX, float scaleY) {
+        if (token.tokenType < tokenTextures.size) {
+            Texture tokenTexture = tokenTextures.get(token.tokenType);
+            if (tokenTexture != null) {
+                // Calculer la taille du token basée sur l'échelle
+                float tokenWidth = tokenTexture.getWidth() * scaleX;
+                float tokenHeight = tokenTexture.getHeight() * scaleY;
+                
+                // Centrer le token sur sa position courante
+                float drawX = token.currentX - tokenWidth / 2;
+                float drawY = token.currentY - tokenHeight / 2;
+                
+                batch.draw(tokenTexture, drawX, drawY, tokenWidth, tokenHeight);
             }
         }
     }
@@ -2232,39 +2697,38 @@ public class MastermindGameScreen extends GameScreen {
             }
         }
 
-        // Dessiner les tokens par-dessus les cases
+        // Dessiner seulement les tokens des tentatives précédentes (pas la colonne courante)
         for (AnimatedColumn column : gridPositions) {
-            float tokensAlpha = 0f;
-            Array<Integer> tokensToShow = null;
-            
             if (column.col < attempts.size) {
-                tokensAlpha = 1f;
-                tokensToShow = attempts.get(column.col);
-            } else if (column.col == attempts.size) {
-                tokensAlpha = column.getTokensAlpha();
-                tokensToShow = currentGuess;
-            }
-            
-            if (tokensAlpha > 0 && tokensToShow != null) {
+                Array<Integer> tokensToShow = attempts.get(column.col);
+                
                 for (int i = 0; i < Math.min(column.rectangles.size, TOKENS_IN_COMBINATION); i++) {
                     Rectangle rect = column.rectangles.get(i);
-                    float boxX = bgX + rect.x * scaleX;
-                    float boxY = bgY + rect.y * scaleY;
-                    float boxWidth = rect.width * scaleX;
-                    float boxHeight = rect.height * scaleY;
                     
-                    if (i < tokensToShow.size && tokenTextures != null && tokensToShow.get(i) < tokenTextures.size) {
+                    if (i < tokensToShow.size && tokenTextures != null && tokensToShow.get(i) >= 0 && tokensToShow.get(i) < tokenTextures.size) {
                         Texture tokenTexture = tokenTextures.get(tokensToShow.get(i));
                         
                         if (tokenTexture != null) {
-                            batch.setColor(1, 1, 1, tokensAlpha);
-                            batch.draw(tokenTexture, boxX, boxY, boxWidth, boxHeight);
-                            batch.setColor(1, 1, 1, 1);
+                            // Calculer la taille réelle du token (comme dans drawAnimatedTokens)
+                            float tokenWidth = tokenTexture.getWidth() * scaleX;
+                            float tokenHeight = tokenTexture.getHeight() * scaleY;
+                            
+                            // Calculer le centre de la case
+                            float boxCenterX = bgX + (rect.x + rect.width/2) * scaleX;
+                            float boxCenterY = bgY + (rect.y + rect.height/2) * scaleY;
+                            
+                            // Centrer le token dans la case (comme les tokens animés)
+                            float tokenX = boxCenterX - tokenWidth / 2;
+                            float tokenY = boxCenterY - tokenHeight / 2;
+                            
+                            batch.setColor(1, 1, 1, 1f);
+                            batch.draw(tokenTexture, tokenX, tokenY, tokenWidth, tokenHeight);
                         }
                     }
                 }
             }
         }
+        // La colonne courante est maintenant entièrement gérée par les tokens animés
     }
 
     private void disableGameElements() {
@@ -2285,6 +2749,14 @@ public class MastermindGameScreen extends GameScreen {
                 }
             }
             tokenTextures.clear();
+        }
+        if (tokenPositionTextures != null) {
+            for (Texture texture : tokenPositionTextures) {
+                if (texture != null) {
+                    texture.dispose();
+                }
+            }
+            tokenPositionTextures.clear();
         }
         // Nettoyer les animations
         if (gridPositions != null) {
