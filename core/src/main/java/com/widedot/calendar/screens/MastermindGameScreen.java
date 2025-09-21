@@ -40,7 +40,6 @@ public class MastermindGameScreen extends GameScreen {
     private final GlyphLayout layout;
     private final Rectangle backButton;
     private final Rectangle submitButton;
-    private final Rectangle solveButton;
     private final Rectangle infoButton;
     private Color backgroundColor;
     private boolean isTestMode;
@@ -48,6 +47,7 @@ public class MastermindGameScreen extends GameScreen {
     private Texture fullImageTexture;
     private Texture sendButtonTexture;
     private Texture infoButtonTexture;
+    private Texture closeButtonTexture;
     private Texture backgroundTexture;
     private Theme theme;
     
@@ -96,9 +96,9 @@ public class MastermindGameScreen extends GameScreen {
     // Transition variables
     private boolean isTransitioning;
     private float transitionTimer;
-    private static final float TRANSITION_DURATION = 3.0f; // 3 secondes de transition
-    private static final float FADE_TO_BLACK_DURATION = 1.0f; // 1 seconde pour fondu vers noir
-    private static final float FADE_TO_IMAGE_DURATION = 2.0f; // 2 secondes pour fondu vers image
+    private static final float TRANSITION_DURATION = 3.0f; // Durée de transition
+    private static final float FADE_TO_BLACK_DURATION = 1.0f; // Durée pour fondu vers noir
+    private static final float FADE_TO_IMAGE_DURATION = 2.0f; // Durée pour fondu vers image
     
     // Nouvelles variables pour les cases
     private Texture boxTexture;
@@ -179,7 +179,7 @@ public class MastermindGameScreen extends GameScreen {
         boolean animationComplete;
         boolean tokensFadeStarted;
         float tokensFadeTimer;
-        static final float TOKENS_FADE_DURATION = 1.0f; // 1 seconde pour le fade-in
+        static final float TOKENS_FADE_DURATION = 1.0f; // Durée pour le fade-in
         
         AnimatedColumn(int col) {
             super(col);
@@ -222,10 +222,10 @@ public class MastermindGameScreen extends GameScreen {
             }
             
             if (tokensFadeTimer >= TOKENS_FADE_DURATION) {
-                return 1f; // Complètement visible après 1 seconde
+                return 1f; // Complètement visible après la durée de fade
             }
             
-            // Fade progressif de 0 à 1 sur 1 seconde
+            // Fade progressif de 0 à 1 sur la durée définie
             return tokensFadeTimer / TOKENS_FADE_DURATION;
         }
         
@@ -286,10 +286,16 @@ public class MastermindGameScreen extends GameScreen {
         boolean isAnimating;
         float animationTime;
         float animationDuration;
+        // ===== VITESSES D'ANIMATION =====
+        // Modifiez ces valeurs pour changer les vitesses :
+        float forwardAnimationDuration = 0.4f; // Durée pour l'animation aller (vers la grille)
+        float returnAnimationDuration = 0.1f; // Durée pour l'animation retour (vers position départ)
+        // Plus petit = plus rapide, Plus grand = plus lent
         boolean isPlaced; // true si le token est placé sur la grille, false s'il est en position de départ
         int gridSlot; // Slot sur la grille (-1 si pas placé)
         boolean isVisible = true; // Pour masquer temporairement les tokens de départ
         boolean curveUp = true; // true = courbe vers le haut, false = courbe vers le bas
+        boolean useStraightLine = false; // true pour ligne droite, false pour courbe
         Runnable onAnimationComplete; // Callback appelée à la fin de l'animation
         
         AnimatedToken(int tokenType, float startX, float startY) {
@@ -301,7 +307,6 @@ public class MastermindGameScreen extends GameScreen {
             this.isAnimating = false;
             this.isPlaced = false;
             this.gridSlot = -1;
-            this.animationDuration = 0.5f; // 0.5 seconde pour l'animation
         }
         
         void startAnimationTo(float targetX, float targetY, boolean toGrid) {
@@ -309,8 +314,10 @@ public class MastermindGameScreen extends GameScreen {
             this.targetY = targetY;
             this.isAnimating = true;
             this.animationTime = 0f;
+            this.animationDuration = forwardAnimationDuration; // Utiliser la durée pour l'aller
             // Si on va vers la grille, on sera placé à la fin
             // Si on revient au départ, on ne sera plus placé
+            this.isPlaced = toGrid;
         }
         
         void startAnimationTo(float targetX, float targetY, boolean toGrid, Runnable onComplete) {
@@ -321,6 +328,18 @@ public class MastermindGameScreen extends GameScreen {
         void startAnimationTo(float targetX, float targetY, boolean toGrid, boolean curveUp, Runnable onComplete) {
             startAnimationTo(targetX, targetY, toGrid);
             this.curveUp = curveUp;
+            this.useStraightLine = false; // Utiliser la courbe par défaut
+            this.onAnimationComplete = onComplete;
+        }
+        
+        void startReturnAnimationTo(float targetX, float targetY, boolean toGrid, Runnable onComplete) {
+            this.targetX = targetX;
+            this.targetY = targetY;
+            this.isAnimating = true;
+            this.animationTime = 0f;
+            this.animationDuration = returnAnimationDuration; // Utiliser la durée pour le retour
+            this.useStraightLine = true; // Utiliser ligne droite pour le retour
+            this.isPlaced = toGrid;
             this.onAnimationComplete = onComplete;
         }
         
@@ -330,21 +349,27 @@ public class MastermindGameScreen extends GameScreen {
             animationTime += delta;
             float progress = Math.min(animationTime / animationDuration, 1f);
             
-            // Courbe de Bézier quadratique pour une trajectoire courbe
-            float midX = (startX + targetX) / 2;
-            float midY;
-            if (curveUp) {
-                midY = Math.max(startY, targetY) + 100; // Point de contrôle plus haut
+            if (useStraightLine) {
+                // Interpolation linéaire pour une trajectoire en ligne droite (retour)
+                currentX = startX + (targetX - startX) * progress;
+                currentY = startY + (targetY - startY) * progress;
             } else {
-                midY = Math.min(startY, targetY) - 100; // Point de contrôle plus bas
+                // Courbe de Bézier quadratique pour une trajectoire courbe (aller)
+                float midX = (startX + targetX) / 2;
+                float midY;
+                if (curveUp) {
+                    midY = Math.max(startY, targetY) + 100; // Point de contrôle plus haut
+                } else {
+                    midY = Math.min(startY, targetY) - 100; // Point de contrôle plus bas
+                }
+                
+                // Interpolation avec courbe de Bézier
+                float t = progress;
+                float invT = 1f - t;
+                
+                currentX = invT * invT * startX + 2 * invT * t * midX + t * t * targetX;
+                currentY = invT * invT * startY + 2 * invT * t * midY + t * t * targetY;
             }
-            
-            // Interpolation avec courbe de Bézier
-            float t = progress;
-            float invT = 1f - t;
-            
-            currentX = invT * invT * startX + 2 * invT * t * midX + t * t * targetX;
-            currentY = invT * invT * startY + 2 * invT * t * midY + t * t * targetY;
             
             if (progress >= 1f) {
                 currentX = targetX;
@@ -462,7 +487,6 @@ public class MastermindGameScreen extends GameScreen {
         
         this.backButton = new Rectangle(20, 20, 100, 50);
         this.submitButton = new Rectangle(0, 0, 120, 50); // Position sera calculée dynamiquement
-        this.solveButton = new Rectangle(viewport.getWorldWidth() - 120, 20, 100, 50);
         this.infoButton = new Rectangle(viewport.getWorldWidth() - 60, viewport.getWorldHeight() - 60, 40, 40);
         
         // Créer texture blanche
@@ -482,10 +506,18 @@ public class MastermindGameScreen extends GameScreen {
         
         // Charger la texture du bouton info
         try {
-            this.infoButtonTexture = new Texture(Gdx.files.internal("images/ui/information.png"));
+            this.infoButtonTexture = new Texture(Gdx.files.internal("images/ui/help.png"));
         } catch (Exception e) {
             System.err.println("Erreur lors du chargement du bouton info: " + e.getMessage());
             this.infoButtonTexture = null;
+        }
+        
+        // Charger la texture du bouton close
+        try {
+            this.closeButtonTexture = new Texture(Gdx.files.internal("images/ui/close.png"));
+        } catch (Exception e) {
+            System.err.println("Erreur lors du chargement du bouton close: " + e.getMessage());
+            this.closeButtonTexture = null;
         }
 
         // Charger la texture du fond d'écran
@@ -496,6 +528,9 @@ public class MastermindGameScreen extends GameScreen {
             System.err.println("Erreur lors du chargement du fond d'écran: " + e.getMessage());
             this.backgroundTexture = null;
         }
+        
+        // Positionner le bouton d'information selon les coordonnées du background
+        updateInfoButtonPosition();
         
         // Initialiser les variables de jeu
         this.secretCode = new Array<>();
@@ -791,6 +826,12 @@ public class MastermindGameScreen extends GameScreen {
             
             @Override
             public boolean keyDown(int keycode) {
+                // Gestion de la touche R pour résoudre (en mode test uniquement)
+                if (keycode == Input.Keys.R && isTestMode && !gameFinished) {
+                    solveGame();
+                    return true;
+                }
+                
                 if (!finalQuestionPhase || gameFinished) return false;
                 
                 if (keycode == Input.Keys.BACKSPACE && inputText.length() > 0) {
@@ -870,6 +911,51 @@ public class MastermindGameScreen extends GameScreen {
             
             currentScaleX = currentBgWidth / backgroundTexture.getWidth();
             currentScaleY = currentBgHeight / backgroundTexture.getHeight();
+        }
+    }
+    
+    /**
+     * Calcule la position des boutons d'information et close en fonction des coordonnées du background
+     * Le bouton help sera centré sur des coordonnées spécifiques dans le référentiel de l'image background
+     * Le bouton close sera positionné à un décalage vertical par rapport au help
+     * La taille sera gérée lors du dessin avec l'échelle du background
+     */
+    private void updateInfoButtonPosition() {
+        if (backgroundTexture != null) {
+            // Coordonnées dans le référentiel de l'image background
+            float bgX = 1867f;
+            float bgY = 959f;
+            
+            // Taille de base des boutons (sera redimensionnée lors du dessin)
+            float baseButtonSize = 40f;
+            
+            // Convertir en coordonnées écran pour le bouton help
+            float helpScreenX = currentBgX + (bgX * currentScaleX);
+            float helpScreenY = currentBgY + (bgY * currentScaleY);
+            
+            // Positionner le bouton help
+            infoButton.setSize(baseButtonSize, baseButtonSize);
+            infoButton.setPosition(
+                helpScreenX - baseButtonSize / 2,
+                helpScreenY - baseButtonSize / 2
+            );
+            
+            // Positionner le bouton close avec un décalage vertical (dans le référentiel background)
+            float closeBgY = bgY + 105f;
+            float closeScreenX = currentBgX + (bgX * currentScaleX);
+            float closeScreenY = currentBgY + (closeBgY * currentScaleY);
+            
+            backButton.setSize(baseButtonSize, baseButtonSize);
+            backButton.setPosition(
+                closeScreenX - baseButtonSize / 2,
+                closeScreenY - baseButtonSize / 2
+            );
+        } else {
+            // Fallback: position et taille par défaut si pas de background
+            infoButton.setSize(40, 40);
+            infoButton.setPosition(viewport.getWorldWidth() - 60, viewport.getWorldHeight() - 60);
+            backButton.setSize(40, 40);
+            backButton.setPosition(20, 20);
         }
     }
     
@@ -1063,10 +1149,7 @@ public class MastermindGameScreen extends GameScreen {
         
         // Le bouton de validation a été supprimé - validation automatique
         
-        if (isTestMode && solveButton.contains(x, y)) {
-            solveGame();
-            return;
-        }
+        // Le bouton Résoudre a été remplacé par la touche R
         
         if (infoButton.contains(x, y)) {
             showInfoPanel = true;
@@ -1231,8 +1314,8 @@ public class MastermindGameScreen extends GameScreen {
         float targetX = positionCentersX.get(token.tokenType);
         float targetY = positionCentersY.get(token.tokenType);
         
-        // Démarrer l'animation de retour avec courbe vers le bas
-        returningToken.startAnimationTo(targetX, targetY, false, false, () -> {
+        // Démarrer l'animation de retour en ligne droite
+        returningToken.startReturnAnimationTo(targetX, targetY, false, () -> {
             // À la fin de l'animation, rendre visible le token de départ
             for (AnimatedToken startToken : startPositionTokens) {
                 if (startToken.tokenType == token.tokenType) {
@@ -1523,6 +1606,8 @@ public class MastermindGameScreen extends GameScreen {
                 
                 // Calculer les dimensions du background une seule fois
                 calculateBackgroundDimensions();
+                // Mettre à jour la position du bouton d'information
+                updateInfoButtonPosition();
                 
                 // Dessiner d'abord un fond uni
                 batch.setColor(backgroundColor);
@@ -1573,30 +1658,15 @@ public class MastermindGameScreen extends GameScreen {
         float screenWidth = viewport.getWorldWidth();
         float screenHeight = viewport.getWorldHeight();
         
-        // Titre
-        bigFont.setColor(textColor);
-        String title = "Mastermind";
-        layout.setText(bigFont, title);
-        bigFont.draw(batch, layout, 
-            (screenWidth - layout.width) / 2,
-            screenHeight - 30);
-        
-        // Instructions
-        font.setColor(textColor);
-        String instructions = "Tentatives: " + attempts.size + "/" + maxAttempts;
-        layout.setText(font, instructions);
-        font.draw(batch, layout, 
-            (screenWidth - layout.width) / 2,
-            screenHeight - 80);
-        
         // Dessiner les résultats des tentatives précédentes
         drawAttemptResults();
         
         // Dessiner les boutons
         drawButtons();
         
-        // Dessiner le bouton d'info
-        drawInfoButton();
+        // Dessiner les boutons d'info et close avec l'échelle du background
+        drawInfoButton(currentScaleX, currentScaleY);
+        drawCloseButton(currentScaleX, currentScaleY);
         
         // Message de fin de jeu
         if (gameFinished) {
@@ -1704,14 +1774,11 @@ public class MastermindGameScreen extends GameScreen {
     }
     
     private void drawButtons() {
-        drawButton(backButton, "Retour", textColor);
+        // Le bouton retour a été remplacé par le bouton close avec image
         
         // Le bouton de validation a été supprimé - validation automatique
         
-        // Dessiner le bouton Résoudre (en mode test uniquement)
-        if (isTestMode && !gameFinished) {
-            drawButton(solveButton, "Résoudre", textColor);
-        }
+        // Le bouton Résoudre a été remplacé par la touche R
     }
     
     private void updateSubmitButtonPosition() {
@@ -1749,7 +1816,7 @@ public class MastermindGameScreen extends GameScreen {
         
         // Positionner le bouton send juste à côté du bord droit de la zone de saisie
         submitButton.setPosition(
-            inputBoxX + inputBoxWidth + 10, // 10 pixels de marge
+            inputBoxX + inputBoxWidth + 10, // Marge entre la zone de saisie et le bouton
             inputBoxY
         );
         submitButton.setSize(sendButtonSize, sendButtonSize);
@@ -2002,7 +2069,8 @@ public class MastermindGameScreen extends GameScreen {
         }
         
         // 6. Dessiner les boutons en bas
-        drawButton(backButton, "Retour", textColor);
+        // Le bouton retour a été remplacé par le bouton close avec image
+        drawCloseButton(currentScaleX, currentScaleY);
         // Le bouton de validation a été supprimé pour la phase finale aussi
         if (sendButtonTexture != null) {
             // Garder le bouton send pour la phase finale seulement
@@ -2150,11 +2218,20 @@ public class MastermindGameScreen extends GameScreen {
         }
     }
     
-    private void drawInfoButton() {
+    private void drawInfoButton(float scaleX, float scaleY) {
         if (infoButtonTexture != null) {
-            // Dessiner l'image du bouton info
+            // Dessiner l'image du bouton info avec la même logique que les tokens
             batch.setColor(1f, 1f, 1f, 1f); // Couleur blanche pour afficher l'image normalement
-            batch.draw(infoButtonTexture, infoButton.x, infoButton.y, infoButton.width, infoButton.height);
+            
+            // Calculer la taille du bouton basée sur l'échelle (comme les tokens)
+            float buttonWidth = infoButtonTexture.getWidth() * scaleX;
+            float buttonHeight = infoButtonTexture.getHeight() * scaleY;
+            
+            // Centrer le bouton sur sa position
+            float drawX = infoButton.x + (infoButton.width - buttonWidth) / 2;
+            float drawY = infoButton.y + (infoButton.height - buttonHeight) / 2;
+            
+            batch.draw(infoButtonTexture, drawX, drawY, buttonWidth, buttonHeight);
         } else {
             // Fallback: dessiner un bouton rectangulaire simple si l'image n'est pas disponible
             batch.setColor(0.3f, 0.6f, 0.9f, 0.8f);
@@ -2180,6 +2257,26 @@ public class MastermindGameScreen extends GameScreen {
             bigFont.draw(batch, layout, 
                 centerX - layout.width / 2,
                 centerY + layout.height / 2);
+        }
+    }
+    
+    private void drawCloseButton(float scaleX, float scaleY) {
+        if (closeButtonTexture != null) {
+            // Dessiner l'image du bouton close avec la même logique que les tokens
+            batch.setColor(1f, 1f, 1f, 1f); // Couleur blanche pour afficher l'image normalement
+            
+            // Calculer la taille du bouton basée sur l'échelle (comme les tokens)
+            float buttonWidth = closeButtonTexture.getWidth() * scaleX;
+            float buttonHeight = closeButtonTexture.getHeight() * scaleY;
+            
+            // Centrer le bouton sur sa position
+            float drawX = backButton.x + (backButton.width - buttonWidth) / 2;
+            float drawY = backButton.y + (backButton.height - buttonHeight) / 2;
+            
+            batch.draw(closeButtonTexture, drawX, drawY, buttonWidth, buttonHeight);
+        } else {
+            // Fallback: dessiner un bouton rectangulaire simple si l'image n'est pas disponible
+            drawButton(backButton, "Retour", textColor);
         }
     }
     
@@ -2299,8 +2396,8 @@ public class MastermindGameScreen extends GameScreen {
     public void resize(int width, int height) {
         super.resize(width, height);
         // Les boutons se repositionnent automatiquement basé sur la taille de l'écran
-        solveButton.setPosition(viewport.getWorldWidth() - 120, 20);
-        infoButton.setPosition(viewport.getWorldWidth() - 60, viewport.getWorldHeight() - 60);
+        // Le bouton d'information se positionne selon les coordonnées du background
+        updateInfoButtonPosition();
         
         // Adapter la police d'information à la nouvelle taille d'écran
         float screenDiagonal = (float) Math.sqrt(width * width + height * height);
@@ -2318,6 +2415,7 @@ public class MastermindGameScreen extends GameScreen {
         if (fullImageTexture != null) fullImageTexture.dispose();
         if (sendButtonTexture != null) sendButtonTexture.dispose();
         if (infoButtonTexture != null) infoButtonTexture.dispose();
+        if (closeButtonTexture != null) closeButtonTexture.dispose();
         if (backgroundTexture != null) backgroundTexture.dispose(); // Dispose the new texture
         if (correctSound != null) correctSound.dispose();
         if (incorrectSound != null) incorrectSound.dispose();
