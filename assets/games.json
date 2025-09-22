@@ -168,7 +168,7 @@
       "reference": "MMD_mona_lisa",
       "gameTemplate": "MMD",
       "theme": "mona_lisa",
-      "presets": ["easy"]
+      "presets": ["hard"]
     },
     {
       "reference": "MMD_composition_1916",

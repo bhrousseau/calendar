@@ -395,6 +395,11 @@ public class MastermindGameScreen extends GameScreen {
     private static final int TOKENS_IN_COMBINATION = 4; // Nombre fixe de jetons dans la combinaison
     private static final int MAX_TOTAL_TOKENS = 6; // Maximum de jetons disponibles (pour le niveau hard)
     
+    // Indicateurs de feedback
+    private Texture dotWhiteTexture;   // Token correct et bien placé
+    private Texture dotBlackTexture;   // Token correct mais mal placé
+    private Texture dotEmptyTexture;   // Token incorrect
+    
     // Système de tokens simplifié
     private Array<AnimatedToken> startPositionTokens; // Tokens statiques en position de départ
     private Array<AnimatedToken> movingTokens; // Tokens en cours d'animation vers la grille
@@ -1677,101 +1682,81 @@ public class MastermindGameScreen extends GameScreen {
     private void drawAttemptResults() {
         if (gridPositions == null || results.size == 0) return;
         
-        float bgWidth, bgHeight, bgX, bgY;
-        float screenWidth = viewport.getWorldWidth();
-        float screenHeight = viewport.getWorldHeight();
-        
-        // Calculer les dimensions du fond d'écran
-        float bgRatio = (float)backgroundTexture.getWidth() / backgroundTexture.getHeight();
-        float screenRatio = screenWidth / screenHeight;
-        
-        if (screenRatio > bgRatio) {
-            bgHeight = screenHeight * 0.9f;
-            bgWidth = bgHeight * bgRatio;
-        } else {
-            bgWidth = screenWidth * 0.9f;
-            bgHeight = bgWidth / bgRatio;
-        }
-        
-        bgX = (screenWidth - bgWidth) / 2;
-        bgY = (screenHeight - bgHeight) / 2;
-        
-        float scaleX = bgWidth / backgroundTexture.getWidth();
-        float scaleY = bgHeight / backgroundTexture.getHeight();
-        
         // Afficher les résultats pour chaque tentative terminée
         for (int attemptIndex = 0; attemptIndex < results.size; attemptIndex++) {
             if (attemptIndex < gridPositions.size) {
                 AnimatedColumn column = gridPositions.get(attemptIndex);
                 GuessResult result = results.get(attemptIndex);
                 
-                // Afficher le résultat à côté de la première case de la colonne
+                // Calculer le centre de la colonne (au-dessus de la première case)
                 if (column.rectangles.size > 0) {
                     Rectangle firstRect = column.rectangles.get(0);
-                    float boxX = bgX + firstRect.x * scaleX;
-                    float boxY = bgY + firstRect.y * scaleY;
-                    float boxHeight = firstRect.height * scaleY;
                     
-                    // Position du feedback à droite de la colonne
-                    float feedbackX = boxX + (firstRect.width * scaleX) + 20;
-                    float feedbackY = boxY + boxHeight / 2;
+                    // Centre de la première case de la colonne
+                    float columnCenterX = currentBgX + (firstRect.x + firstRect.width/2) * currentScaleX;
+                    float columnCenterY = currentBgY + (firstRect.y + firstRect.height/2) * currentScaleY;
                     
-                    drawResultFeedback(result, feedbackX, feedbackY);
+                    // Position des indicateurs au-dessus de la colonne
+                    // Décalage vertical pour placer les indicateurs au-dessus
+                    float offsetY = 118f * currentScaleY;
+                    float feedbackCenterY = columnCenterY + offsetY;
+                    
+                    drawResultFeedback(result, columnCenterX, feedbackCenterY, currentScaleX, currentScaleY);
                 }
             }
         }
     }
     
-    private void drawResultFeedback(GuessResult result, float x, float y) {
-        float feedbackRadius = 6f;
-        float feedbackSpacing = 15f;
+    private void drawResultFeedback(GuessResult result, float centerX, float centerY, float scaleX, float scaleY) {
+        // Taille de base des indicateurs (en pixels dans l'image originale) avec facteur 4x
+        float baseIndicatorSize = 40f;
+        float baseSpacing = 22f;
         
-        // Dessiner les ronds pour les positions exactes (vert foncé)
+        // Appliquer l'échelle comme le bouton close (même logique que les tokens)
+        float indicatorSize = baseIndicatorSize * scaleX; // Même échelle que le background
+        float spacing = baseSpacing * scaleX; // Espacement proportionnel
+        
+        // Créer un tableau de 4 indicateurs
+        Texture[] indicators = new Texture[4];
+        
+        // Remplir avec les indicateurs blancs (positions correctes)
         for (int i = 0; i < result.correctPosition; i++) {
-            float feedbackX = x + i * feedbackSpacing;
-            drawSmallCircle(feedbackX, y, feedbackRadius, new Color(0.2f, 0.7f, 0.2f, 1));
+            indicators[i] = dotWhiteTexture;
         }
         
-        // Dessiner les cercles pour les couleurs correctes mais mal placées (gris clair)
-        for (int i = 0; i < result.correctSymbol; i++) {
-            float feedbackX = x + (result.correctPosition + i) * feedbackSpacing;
-            drawSmallCircle(feedbackX, y, feedbackRadius, new Color(0.5f, 0.5f, 0.5f, 1));
+        // Remplir avec les indicateurs noirs (symboles corrects mais mal placés)
+        for (int i = result.correctPosition; i < result.correctPosition + result.correctSymbol; i++) {
+            indicators[i] = dotBlackTexture;
+        }
+        
+        // Remplir le reste avec les indicateurs vides
+        for (int i = result.correctPosition + result.correctSymbol; i < 4; i++) {
+            indicators[i] = dotEmptyTexture;
+        }
+        
+        // Positions des 4 indicateurs en carré tourné à 45 degrés (comme un signe plus)
+        // Position 0: haut
+        // Position 1: droite  
+        // Position 2: bas
+        // Position 3: gauche
+        float[][] positions = {
+            {centerX, centerY + spacing},           // Haut
+            {centerX + spacing, centerY},           // Droite
+            {centerX, centerY - spacing},           // Bas
+            {centerX - spacing, centerY}            // Gauche
+        };
+        
+        // Dessiner les 4 indicateurs
+        batch.setColor(1, 1, 1, 1); // Couleur blanche pour les textures
+        for (int i = 0; i < 4; i++) {
+            if (indicators[i] != null) {
+                float indicatorX = positions[i][0] - indicatorSize / 2; // Centrer horizontalement
+                float indicatorY = positions[i][1] - indicatorSize / 2; // Centrer verticalement
+                batch.draw(indicators[i], indicatorX, indicatorY, indicatorSize, indicatorSize);
+            }
         }
     }
     
-    /**
-     * Dessine un petit cercle pour le feedback
-     */
-    private void drawSmallCircle(float centerX, float centerY, float radius, Color color) {
-        batch.setColor(color);
-        
-        // Dessiner le cercle rempli ligne par ligne
-        for (float py = centerY - radius; py <= centerY + radius; py += 1f) {
-            float dy = py - centerY;
-            float distanceFromCenter = Math.abs(dy);
-            
-            if (distanceFromCenter <= radius) {
-                // Calculer la largeur de la ligne à cette hauteur
-                float halfWidth = (float) Math.sqrt(radius * radius - dy * dy);
-                float lineWidth = halfWidth * 2;
-                
-                if (lineWidth > 0) {
-                    batch.draw(whiteTexture, centerX - halfWidth, py, lineWidth, 1f);
-                }
-            }
-        }
-        
-        // Dessiner un contour léger
-        batch.setColor(color.r * 0.7f, color.g * 0.7f, color.b * 0.7f, color.a);
-        
-        // Contour simplifié avec quelques points
-        for (float angle = 0; angle < 360; angle += 10) {
-            float radians = angle * (float) Math.PI / 180f;
-            float borderX = centerX + (float) Math.cos(radians) * (radius - 1);
-            float borderY = centerY + (float) Math.sin(radians) * (radius - 1);
-            batch.draw(whiteTexture, borderX - 0.5f, borderY - 0.5f, 1f, 1f);
-        }
-    }
     
     private void drawButtons() {
         // Le bouton retour a été remplacé par le bouton close avec image
@@ -2463,6 +2448,11 @@ public class MastermindGameScreen extends GameScreen {
             }
             tokenPositionTextures.clear();
         }
+        
+        // Nettoyer les textures d'indicateurs
+        if (dotWhiteTexture != null) dotWhiteTexture.dispose();
+        if (dotBlackTexture != null) dotBlackTexture.dispose();
+        if (dotEmptyTexture != null) dotEmptyTexture.dispose();
     }
     
     /**
@@ -2611,6 +2601,44 @@ public class MastermindGameScreen extends GameScreen {
                 posPixmap.dispose();
             }
         }
+        
+        // Charger les textures d'indicateurs
+        loadIndicatorTextures();
+    }
+    
+    /**
+     * Charge les textures des indicateurs de feedback
+     */
+    private void loadIndicatorTextures() {
+        try {
+            // Charger dot-white.png (token correct et bien placé)
+            dotWhiteTexture = new Texture(Gdx.files.internal("images/games/mmd/indicator/dot-white.png"));
+            dotWhiteTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+            System.out.println("✓ Texture dot-white chargée");
+        } catch (Exception e) {
+            System.err.println("Erreur lors du chargement de dot-white.png: " + e.getMessage());
+            dotWhiteTexture = null;
+        }
+        
+        try {
+            // Charger dot-black.png (token correct mais mal placé)
+            dotBlackTexture = new Texture(Gdx.files.internal("images/games/mmd/indicator/dot-black.png"));
+            dotBlackTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+            System.out.println("✓ Texture dot-black chargée");
+        } catch (Exception e) {
+            System.err.println("Erreur lors du chargement de dot-black.png: " + e.getMessage());
+            dotBlackTexture = null;
+        }
+        
+        try {
+            // Charger dot-empty.png (token incorrect)
+            dotEmptyTexture = new Texture(Gdx.files.internal("images/games/mmd/indicator/dot-empty.png"));
+            dotEmptyTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+            System.out.println("✓ Texture dot-empty chargée");
+        } catch (Exception e) {
+            System.err.println("Erreur lors du chargement de dot-empty.png: " + e.getMessage());
+            dotEmptyTexture = null;
+        }
     }
 
     /**
@@ -2624,8 +2652,8 @@ public class MastermindGameScreen extends GameScreen {
         batch.setColor(1, 1, 1, 1);
         
         // Position de base relative au fond d'écran (coordonnées dans l'image originale)
-        float baseX = 65;
-        float baseY = 840;
+        float baseX = 70;
+        float baseY = 850;
         float spacing = 115f;
         
         // Convertir les coordonnées relatives au fond d'écran en coordonnées écran (utilise les variables calculées)
@@ -2855,6 +2883,20 @@ public class MastermindGameScreen extends GameScreen {
                 }
             }
             tokenPositionTextures.clear();
+        }
+        
+        // Nettoyer les textures d'indicateurs
+        if (dotWhiteTexture != null) {
+            dotWhiteTexture.dispose();
+            dotWhiteTexture = null;
+        }
+        if (dotBlackTexture != null) {
+            dotBlackTexture.dispose();
+            dotBlackTexture = null;
+        }
+        if (dotEmptyTexture != null) {
+            dotEmptyTexture.dispose();
+            dotEmptyTexture = null;
         }
         // Nettoyer les animations
         if (gridPositions != null) {
