@@ -4,8 +4,9 @@ import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.utils.viewport.Viewport;
-import com.badlogic.gdx.utils.viewport.ScreenViewport;
+import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.widedot.calendar.data.Theme;
@@ -27,9 +28,7 @@ public abstract class GameScreen implements Screen {
     protected float currentWidth;
     protected float currentHeight;
 
-    // Dimensions de base du monde
-    private static final float BASE_WIDTH = 800;
-    private static final float BASE_HEIGHT = 600;
+    // Dimensions supprimées - utilisation des ViewRules
     
     // Flag pour éviter la double initialisation
     private boolean isInitialized = false;
@@ -43,13 +42,20 @@ public abstract class GameScreen implements Screen {
         this.dayId = dayId;
         this.game = game;
         this.camera = new OrthographicCamera();
-        this.viewport = new ScreenViewport(camera);
+        
+        // Utiliser FitViewport pour maintenir le ratio avec bandes noires
+        // Ratio cible : 16:9 (1.777...) 
+        float targetWidth = 2048f;  // Largeur fixe
+        float targetHeight = targetWidth * 9f / 16f;    // 1152 (ratio 16:9)
+        
+        this.viewport = new FitViewport(targetWidth, targetHeight, camera);
+        
         this.batch = new SpriteBatch();
         this.theme = null;
         
-        // Initialiser les dimensions
-        this.currentWidth = BASE_WIDTH;
-        this.currentHeight = BASE_HEIGHT;
+        // Initialiser les dimensions avec les valeurs par défaut
+        this.currentWidth = 1280;
+        this.currentHeight = 720;
     }
 
     /**
@@ -95,6 +101,70 @@ public abstract class GameScreen implements Screen {
      * Gère les entrées utilisateur
      */
     protected abstract void handleInput();
+    
+    /**
+     * Gère les raccourcis globaux (plein écran, etc.)
+     * 
+     * Raccourcis disponibles :
+     * - F11 : Basculer plein écran / fenêtré
+     * - Alt+Enter : Basculer plein écran / fenêtré (raccourci alternatif)
+     */
+    protected void handleGlobalInput() {
+        // F11 pour basculer en plein écran
+        if (Gdx.input.isKeyJustPressed(Input.Keys.F11)) {
+            toggleFullscreen();
+        }
+        
+        // Alt+Enter pour basculer en plein écran (raccourci standard)
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) && 
+            (Gdx.input.isKeyPressed(Input.Keys.ALT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.ALT_RIGHT))) {
+            toggleFullscreen();
+        }
+    }
+    
+    /**
+     * Bascule entre mode fenêtré et plein écran
+     */
+    protected void toggleFullscreen() {
+        if (Gdx.graphics.isFullscreen()) {
+            // Passer en mode fenêtré : taille fixe ratio 16:9, optimisée pour l'écran
+            int screenWidth = Gdx.graphics.getDisplayMode().width;
+            int screenHeight = Gdx.graphics.getDisplayMode().height;
+            
+            // Option 1: Basé sur 50% de la hauteur d'écran
+            int heightBasedWindowHeight = screenHeight / 2;
+            int heightBasedWindowWidth = Math.round(heightBasedWindowHeight * 16f / 9f);
+            
+            // Option 2: Basé sur la largeur maximale de l'écran
+            int widthBasedWindowWidth = screenWidth;
+            int widthBasedWindowHeight = Math.round(widthBasedWindowWidth * 9f / 16f);
+            
+            // Choisir la plus petite des deux options
+            int windowWidth, windowHeight;
+            String method;
+            
+            if (heightBasedWindowWidth <= screenWidth) {
+                // La fenêtre basée sur la hauteur rentre dans l'écran
+                windowWidth = heightBasedWindowWidth;
+                windowHeight = heightBasedWindowHeight;
+                method = "50% hauteur écran";
+            } else {
+                // La fenêtre basée sur la hauteur est trop large, utiliser la largeur
+                windowWidth = widthBasedWindowWidth;
+                windowHeight = widthBasedWindowHeight;
+                method = "largeur écran max";
+            }
+            
+            Gdx.graphics.setWindowedMode(windowWidth, windowHeight);
+            System.out.println("Basculé en mode fenêtré (" + windowWidth + "x" + windowHeight + ") - ratio 16:9, " + method);
+        } else {
+            // Passer en plein écran
+            Gdx.graphics.setFullscreenMode(Gdx.graphics.getDisplayMode());
+            System.out.println("Basculé en plein écran (" + 
+                             Gdx.graphics.getDisplayMode().width + "x" + 
+                             Gdx.graphics.getDisplayMode().height + ")");
+        }
+    }
 
     /**
      * Détermine si les entrées utilisateur doivent être traitées
@@ -147,8 +217,8 @@ public abstract class GameScreen implements Screen {
 
     @Override
     public void render(float delta) {
-        // Effacer l'écran
-        Gdx.gl.glClearColor(0.2f, 0.2f, 0.2f, 1);
+        // Effacer l'écran avec un fond noir
+        Gdx.gl.glClearColor(0.0f, 0.0f, 0.0f, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         
         // Mettre à jour la caméra
@@ -164,6 +234,9 @@ public abstract class GameScreen implements Screen {
         renderGame();
         batch.end();
         
+        // Gérer les raccourcis globaux (plein écran)
+        handleGlobalInput();
+        
         // Gérer les entrées utilisateur seulement si autorisé
         if (canHandleInput()) {
             handleInput();
@@ -178,12 +251,11 @@ public abstract class GameScreen implements Screen {
         this.currentWidth = width;
         this.currentHeight = height;
         
-        // Mettre à jour la caméra
-        camera.setToOrtho(false, width, height);
-        
-        // Mettre à jour le viewport
+        // Mettre à jour le viewport (FitViewport gère automatiquement les bandes noires)
         viewport.update(width, height, true);
         
+        // Informations de debug
+        System.out.println("Monde: " + viewport.getWorldWidth() + "x" + viewport.getWorldHeight());
         System.out.println("Redimensionnement terminé");
     }
 

@@ -12,7 +12,7 @@ public class Lwjgl3Launcher {
         if (StartupHelper.startNewJvmIfRequired()) return; // This handles macOS support and helps on Windows.
         
         Lwjgl3ApplicationConfiguration config = getDefaultConfiguration();
-        Lwjgl3Application app = new Lwjgl3Application(new Main() {
+        new Lwjgl3Application(new Main() {
             @Override
             public void create() {
                 // Initialiser la plateforme après que LibGDX soit prêt
@@ -35,7 +35,10 @@ public class Lwjgl3Launcher {
         //// useful for testing performance, but can also be very stressful to some hardware.
         //// You may also need to configure GPU drivers to fully disable Vsync; this can cause screen tearing.
 
-        configuration.setWindowedMode(958, 561);
+        // Démarrer automatiquement en plein écran avec la résolution native
+        configuration.setFullscreenMode(Lwjgl3ApplicationConfiguration.getDisplayMode());
+        configuration.setResizable(false); // Pas de redimensionnement en mode fenêtré
+        
         //// You can change these files; they are in lwjgl3/src/main/resources/ .
         //// They can also be loaded from the root of assets/ .
         configuration.setWindowIcon("libgdx128.png", "libgdx64.png", "libgdx32.png", "libgdx16.png");

@@ -937,68 +937,56 @@ public class MastermindGameScreen extends GameScreen {
      * Calcule les dimensions et l'échelle du background une seule fois
      */
     private void calculateBackgroundDimensions() {
-        float screenWidth = viewport.getWorldWidth();
-        float screenHeight = viewport.getWorldHeight();
+        // Avec le nouveau système, la largeur monde est fixe à 2048
+        float screenWidth = viewport.getWorldWidth();  // Toujours 2048
+        float screenHeight = viewport.getWorldHeight(); // Variable selon aspect ratio
         
         if (backgroundTexture != null) {
             float bgRatio = (float)backgroundTexture.getWidth() / backgroundTexture.getHeight();
-            float screenRatio = screenWidth / screenHeight;
             
-            if (screenRatio > bgRatio) {
-                currentBgHeight = screenHeight;
-                currentBgWidth = currentBgHeight * bgRatio;
-            } else {
-                currentBgHeight = screenHeight;
-                currentBgWidth = currentBgHeight * bgRatio;
-                if (currentBgWidth > screenWidth) {
-                    currentBgWidth = screenWidth;
-                    currentBgHeight = currentBgWidth / bgRatio;
-                }
-            }
+            // Le background s'adapte à la largeur fixe et se centre verticalement
+            currentBgWidth = screenWidth; // 2048
+            currentBgHeight = currentBgWidth / bgRatio;
             
-            currentBgX = (screenWidth - currentBgWidth) / 2;
+            // Centrer horizontalement (toujours 0 car largeur fixe)
+            currentBgX = 0;
+            // Centrer verticalement (l'image peut déborder en haut/bas selon le viewport)
             currentBgY = (screenHeight - currentBgHeight) / 2;
             
             currentScaleX = currentBgWidth / backgroundTexture.getWidth();
             currentScaleY = currentBgHeight / backgroundTexture.getHeight();
-            
-            // Plus besoin de préserver les échelles
         }
     }
     
     /**
-     * Calcule la position des boutons d'information et close (version simplifiée)
+     * Calcule la position des boutons d'information et close en haut à droite du viewport
      */
     private void updateInfoButtonPosition() {
-        // Coordonnées dans le référentiel de l'image background
-        float bgX = 1867f;
-        float bgY = 959f;
+        // Obtenir les dimensions du viewport
+        float viewportWidth = viewport.getWorldWidth();
+        float viewportHeight = viewport.getWorldHeight();
         
-        // Taille de base des boutons (sera redimensionnée lors du dessin)
-        float baseButtonSize = 40f;
+        // Taille de base des boutons
+        float baseButtonSize = 100f; // Taille un peu plus grande pour une meilleure visibilité
         
-        if (backgroundTexture != null) {
-            // Utiliser les valeurs actuelles du background
-            float helpScreenX = currentBgX + (bgX * currentScaleX);
-            float helpScreenY = currentBgY + (bgY * currentScaleY);
-            
-            // Calculer les positions des boutons
-            float infoButtonX = helpScreenX - baseButtonSize / 2;
-            float infoButtonY = helpScreenY - baseButtonSize / 2;
-            
-            float closeBgY = bgY + 105f;
-            float closeScreenX = currentBgX + (bgX * currentScaleX);
-            float closeScreenY = currentBgY + (closeBgY * currentScaleY);
-            float closeButtonX = closeScreenX - baseButtonSize / 2;
-            float closeButtonY = closeScreenY - baseButtonSize / 2;
-            
-            // Positionner les boutons
-            infoButton.setSize(baseButtonSize, baseButtonSize);
-            infoButton.setPosition(infoButtonX, infoButtonY);
-            
-            backButton.setSize(baseButtonSize, baseButtonSize);
-            backButton.setPosition(closeButtonX, closeButtonY);
-        }
+        // Marge depuis les bords du viewport
+        float marginFromEdge = 20f;
+        float spacingBetweenButtons = 10f;
+        
+        // Position du bouton info (en haut à droite)
+        float closeButtonX = viewportWidth - marginFromEdge - baseButtonSize;
+        float closeButtonY = viewportHeight - marginFromEdge - baseButtonSize;
+        
+        // Position du bouton close (juste en dessous du bouton info)
+        float infoButtonX = closeButtonX;
+        float infoButtonY = closeButtonY - baseButtonSize - spacingBetweenButtons;
+        
+        // Positionner les boutons
+        infoButton.setSize(baseButtonSize, baseButtonSize);
+        infoButton.setPosition(infoButtonX, infoButtonY);
+        
+        backButton.setSize(baseButtonSize, baseButtonSize);
+        backButton.setPosition(closeButtonX, closeButtonY);
     }
     
     /**
@@ -1804,8 +1792,6 @@ public class MastermindGameScreen extends GameScreen {
                 
                 // Calculer les dimensions du background une seule fois
                 calculateBackgroundDimensions();
-                // Mettre à jour la position du bouton d'information
-                updateInfoButtonPosition();
                 
                 // Dessiner d'abord un fond uni
                 batch.setColor(backgroundColor);
@@ -1856,10 +1842,8 @@ public class MastermindGameScreen extends GameScreen {
         
         if (captureNextFramePending) {
             updateInfoButtonPosition();
-            float scaleX = currentScaleX;
-            float scaleY = currentScaleY;
-            drawCloseButton(scaleX, scaleY);
-            drawInfoButton(scaleX, scaleY);
+            drawCloseButton();
+            drawInfoButton();
         }
         
         // Capturer le framebuffer si demandé (AVANT les overlays)
@@ -1911,10 +1895,8 @@ public class MastermindGameScreen extends GameScreen {
         // Dessiner les boutons info et close (maintenant inclus dans la capture)
         // S'assurer que les positions des boutons sont à jour
         updateInfoButtonPosition();
-        float scaleX = currentScaleX;
-        float scaleY = currentScaleY;
-        drawCloseButton(scaleX, scaleY);
-        drawInfoButton(scaleX, scaleY);
+        drawCloseButton();
+        drawInfoButton();
     }
     
     private void drawAttemptResults() {
@@ -2123,37 +2105,31 @@ public class MastermindGameScreen extends GameScreen {
         batch.draw(fullImageTexture, imageX, imageY, imageWidth, imageHeight);
     }
     
-    private void drawInfoButton(float scaleX, float scaleY) {
+    private void drawInfoButton() {
         if (infoButtonTexture != null) {
-            // Dessiner l'image du bouton info avec la même logique que les tokens
+            // Dessiner l'image du bouton info à sa taille naturelle
             batch.setColor(1f, 1f, 1f, 1f); // Couleur blanche pour afficher l'image normalement
             
-            // Calculer la taille du bouton basée sur l'échelle (comme les tokens)
-            float buttonWidth = infoButtonTexture.getWidth() * scaleX;
-            float buttonHeight = infoButtonTexture.getHeight() * scaleY;
+            // Utiliser la taille du rectangle du bouton (définie dans updateInfoButtonPosition)
+            float buttonWidth = infoButton.width;
+            float buttonHeight = infoButton.height;
             
-            // Centrer le bouton sur sa position
-            float drawX = infoButton.x + (infoButton.width - buttonWidth) / 2;
-            float drawY = infoButton.y + (infoButton.height - buttonHeight) / 2;
-            
-            batch.draw(infoButtonTexture, drawX, drawY, buttonWidth, buttonHeight);
+            // Dessiner le bouton à sa position
+            batch.draw(infoButtonTexture, infoButton.x, infoButton.y, buttonWidth, buttonHeight);
         }
     }
     
-    private void drawCloseButton(float scaleX, float scaleY) {
+    private void drawCloseButton() {
         if (closeButtonTexture != null) {
-            // Dessiner l'image du bouton close avec la même logique que les tokens
+            // Dessiner l'image du bouton close à sa taille naturelle
             batch.setColor(1f, 1f, 1f, 1f); // Couleur blanche pour afficher l'image normalement
             
-            // Calculer la taille du bouton basée sur l'échelle (comme les tokens)
-            float buttonWidth = closeButtonTexture.getWidth() * scaleX;
-            float buttonHeight = closeButtonTexture.getHeight() * scaleY;
+            // Utiliser la taille du rectangle du bouton (définie dans updateInfoButtonPosition)
+            float buttonWidth = backButton.width;
+            float buttonHeight = backButton.height;
             
-            // Centrer le bouton sur sa position
-            float drawX = backButton.x + (backButton.width - buttonWidth) / 2;
-            float drawY = backButton.y + (backButton.height - buttonHeight) / 2;
-            
-            batch.draw(closeButtonTexture, drawX, drawY, buttonWidth, buttonHeight);
+            // Dessiner le bouton à sa position
+            batch.draw(closeButtonTexture, backButton.x, backButton.y, buttonWidth, buttonHeight);
         }
     }
     
@@ -2579,8 +2555,8 @@ public class MastermindGameScreen extends GameScreen {
         batch.setColor(1, 1, 1, 1);
         
         // Position de base relative au fond d'écran (coordonnées dans l'image originale)
-        float baseX = 70;
-        float baseY = 850;
+        float baseX = 100;
+        float baseY = 925;
         float spacing = 115f;
         
         // Convertir les coordonnées relatives au fond d'écran en coordonnées écran (utilise les variables calculées)
