@@ -17,14 +17,11 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ObjectMap;
 import com.badlogic.gdx.utils.JsonReader;
 import com.badlogic.gdx.utils.JsonValue;
-import com.badlogic.gdx.utils.Timer;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
-import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.files.FileHandle;
-import java.util.Random;
 import java.util.HashSet;
 import java.util.Set;
 import com.widedot.calendar.AdventCalendarGame;
@@ -44,13 +41,12 @@ public class MastermindGameScreen extends GameScreen {
     private final BitmapFont infoFont; // Police dédiée pour le panneau d'info
     private final GlyphLayout layout;
     private final Rectangle backButton;
-    private final Rectangle submitButton;
+    // Rectangle submitButton supprimé (plus de bouton de validation)
     private final Rectangle infoButton;
     private Color backgroundColor;
     private boolean isTestMode;
     private final Texture whiteTexture;
     private Texture fullImageTexture;
-    private Texture sendButtonTexture;
     private Texture infoButtonTexture;
     private Texture closeButtonTexture;
     private Texture backgroundTexture;
@@ -67,7 +63,6 @@ public class MastermindGameScreen extends GameScreen {
     private boolean gameWon;
     private boolean gameFinished;
     private boolean finalPhase;
-    private boolean finalQuestionPhase;
     private boolean showWinImage;
     private boolean showInfoPanel;
     
@@ -81,33 +76,22 @@ public class MastermindGameScreen extends GameScreen {
     private float restartDelay = 2.0f; // 2 secondes avant le redémarrage
     
     // Game parameters
-    private Color textColor;
-    private Color correctColor;
-    private Color incorrectColor;
+        private Color correctColor;
+    // incorrectColor supprimé (plus utilisé)
     private String[] symbolNames;
     private Texture[] symbolTextures;
     
-    // Final question
-    private QuestionData finalQuestion;
-    private String inputText;
-    private boolean inputFocused;
-    private float cursorBlinkTimer;
-    private boolean showCursor;
-    
     // Sounds
-    private Sound correctSound;
-    private Sound incorrectSound;
     private Sound winSound;
     private Sound wrongSound;
     private Sound failedSound;
     
     // Image fragments for final phase
-    private static final int TOTAL_IMAGE_SQUARES = 100;
     private static final int GRID_ROWS = 10;
     private static final int GRID_COLS = 10;
     private TextureRegion[][] imageSquares;
     private Set<Integer> visibleSquares;
-    private Random random;
+    // random supprimé (plus utilisé)
     
     // Transition variables
     private boolean isTransitioning;
@@ -124,7 +108,6 @@ public class MastermindGameScreen extends GameScreen {
     private static final float BOX_OPENING_DURATION = 0.5f; // Durée totale d'ouverture en secondes
     private static final float BOX_CLOSING_DURATION = 0.3f; // Durée totale de fermeture en secondes
     private static final float ANIMATION_DELAY = 0.0f;
-    private static final int ANIMATION_VARIANTS = 6;
     private static final int DEFAULT_ANIMATION_VARIANT = 2;
     
     // Animation state
@@ -196,25 +179,18 @@ public class MastermindGameScreen extends GameScreen {
         Array<BoxAnimation> animations;
         boolean isAnimating;
         boolean animationComplete;
-        boolean tokensFadeStarted;
-        float tokensFadeTimer;
-        static final float TOKENS_FADE_DURATION = 1.0f; // Durée pour le fade-in
         
         AnimatedColumn(int col) {
             super(col);
             this.animations = new Array<>();
             this.isAnimating = false;
             this.animationComplete = false;
-            this.tokensFadeStarted = false;
-            this.tokensFadeTimer = 0;
         }
         
         void startAnimations() {
             if (!isAnimating) {
                 isAnimating = true;
                 animationComplete = false;
-                tokensFadeStarted = false;
-                tokensFadeTimer = 0;
                 
                 // Créer une animation pour chaque case de la colonne
                 for (int i = 0; i < rectangles.size; i++) {
@@ -225,34 +201,13 @@ public class MastermindGameScreen extends GameScreen {
         }
         
         void updateTokensFade(float delta) {
-            if (animationComplete && !tokensFadeStarted) {
-                tokensFadeStarted = true;
-                tokensFadeTimer = 0;
-            }
-            
-            if (tokensFadeStarted) {
-                tokensFadeTimer += delta;
-            }
+            // Méthode conservée pour compatibilité mais plus utilisée
         }
         
-        float getTokensAlpha() {
-            if (!animationComplete || !tokensFadeStarted) {
-                return 0f; // Invisible avant la fin de l'animation
-            }
-            
-            if (tokensFadeTimer >= TOKENS_FADE_DURATION) {
-                return 1f; // Complètement visible après la durée de fade
-            }
-            
-            // Fade progressif de 0 à 1 sur la durée définie
-            return tokensFadeTimer / TOKENS_FADE_DURATION;
-        }
         
         void reset() {
             this.isAnimating = false;
             this.animationComplete = false;
-            this.tokensFadeStarted = false;
-            this.tokensFadeTimer = 0;
             // Réinitialiser les animations sans les supprimer
             for (BoxAnimation anim : this.animations) {
                 anim.isPlaying = false;
@@ -318,35 +273,7 @@ public class MastermindGameScreen extends GameScreen {
             }
         }
     }
-    
-    /**
-     * Classe interne pour représenter une question
-     */
-    private static class QuestionData {
-        public String question;
-        public String answer;
-        public Array<String> acceptedAnswers;
         
-        public QuestionData(String question, String answer) {
-            this.question = question;
-            this.answer = answer;
-            this.acceptedAnswers = new Array<>();
-            this.acceptedAnswers.add(answer);
-        }
-        
-        public boolean isAnswerCorrect(String userAnswer, boolean caseSensitive) {
-            String testAnswer = caseSensitive ? userAnswer : userAnswer.toLowerCase();
-            for (String accepted : acceptedAnswers) {
-                String acceptedCompare = caseSensitive ? accepted : accepted.toLowerCase();
-                if (testAnswer.trim().equals(acceptedCompare.trim())) {
-                    return true;
-                }
-            }
-            return false;
-        }
-    }
-    private static final float GUESS_SPACING = 60f;
-    
     /**
      * Classe interne pour représenter le résultat d'une tentative
      */
@@ -376,7 +303,6 @@ public class MastermindGameScreen extends GameScreen {
         float forwardAnimationDuration = 0.4f; // Durée pour l'animation aller (vers la grille)
         float returnAnimationDuration = 0.1f; // Durée pour l'animation retour (vers position départ)
         // Plus petit = plus rapide, Plus grand = plus lent
-        boolean isPlaced; // true si le token est placé sur la grille, false s'il est en position de départ
         int gridSlot; // Slot sur la grille (-1 si pas placé)
         boolean isVisible = true; // Pour masquer temporairement les tokens de départ
         boolean curveUp = true; // true = courbe vers le haut, false = courbe vers le bas
@@ -390,7 +316,7 @@ public class MastermindGameScreen extends GameScreen {
             this.currentX = startX;
             this.currentY = startY;
             this.isAnimating = false;
-            this.isPlaced = false;
+            // Token initialisé
             this.gridSlot = -1;
         }
         
@@ -400,9 +326,7 @@ public class MastermindGameScreen extends GameScreen {
             this.isAnimating = true;
             this.animationTime = 0f;
             this.animationDuration = forwardAnimationDuration; // Utiliser la durée pour l'aller
-            // Si on va vers la grille, on sera placé à la fin
-            // Si on revient au départ, on ne sera plus placé
-            this.isPlaced = toGrid;
+            // Animation vers la grille ou retour au départ
         }
         
         void startAnimationTo(float targetX, float targetY, boolean toGrid, Runnable onComplete) {
@@ -410,12 +334,6 @@ public class MastermindGameScreen extends GameScreen {
             this.onAnimationComplete = onComplete;
         }
         
-        void startAnimationTo(float targetX, float targetY, boolean toGrid, boolean curveUp, Runnable onComplete) {
-            startAnimationTo(targetX, targetY, toGrid);
-            this.curveUp = curveUp;
-            this.useStraightLine = false; // Utiliser la courbe par défaut
-            this.onAnimationComplete = onComplete;
-        }
         
         void startReturnAnimationTo(float targetX, float targetY, boolean toGrid, Runnable onComplete) {
             this.targetX = targetX;
@@ -424,7 +342,7 @@ public class MastermindGameScreen extends GameScreen {
             this.animationTime = 0f;
             this.animationDuration = returnAnimationDuration; // Utiliser la durée pour le retour
             this.useStraightLine = true; // Utiliser ligne droite pour le retour
-            this.isPlaced = toGrid;
+            // Animation vers la grille ou retour
             this.onAnimationComplete = onComplete;
         }
         
@@ -498,56 +416,36 @@ public class MastermindGameScreen extends GameScreen {
     // Variables de calcul du background mutualisées
     private float currentBgX, currentBgY, currentBgWidth, currentBgHeight;
     private float currentScaleX, currentScaleY;
-    
-    // Variables pour préserver l'échelle des boutons après la capture
-    private float preservedScaleX = 1.0f, preservedScaleY = 1.0f;
-    
-    // Nouvelles variables pour la transition vers la question finale
-    private boolean isTransitioningToQuestion;
-    private float questionTransitionTimer;
-    private static final float WAIT_BEFORE_TRANSITION = 1.0f; // Attente d'une seconde avant la transition
-    private static final float FADE_TO_BG_DURATION = 1.0f;
-    private static final float FADE_FROM_BG_DURATION = 1.0f;
-    private static final float QUESTION_TRANSITION_DURATION = WAIT_BEFORE_TRANSITION + FADE_TO_BG_DURATION + FADE_FROM_BG_DURATION;
-    
+        
+    // Variables pour la transition vers l'image finale
+    private boolean isTransitioningToPicture;
+        
     // Variables pour l'animation de porte coulissante
-    // Pour désactiver l'animation de porte coulissante et revenir au fade classique, 
-    // changer cette valeur à false
     private boolean useSlidingDoorAnimation = true; // Activer/désactiver l'animation spéciale
     private float slidingDoorTimer;
-    private static final float SLIDING_DOOR_DURATION = 2.0f; // Durée de l'animation de porte
-    private static final float SLIDING_DOOR_WAIT = 0.5f; // Attente avant l'ouverture
+    private static final float SLIDING_DOOR_WAIT = 2.5f; // Attente avant l'ouverture (2s + 0.5s)
     private static final float SLIDING_DOOR_OPEN_DURATION = 1.0f; // Durée d'ouverture des panneaux
-    private static final float SLIDING_DOOR_FADE_DURATION = 0.5f; // Durée du fade vers la question
     private float leftPanelOffset = 0f; // Décalage du panneau gauche (négatif = vers la gauche)
     private float rightPanelOffset = 0f; // Décalage du panneau droit (positif = vers la droite)
-    private float slidingDoorFadeAlpha = 0f; // Alpha pour le fade vers la question
+
     
     // Variables pour capturer l'état du plateau de jeu
     private Texture gameStateTexture = null; // Texture contenant le rendu du plateau au moment de la victoire
-    private boolean gameStateCaptured = false; // Indique si l'état a été capturé
     private boolean captureNextFramePending = false; // Indique qu'il faut capturer la prochaine frame
     
     // Stage pour gérer les animations avec Actions
     private Stage transitionStage;
     private Actor leftPanelActor;
     private Actor rightPanelActor;
-    private Actor backgroundFadeActor;
     private boolean isUsingActionBasedTransition = false;
+    private float imageAlpha = 0f; // Alpha pour le fade-in de l'image finale
     
     // Constants
-    private static final String CORRECT_SOUND_PATH = "audio/win.mp3";
-    private static final String INCORRECT_SOUND_PATH = "audio/sliding.mp3";
     private static final String WIN_SOUND_PATH = "audio/win.mp3";
     private static final String WRONG_SOUND_PATH = "audio/wrong.wav";
     private static final String FAILED_SOUND_PATH = "audio/failed.wav";
-    private static final float SYMBOL_SIZE = 40f;
-    private static final float CURSOR_BLINK_SPEED = 1.0f;
     
     private boolean gameElementsDisabled = false;
-    
-    // Couleur de fond pour la phase de question finale
-    private static final Color QUESTION_PHASE_BG_COLOR = Color.BLACK;
     
     /**
      * Constructeur avec paramètres dynamiques
@@ -562,9 +460,8 @@ public class MastermindGameScreen extends GameScreen {
         this.codeLength = TOKENS_IN_COMBINATION; // Toujours 4 jetons à deviner
         this.numberOfSymbols = 6; // Valeur par défaut si aucun paramètre n'est fourni
         this.backgroundColor = new Color(0.1f, 0.1f, 0.2f, 1);
-        this.textColor = new Color(1, 1, 1, 1);
         this.correctColor = new Color(0.7f, 0.9f, 0.7f, 1);
-        this.incorrectColor = new Color(0.9f, 0.7f, 0.7f, 1);
+        // incorrectColor supprimé (plus utilisé)
         
         // Stocker le paramètre symbolImages pour plus tard (après l'initialisation des symboles)
         String symbolImagesParam = null;
@@ -580,10 +477,6 @@ public class MastermindGameScreen extends GameScreen {
             if (parameters.containsKey("bgColor")) {
                 String bgColor = (String) parameters.get("bgColor");
                 this.backgroundColor = parseColor(bgColor);
-            }
-            if (parameters.containsKey("textColor")) {
-                String color = (String) parameters.get("textColor");
-                this.textColor = parseColor(color);
             }
             if (parameters.containsKey("symbolImages")) {
                 symbolImagesParam = (String) parameters.get("symbolImages");
@@ -606,7 +499,7 @@ public class MastermindGameScreen extends GameScreen {
         this.layout = new GlyphLayout();
         
         this.backButton = new Rectangle(20, 20, 100, 50);
-        this.submitButton = new Rectangle(0, 0, 120, 50); // Position sera calculée dynamiquement
+        // submitButton supprimé (plus de bouton de validation)
         this.infoButton = new Rectangle(viewport.getWorldWidth() - 60, viewport.getWorldHeight() - 60, 40, 40);
         
         // Créer texture blanche
@@ -616,13 +509,6 @@ public class MastermindGameScreen extends GameScreen {
         this.whiteTexture = new Texture(pixmap);
         pixmap.dispose();
         
-        // Charger la texture du bouton validate
-        try {
-            this.sendButtonTexture = new Texture(Gdx.files.internal("images/ui/validate.png"));
-        } catch (Exception e) {
-            System.err.println("Erreur lors du chargement du bouton validate: " + e.getMessage());
-            this.sendButtonTexture = null;
-        }
         
         // Charger la texture du bouton info
         try {
@@ -661,7 +547,6 @@ public class MastermindGameScreen extends GameScreen {
         this.gameWon = false;
         this.gameFinished = false;
         this.finalPhase = false;
-        this.finalQuestionPhase = false;
         this.showWinImage = false;
         
         // Initialiser les variables de fade out et redémarrage
@@ -671,17 +556,15 @@ public class MastermindGameScreen extends GameScreen {
         this.closeBoxesTimer = 0;
         
         // Initialiser les variables de transition vers la question finale
-        this.isTransitioningToQuestion = false;
-        this.questionTransitionTimer = 0;
+        this.isTransitioningToPicture = false;
         
         // Initialiser les variables de l'animation de porte coulissante
         this.slidingDoorTimer = 0;
         this.leftPanelOffset = 0f;
         this.rightPanelOffset = 0f;
-        this.slidingDoorFadeAlpha = 0f;
+        // slidingDoorFadeAlpha supprimé (plus de fade nécessaire)
         
-        // Initialiser les variables de capture d'état du plateau
-        this.gameStateCaptured = false;
+        // Variables de capture d'état du plateau initialisées
         this.captureNextFramePending = false;
         if (this.gameStateTexture != null) {
             this.gameStateTexture.dispose();
@@ -699,16 +582,11 @@ public class MastermindGameScreen extends GameScreen {
             placedTokens.add(-1); // -1 signifie slot vide
         }
         this.showInfoPanel = false;
-        this.inputText = "";
-        this.inputFocused = true;
-        this.cursorBlinkTimer = 0;
-        this.showCursor = true;
         this.symbolTextures = null;
         this.isTransitioning = false;
         this.transitionTimer = 0;
         
-        // Initialiser le générateur de nombres aléatoires et les variables d'image
-        this.random = new Random();
+        // Initialiser les variables d'image
         this.visibleSquares = new HashSet<>();
         this.imageSquares = null;
         
@@ -986,8 +864,6 @@ public class MastermindGameScreen extends GameScreen {
     
     private void loadSounds() {
         try {
-            correctSound = Gdx.audio.newSound(Gdx.files.internal(CORRECT_SOUND_PATH));
-            incorrectSound = Gdx.audio.newSound(Gdx.files.internal(INCORRECT_SOUND_PATH));
             winSound = Gdx.audio.newSound(Gdx.files.internal(WIN_SOUND_PATH));
             wrongSound = Gdx.audio.newSound(Gdx.files.internal(WRONG_SOUND_PATH));
             failedSound = Gdx.audio.newSound(Gdx.files.internal(FAILED_SOUND_PATH));
@@ -1005,21 +881,7 @@ public class MastermindGameScreen extends GameScreen {
                 handleClick(worldCoords.x, worldCoords.y);
                 return true;
             }
-            
-            @Override
-            public boolean keyTyped(char character) {
-                if (!finalQuestionPhase || gameFinished) return false;
-                
-                // Gérer les caractères imprimables et accentués
-                if (Character.isLetterOrDigit(character) || 
-                    character == ' ' || character == '\t' || character == '\u00A0' || // espaces divers
-                    isAcceptableSymbol(character)) {
-                    inputText += character;
-                    return true;
-                }
-                return false;
-            }
-            
+                        
             @Override
             public boolean keyDown(int keycode) {
                 // Gestion de la touche R pour résoudre (en mode test uniquement)
@@ -1034,24 +896,10 @@ public class MastermindGameScreen extends GameScreen {
                     return true;
                 }
                 
-                if (!finalQuestionPhase || gameFinished) return false;
-                
-                if (keycode == Input.Keys.BACKSPACE && inputText.length() > 0) {
-                    inputText = inputText.substring(0, inputText.length() - 1);
-                    return true;
-                } else if (keycode == Input.Keys.ENTER || keycode == Input.Keys.NUMPAD_ENTER) {
-                    submitFinalAnswer();
-                    return true;
-                }
+                // Plus de gestion de saisie de texte
                 return false;
             }
             
-            // Méthode pour valider les symboles acceptables
-            private boolean isAcceptableSymbol(char character) {
-                // Accepter certains symboles utiles pour les réponses
-                String acceptableSymbols = ".-'\"()[]{},:;!?/\\";
-                return acceptableSymbols.indexOf(character) != -1;
-            }
         };
         System.out.println("InputAdapter créé avec succès");
     }
@@ -1114,17 +962,12 @@ public class MastermindGameScreen extends GameScreen {
             currentScaleX = currentBgWidth / backgroundTexture.getWidth();
             currentScaleY = currentBgHeight / backgroundTexture.getHeight();
             
-            // Préserver les valeurs d'échelle pour les boutons
-            preservedScaleX = currentScaleX;
-            preservedScaleY = currentScaleY;
+            // Plus besoin de préserver les échelles
         }
     }
     
     /**
-     * Calcule la position des boutons d'information et close en fonction des coordonnées du background
-     * Le bouton help sera centré sur des coordonnées spécifiques dans le référentiel de l'image background
-     * Le bouton close sera positionné à un décalage vertical par rapport au help
-     * La taille sera gérée lors du dessin avec l'échelle du background
+     * Calcule la position des boutons d'information et close (version simplifiée)
      */
     private void updateInfoButtonPosition() {
         // Coordonnées dans le référentiel de l'image background
@@ -1139,31 +982,22 @@ public class MastermindGameScreen extends GameScreen {
             float helpScreenX = currentBgX + (bgX * currentScaleX);
             float helpScreenY = currentBgY + (bgY * currentScaleY);
             
-            // Positionner le bouton help
-            infoButton.setSize(baseButtonSize, baseButtonSize);
-            infoButton.setPosition(
-                helpScreenX - baseButtonSize / 2,
-                helpScreenY - baseButtonSize / 2
-            );
+            // Calculer les positions des boutons
+            float infoButtonX = helpScreenX - baseButtonSize / 2;
+            float infoButtonY = helpScreenY - baseButtonSize / 2;
             
-            // Positionner le bouton close avec un décalage vertical (dans le référentiel background)
             float closeBgY = bgY + 105f;
             float closeScreenX = currentBgX + (bgX * currentScaleX);
             float closeScreenY = currentBgY + (closeBgY * currentScaleY);
+            float closeButtonX = closeScreenX - baseButtonSize / 2;
+            float closeButtonY = closeScreenY - baseButtonSize / 2;
             
-            backButton.setSize(baseButtonSize, baseButtonSize);
-            backButton.setPosition(
-                closeScreenX - baseButtonSize / 2,
-                closeScreenY - baseButtonSize / 2
-            );
-        } else {
-            // Fallback : position par défaut en haut à droite
-            // Maintenir le même ordre que dans la phase avec background (close en bas)
+            // Positionner les boutons
             infoButton.setSize(baseButtonSize, baseButtonSize);
-            infoButton.setPosition(viewport.getWorldWidth() - 60, viewport.getWorldHeight() - 120);
+            infoButton.setPosition(infoButtonX, infoButtonY);
             
             backButton.setSize(baseButtonSize, baseButtonSize);
-            backButton.setPosition(viewport.getWorldWidth() - 60, viewport.getWorldHeight() - 60);
+            backButton.setPosition(closeButtonX, closeButtonY);
         }
     }
     
@@ -1249,88 +1083,6 @@ public class MastermindGameScreen extends GameScreen {
         }
     }
     
-    /**
-     * Calcule quels carrés doivent être visibles basé sur le score
-     */
-    private void calculateVisibleSquares() {
-        visibleSquares.clear();
-        
-        // Calculer le score basé sur le nombre de tentatives utilisées
-        float scorePercentage = Math.max(0, (float)(maxAttempts - attempts.size) / maxAttempts);
-        
-        // Calculer le nombre de carrés à afficher (minimum 1, maximum 50 carrés = 50% de l'image)
-        int maxSquares = TOTAL_IMAGE_SQUARES / 2; // 50 carrés maximum
-        int squaresToShow = Math.max(1, (int) (scorePercentage * maxSquares));
-        
-        // Créer une liste de tous les indices de carrés possibles (0-99)
-        Array<Integer> availableSquares = new Array<>();
-        for (int i = 0; i < TOTAL_IMAGE_SQUARES; i++) {
-            availableSquares.add(i);
-        }
-        
-        // Mélanger et sélectionner aléatoirement les carrés à afficher
-        availableSquares.shuffle();
-        for (int i = 0; i < squaresToShow; i++) {
-            visibleSquares.add(availableSquares.get(i));
-        }
-    }
-    
-    /**
-     * Charge la question finale spécifique au thème depuis theme_questions.json
-     */
-    private void loadFinalQuestion() {
-        if (theme != null) {
-            String themeName = theme.getName();
-            String themeTitle = theme.getTitle();
-            
-            try {
-                JsonReader jsonReader = new JsonReader();
-                JsonValue root = jsonReader.parse(Gdx.files.internal("theme_questions.json"));
-                
-                JsonValue themeQuestions = root.get("themeQuestions");
-                if (themeQuestions != null && themeQuestions.has(themeName)) {
-                    JsonValue themeQuestion = themeQuestions.get(themeName);
-                    
-                    String question = themeQuestion.getString("question");
-                    String answer = themeQuestion.getString("answer");
-                    
-                    finalQuestion = new QuestionData(question, answer);
-                    
-                    // Charger les réponses alternatives
-                    JsonValue alternativesArray = themeQuestion.get("alternatives");
-                    if (alternativesArray != null) {
-                        for (JsonValue alt = alternativesArray.child; alt != null; alt = alt.next) {
-                            finalQuestion.acceptedAnswers.add(alt.asString());
-                        }
-                    }
-                    
-                    return;
-                }
-            } catch (Exception e) {
-                System.err.println("Erreur lors du chargement de la question finale: " + e.getMessage());
-            }
-            
-            // Fallback: utiliser les métadonnées du thème
-            finalQuestion = new QuestionData(
-                "Quel est le titre de cette oeuvre ?",
-                themeTitle
-            );
-            
-            // Ajouter des alternatives basées sur le nom du thème
-            if (themeName != null) {
-                finalQuestion.acceptedAnswers.add(themeName.replace("_", " "));
-                finalQuestion.acceptedAnswers.add(themeName.replace("_", " ").toLowerCase());
-                finalQuestion.acceptedAnswers.add(themeTitle.toLowerCase());
-            }
-        } else {
-            // Question par défaut si pas de thème
-            finalQuestion = new QuestionData(
-                "Quel est le nom de cette oeuvre ?",
-                "oeuvre"
-            );
-        }
-    }
-    
     private void handleClick(float x, float y) {
         // Si le panneau d'info est visible, n'importe quel clic le ferme
         if (showInfoPanel) {
@@ -1375,7 +1127,7 @@ public class MastermindGameScreen extends GameScreen {
      * Nouvelle méthode pour gérer les clics sur les tokens avec le système d'animation
      */
     private void handleTokenClick(float x, float y) {
-        if (gameFinished || finalQuestionPhase) return;
+        if (gameFinished) return;
         
         // Vérifier si la colonne courante est en cours d'animation
         if (gridPositions != null && attempts.size < gridPositions.size) {
@@ -1395,7 +1147,7 @@ public class MastermindGameScreen extends GameScreen {
         float bgRatio = (float)backgroundTexture.getWidth() / backgroundTexture.getHeight();
         float screenRatio = screenWidth / screenHeight;
         
-        float bgWidth, bgHeight, bgX, bgY;
+        float bgWidth, bgHeight;
         if (screenRatio > bgRatio) {
             bgHeight = screenHeight;
             bgWidth = bgHeight * bgRatio;
@@ -1408,10 +1160,7 @@ public class MastermindGameScreen extends GameScreen {
             }
         }
         
-        bgX = (screenWidth - bgWidth) / 2;
-        bgY = (screenHeight - bgHeight) / 2;
         float scaleX = bgWidth / backgroundTexture.getWidth();
-        float scaleY = bgHeight / backgroundTexture.getHeight();
         
         // 1. Vérifier les clics sur les tokens en position de départ
         for (AnimatedToken token : startPositionTokens) {
@@ -1457,17 +1206,6 @@ public class MastermindGameScreen extends GameScreen {
         return -1; // Aucun slot libre
     }
     
-    /**
-     * Trouve un token par son type dans la grille
-     */
-    private AnimatedToken findTokenByType(int tokenType) {
-        for (AnimatedToken token : gridTokens) {
-            if (token.tokenType == tokenType) {
-                return token;
-            }
-        }
-        return null;
-    }
     
     /**
      * Crée un nouveau token en mouvement vers la grille
@@ -1505,7 +1243,6 @@ public class MastermindGameScreen extends GameScreen {
                     // À la fin de l'animation, créer un token statique sur la grille
                     AnimatedToken gridToken = new AnimatedToken(tokenType, targetX, targetY);
                     gridToken.gridSlot = slot;
-                    gridToken.isPlaced = true;
                     gridTokens.add(gridToken);
                     
                     // Vérifier la validation automatique
@@ -1615,17 +1352,18 @@ public class MastermindGameScreen extends GameScreen {
             captureNextFramePending = true;
             // Ne pas démarrer la transition maintenant, elle sera démarrée après la capture
             
-            // Réinitialiser les variables de l'animation de porte coulissante
-            slidingDoorTimer = 0;
-            leftPanelOffset = 0f;
-            rightPanelOffset = 0f;
-            slidingDoorFadeAlpha = 0f;
+        // Réinitialiser les variables de l'animation de porte coulissante
+        slidingDoorTimer = 0;
+        leftPanelOffset = 0f;
+        rightPanelOffset = 0f;
             
-            // Charger la question finale spécifique au thème
-            loadFinalQuestion();
-            
-            // Calculer quels carrés de l'image doivent être visibles basé sur le score
-            calculateVisibleSquares();
+            // Calculer le score final et enregistrer immédiatement
+            int finalScore = calculateScore();
+            if (game instanceof AdventCalendarGame) {
+                AdventCalendarGame adventGame = (AdventCalendarGame) game;
+                adventGame.setScore(dayId, finalScore);
+                adventGame.setVisited(dayId, true);
+            }
             
             if (winSound != null) {
                 winSound.play();
@@ -1695,13 +1433,6 @@ public class MastermindGameScreen extends GameScreen {
         return Math.min(100, Math.max(10, (int)(efficiency * 100)));
     }
     
-    private void startFinalPhase() {
-        finalPhase = true;
-        calculateVisibleSquares();
-        
-        // Afficher l'image immédiatement
-        showWinImage = true;
-    }
     
     private void solveGame() {
         System.out.println("Résolution automatique du jeu Mastermind (mode test)");
@@ -1735,13 +1466,14 @@ public class MastermindGameScreen extends GameScreen {
         slidingDoorTimer = 0;
         leftPanelOffset = 0f;
         rightPanelOffset = 0f;
-        slidingDoorFadeAlpha = 0f;
         
-        // Charger la question finale spécifique au thème
-        loadFinalQuestion();
-        
-        // Calculer quels carrés de l'image doivent être visibles basé sur le score
-        calculateVisibleSquares();
+        // Calculer le score final et enregistrer immédiatement
+        int finalScore = calculateScore();
+        if (game instanceof AdventCalendarGame) {
+            AdventCalendarGame adventGame = (AdventCalendarGame) game;
+            adventGame.setScore(dayId, finalScore);
+            adventGame.setVisited(dayId, true);
+        }
         
         if (winSound != null) {
             winSound.play();
@@ -1798,7 +1530,6 @@ public class MastermindGameScreen extends GameScreen {
         this.gameWon = false;
         this.gameFinished = false;
         this.finalPhase = false;
-        this.finalQuestionPhase = false;
         this.showWinImage = false;
         
         // Réinitialiser les variables de fade out et redémarrage
@@ -1808,17 +1539,14 @@ public class MastermindGameScreen extends GameScreen {
         this.closeBoxesTimer = 0;
         
         // Réinitialiser les variables de transition vers la question finale
-        this.isTransitioningToQuestion = false;
-        this.questionTransitionTimer = 0;
+        this.isTransitioningToPicture = false;
         
         // Réinitialiser les variables de l'animation de porte coulissante
         this.slidingDoorTimer = 0;
         this.leftPanelOffset = 0f;
         this.rightPanelOffset = 0f;
-        this.slidingDoorFadeAlpha = 0f;
         
         // Réinitialiser les variables de capture d'état du plateau
-        this.gameStateCaptured = false;
         this.captureNextFramePending = false;
         if (this.gameStateTexture != null) {
             this.gameStateTexture.dispose();
@@ -1866,6 +1594,20 @@ public class MastermindGameScreen extends GameScreen {
         // Mettre à jour le Stage de transition si actif
         if (isUsingActionBasedTransition && transitionStage != null) {
             transitionStage.act(delta);
+            
+            // Calculer l'alpha pour le fade-in de l'image finale
+            // L'image fait un fade-in pendant la première moitié de l'ouverture des panneaux
+            if (leftPanelActor != null) {
+                // Calculer le progrès de l'animation des panneaux (0.0 = début, 1.0 = fin)
+                float screenWidth = viewport.getWorldWidth();
+                float halfWidth = screenWidth * 0.5f;
+                float currentOffset = Math.abs(leftPanelActor.getX()); // Distance parcourue par le panneau gauche
+                float animationProgress = Math.min(1.0f, currentOffset / halfWidth);
+                
+                // L'image fait un fade-in pendant la première moitié (0.0 à 0.5 du progrès total)
+                float fadeProgress = Math.min(1.0f, animationProgress * 2.0f); // *2 pour que ça se termine à 50%
+                imageAlpha = fadeProgress;
+            }
         }
         // Mettre à jour les animations des tokens en mouvement
         for (AnimatedToken token : movingTokens) {
@@ -1928,11 +1670,7 @@ public class MastermindGameScreen extends GameScreen {
             }
         }
         
-        // Mettre à jour le clignotement du curseur dans la phase finale
-        if (finalQuestionPhase && !gameFinished && !isTransitioning) {
-            cursorBlinkTimer += delta * CURSOR_BLINK_SPEED;
-            showCursor = (cursorBlinkTimer % 2.0f) < 1.0f;
-        }
+        // Code supprimé : clignotement du curseur (plus de phase de question finale)
         
         // Mettre à jour la transition
         if (isTransitioning) {
@@ -1948,9 +1686,7 @@ public class MastermindGameScreen extends GameScreen {
         }
 
         // Mettre à jour la transition vers la question finale
-        if (isTransitioningToQuestion) {
-            questionTransitionTimer += delta;
-            
+        if (isTransitioningToPicture) {
             if (useSlidingDoorAnimation) {
                 // Animation de porte coulissante
                 slidingDoorTimer += delta;
@@ -1959,7 +1695,7 @@ public class MastermindGameScreen extends GameScreen {
                     // Phase 1: Attente
                     leftPanelOffset = 0f;
                     rightPanelOffset = 0f;
-                    slidingDoorFadeAlpha = 0f;
+                    // Plus de fade nécessaire
                     
                     // Désactiver l'affichage des éléments de jeu dès le début de la phase d'attente
                     // pour éviter la surimpression avec les panneaux
@@ -1974,37 +1710,13 @@ public class MastermindGameScreen extends GameScreen {
                     // Les panneaux se déplacent vers l'extérieur
                     leftPanelOffset = -screenWidth * 0.5f * openProgress; // Panneau gauche vers la gauche
                     rightPanelOffset = screenWidth * 0.5f * openProgress; // Panneau droit vers la droite
-                    slidingDoorFadeAlpha = 0f;
-                } else if (slidingDoorTimer <= SLIDING_DOOR_WAIT + SLIDING_DOOR_OPEN_DURATION + SLIDING_DOOR_FADE_DURATION) {
-                    // Phase 3: Fade vers la question
-                    float fadeProgress = (slidingDoorTimer - (SLIDING_DOOR_WAIT + SLIDING_DOOR_OPEN_DURATION)) / SLIDING_DOOR_FADE_DURATION;
-                    slidingDoorFadeAlpha = fadeProgress;
-                    
-                    // Désactiver les éléments du jeu pendant le fade
-                    if (!gameElementsDisabled && fadeProgress > 0.5f) {
-                        disableGameElements();
-                    }
                 } else {
-                    // Animation terminée
-                    isTransitioningToQuestion = false;
-                    finalQuestionPhase = true;
-                    questionTransitionTimer = 0;
+                    // Animation terminée, passer directement à la phase finale avec l'image complète
+                    isTransitioningToPicture = false;
+                    finalPhase = true;
+                    gameFinished = true;
+                    showWinImage = true;
                     slidingDoorTimer = 0;
-                    updateSubmitButtonPositionForFinalPhase(); // Positionner le bouton dès l'activation de la phase
-                }
-            } else {
-                // Animation de transition classique (fallback)
-                // Vérifier si on doit désactiver les éléments du jeu
-                if (!gameElementsDisabled && questionTransitionTimer > WAIT_BEFORE_TRANSITION + FADE_TO_BG_DURATION) {
-                    disableGameElements();
-                }
-                
-                if (questionTransitionTimer >= QUESTION_TRANSITION_DURATION) {
-                    // Transition terminée, passer à la phase de question
-                    isTransitioningToQuestion = false;
-                    finalQuestionPhase = true;
-                    questionTransitionTimer = 0;
-                    updateSubmitButtonPositionForFinalPhase(); // Positionner le bouton dès l'activation de la phase
                 }
             }
         }
@@ -2082,7 +1794,7 @@ public class MastermindGameScreen extends GameScreen {
         // MAIS ne pas dessiner pendant la transition (les panneaux se chargent de l'affichage)
         // ET ne pas dessiner si les panneaux sont déjà en cours d'affichage (après la phase d'attente)
         boolean shouldDrawGameElements = (!gameElementsDisabled || captureNextFramePending) && 
-                                       (!isTransitioningToQuestion || 
+                                       (!isTransitioningToPicture || 
                                         (useSlidingDoorAnimation && slidingDoorTimer <= SLIDING_DOOR_WAIT));
         
         if (shouldDrawGameElements) {
@@ -2114,37 +1826,40 @@ public class MastermindGameScreen extends GameScreen {
                 
                 // Dessiner tous les types de tokens
                 drawAllTokens(currentScaleX, currentScaleY);
-            } else {
-                // Fallback : fond uni si la texture n'est pas chargée
-                batch.setColor(backgroundColor);
-                batch.draw(whiteTexture, 0, 0, viewport.getWorldWidth(), viewport.getWorldHeight());
             }
         }
 
         // Toujours dessiner l'interface appropriée
         if (isUsingActionBasedTransition) {
-            // Utiliser le Stage pour la transition avec Actions
-            // Le Stage a son propre batch, pas de conflit
+            // Dessiner d'abord l'image finale en arrière-plan avec le batch principal
+            batch.setColor(1, 1, 1, 1);
+            drawFinalPhase();
+            
+            // IMPORTANT : Terminer le batch principal avant d'utiliser le Stage
+            batch.end();
+            
+            // Puis dessiner le Stage avec les panneaux par-dessus (le Stage gère son propre batch)
             transitionStage.act(Gdx.graphics.getDeltaTime());
             transitionStage.draw();
             
-            // Dessiner l'UI de la question finale si elle est visible (fade alpha > 0)
-            if (backgroundFadeActor.isVisible() && backgroundFadeActor.getColor().a > 0) {
-                batch.setColor(1, 1, 1, backgroundFadeActor.getColor().a);
-                drawFinalQuestionPhase();
-                batch.setColor(1, 1, 1, 1);
-            }
-        } else if (isTransitioningToQuestion) {
-            drawTransitionToQuestion();
+            // Redémarrer le batch principal pour les overlays
+            batch.begin();
+        } else if (isTransitioningToPicture && !isUsingActionBasedTransition) {
+            drawTransitionToPicture();
         } else if (isTransitioning) {
             drawTransition();
-        } else if (finalQuestionPhase && !gameFinished) {
-            drawFinalQuestionPhase();
         } else if (finalPhase && showWinImage) {
             drawFinalPhase();
         } else if (shouldDrawGameElements) {
-            // Dessiner l'interface même si les éléments sont désactivés, tant qu'on n'a pas capturé
             drawGameInterface();
+        }
+        
+        if (captureNextFramePending) {
+            updateInfoButtonPosition();
+            float scaleX = currentScaleX;
+            float scaleY = currentScaleY;
+            drawCloseButton(scaleX, scaleY);
+            drawInfoButton(scaleX, scaleY);
         }
         
         // Capturer le framebuffer si demandé (AVANT les overlays)
@@ -2162,8 +1877,7 @@ public class MastermindGameScreen extends GameScreen {
                 gameStateTexture = new Texture(pm);
                 pm.dispose();
                 
-                // Marquer comme capturé et démarrer la transition avec Actions
-                gameStateCaptured = true;
+                // Démarrer la transition avec Actions
                 captureNextFramePending = false;
                 
                 // Démarrer la transition basée sur les Actions
@@ -2177,22 +1891,11 @@ public class MastermindGameScreen extends GameScreen {
                 e.printStackTrace();
                 // En cas d'erreur, utiliser l'animation classique
                 captureNextFramePending = false;
-                isTransitioningToQuestion = true;
-                questionTransitionTimer = 0;
+                isTransitioningToPicture = true;
             }
         }
         
-        // Dessiner les boutons en overlay global (sauf pendant le fade final de transition)
-        if (!isTransitioningToQuestion || slidingDoorFadeAlpha < 1.0f) {
-            // S'assurer que les positions des boutons sont à jour
-            updateInfoButtonPosition();
-            
-            // Utiliser l'échelle préservée si le background n'est plus disponible
-            float scaleX = (backgroundTexture != null) ? currentScaleX : preservedScaleX;
-            float scaleY = (backgroundTexture != null) ? currentScaleY : preservedScaleY;
-            drawInfoButton(scaleX, scaleY);
-            drawCloseButton(scaleX, scaleY);
-        }
+        // Les boutons sont maintenant inclus dans drawGameInterface() et capturés avec le reste
         
         // Dessiner le panneau d'info par-dessus tout le reste s'il est visible
         if (showInfoPanel) {
@@ -2201,19 +1904,17 @@ public class MastermindGameScreen extends GameScreen {
     }
     
     private void drawGameInterface() {
-        float screenWidth = viewport.getWorldWidth();
-        float screenHeight = viewport.getWorldHeight();
         
         // Dessiner les résultats des tentatives précédentes
         drawAttemptResults();
         
-        // Les boutons info et close seront dessinés en overlay pour éviter la capture framebuffer
-        // Plus de dessin de boutons ici
-        
-        // Message de fin de jeu (seulement en cas de victoire)
-        if (gameFinished && gameWon) {
-            drawGameEndMessage();
-        }
+        // Dessiner les boutons info et close (maintenant inclus dans la capture)
+        // S'assurer que les positions des boutons sont à jour
+        updateInfoButtonPosition();
+        float scaleX = currentScaleX;
+        float scaleY = currentScaleY;
+        drawCloseButton(scaleX, scaleY);
+        drawInfoButton(scaleX, scaleY);
     }
     
     private void drawAttemptResults() {
@@ -2305,59 +2006,8 @@ public class MastermindGameScreen extends GameScreen {
         }
     }
     
-    private void updateSubmitButtonPositionForFinalPhase() {
-        // Calculer la position de la zone de saisie dans la phase finale
-        float inputBoxWidth = 400;
-        float inputBoxHeight = 50;
-        float screenWidth = viewport.getWorldWidth();
-        float screenHeight = viewport.getWorldHeight();
-        
-        // Calculer la position Y de la zone de saisie selon la disposition de la phase finale
-        float currentY = screenHeight - 30; // Score
-        currentY -= (font.getLineHeight() + 15); // Après le score
-        if (finalQuestion != null) {
-            currentY -= (font.getLineHeight() + 15); // Après la question
-        }
-        float inputBoxY = currentY - inputBoxHeight / 2; // Position de la zone de saisie
-        float inputBoxX = (screenWidth - inputBoxWidth) / 2;
-        
-        // Définir la taille du bouton validate (carré basé sur la hauteur de la zone de saisie)
-        float sendButtonSize = inputBoxHeight;
-        
-        // Positionner le bouton validate directement à droite de la zone de saisie
-        submitButton.setPosition(
-            inputBoxX + inputBoxWidth + 5, // Marge réduite entre la zone de saisie et le bouton
-            inputBoxY
-        );
-        submitButton.setSize(sendButtonSize, sendButtonSize);
-    }
-    
     private void drawGameEndMessage() {
-        float centerX = viewport.getWorldWidth() / 2;
-        float centerY = viewport.getWorldHeight() / 2;
-        
-        // Seulement afficher le message de victoire
-        bigFont.setColor(correctColor);
-        String message = "Bravo!";
-        layout.setText(bigFont, message);
-        bigFont.draw(batch, layout, 
-            centerX - layout.width / 2,
-            centerY + 50);
-        
-        font.setColor(textColor);
-        String scoreText = "Score: " + calculateScore() + "%";
-        layout.setText(font, scoreText);
-        font.draw(batch, layout, 
-            centerX - layout.width / 2,
-            centerY);
-            
-        // Instructions pour continuer
-        font.setColor(textColor);
-        String instruction = "Cliquez pour voir l'image!";
-        layout.setText(font, instruction);
-        font.draw(batch, layout, 
-            centerX - layout.width / 2,
-            centerY - 50);
+
     }
     
     private void drawTransition() {
@@ -2365,11 +2015,8 @@ public class MastermindGameScreen extends GameScreen {
         float screenHeight = viewport.getWorldHeight();
         
         if (transitionTimer <= FADE_TO_BLACK_DURATION) {
-            // Phase 1: Fondu de l'image partielle vers le noir
+            // Phase 1: Fondu vers le noir
             float fadeProgress = transitionTimer / FADE_TO_BLACK_DURATION;
-            
-            // Dessiner l'image partielle qui disparaît progressivement
-            drawFinalQuestionPhaseImageOnly();
             
             // Superposer un voile noir qui s'intensifie
             batch.setColor(0, 0, 0, fadeProgress);
@@ -2422,62 +2069,16 @@ public class MastermindGameScreen extends GameScreen {
             screenHeight - 50);
     }
     
-    private void drawFinalQuestionPhaseImageOnly() {
-        float screenWidth = viewport.getWorldWidth();
-        float screenHeight = viewport.getWorldHeight();
-        
-        // Calculer l'espace pour l'image comme dans drawFinalQuestionPhase
-        float currentY = screenHeight - 30; // Score
-        currentY -= (font.getLineHeight() + 15); // Après le score
-        if (finalQuestion != null) {
-            currentY -= (font.getLineHeight() + 15); // Après la question
-        }
-        currentY -= (50 + 15); // Après la zone de saisie
-        
-        float bottomMargin = 80;
-        float availableHeight = currentY - bottomMargin;
-        
-        // Afficher l'image adaptative partielle
-        if (fullImageTexture != null && availableHeight > 100) {
-            drawAdaptiveImage(availableHeight);
-        }
-    }
-    
     private void drawFinalPhase() {
-        float screenWidth = viewport.getWorldWidth();
         float screenHeight = viewport.getWorldHeight();
         
-        // Titre
-        bigFont.setColor(correctColor);
-        String title = "Félicitations!";
-        layout.setText(bigFont, title);
-        bigFont.draw(batch, layout, 
-            (screenWidth - layout.width) / 2,
-            screenHeight - 30);
+        // Calculer l'espace disponible pour l'image (utiliser tout l'écran)
+        float availableHeight = screenHeight - 20; // Petite marge
         
-        // Score
-        font.setColor(textColor);
-        String scoreText = "Score: " + calculateScore() + "%";
-        layout.setText(font, scoreText);
-        font.draw(batch, layout, 
-            (screenWidth - layout.width) / 2,
-            screenHeight - 80);
-        
-        // Calculer l'espace disponible pour l'image
-        float availableHeight = screenHeight - 150; // Laisser de l'espace pour le titre et score
-        
-        // Afficher l'image complète
+        // Afficher l'image complète en plein écran
         if (fullImageTexture != null && availableHeight > 100) {
             drawCompleteImage(availableHeight);
         }
-        
-        // Instructions
-        font.setColor(textColor);
-        String instruction = "Cliquez pour retourner au menu";
-        layout.setText(font, instruction);
-        font.draw(batch, layout, 
-            (screenWidth - layout.width) / 2,
-            30);
     }
     
     private void drawCompleteImage(float availableHeight) {
@@ -2490,234 +2091,36 @@ public class MastermindGameScreen extends GameScreen {
         float originalHeight = fullImageTexture.getHeight();
         float aspectRatio = originalWidth / originalHeight;
         
-        // Calculer les dimensions adaptatives
-        float screenWidth = viewport.getWorldWidth();
-        float maxWidth = screenWidth * 0.8f; // Maximum 80% de la largeur de l'écran
-        
-        float imageHeight = Math.min(availableHeight, maxWidth / aspectRatio);
-        float imageWidth = imageHeight * aspectRatio;
-        
-        // Si l'image est trop large, ajuster par la largeur
-        if (imageWidth > maxWidth) {
-            imageWidth = maxWidth;
-            imageHeight = imageWidth / aspectRatio;
-        }
-        
-        // Centrer l'image horizontalement
-        float imageX = (screenWidth - imageWidth) / 2;
-        
-        // Positionner l'image verticalement dans l'espace disponible
-        float imageY = (availableHeight - imageHeight) / 2 + 50; // Centré avec marge
-        
-        // Dessiner l'image complète
-        batch.setColor(1f, 1f, 1f, 1f);
-        batch.draw(fullImageTexture, imageX, imageY, imageWidth, imageHeight);
-    }
-    
-    private void drawFinalQuestionPhase() {
-        batch.setColor(QUESTION_PHASE_BG_COLOR);
-        batch.draw(whiteTexture, 0, 0, viewport.getWorldWidth(), viewport.getWorldHeight());
+        // Calculer les dimensions adaptatives pour utiliser tout l'écran
         float screenWidth = viewport.getWorldWidth();
         float screenHeight = viewport.getWorldHeight();
         
-        // Calculer le score pour l'affichage
-        int score = calculateScore();
+        float imageWidth, imageHeight;
         
-        // Variables pour le positionnement vertical depuis le haut
-        float currentY = screenHeight - 30; // Commencer 30px du haut
-        float spacing = 15; // Espacement entre les éléments
-        
-        // 1. Afficher le score du Mastermind en haut
-        font.setColor(textColor);
-        String scoreText = "Score Mastermind: " + score + "%";
-        layout.setText(font, scoreText);
-        font.draw(batch, layout, 
-            (screenWidth - layout.width) / 2,
-            currentY);
-        currentY -= (layout.height + spacing);
-        
-        // 2. Afficher la question finale
-        if (finalQuestion != null) {
-            font.setColor(textColor);
-            layout.setText(font, finalQuestion.question);
-            font.draw(batch, layout, 
-                (screenWidth - layout.width) / 2,
-                currentY);
-            currentY -= (layout.height + spacing);
-        }
-        
-        // 3. Dessiner la zone de saisie
-        float inputBoxHeight = 50;
-        drawInputAreaCenteredAt(currentY - inputBoxHeight / 2);
-        currentY -= (inputBoxHeight + spacing);
-        
-        // 4. Calculer l'espace disponible pour l'image
-        float bottomMargin = 80; // Marge en bas pour les boutons
-        float availableHeight = currentY - bottomMargin;
-        
-        // 5. Afficher l'image adaptative
-        if (fullImageTexture != null && availableHeight > 100) { // Minimum 100px de hauteur
-            drawAdaptiveImage(availableHeight);
-        }
-        
-        // 6. Les boutons sont maintenant gérés globalement en overlay
-        // Plus besoin de les dessiner ici
-        // Le bouton de validation a été supprimé pour la phase finale aussi
-        if (sendButtonTexture != null) {
-            // Dessiner le bouton validate (position déjà calculée lors de l'activation de finalQuestionPhase)
-            drawSendButton(submitButton);
-        }
-    }
-    
-    private void drawInputAreaCenteredAt(float centerY) {
-        float inputBoxWidth = 400;
-        float inputBoxHeight = 50;
-        float inputBoxX = (viewport.getWorldWidth() - inputBoxWidth) / 2;
-        float inputBoxY = centerY - inputBoxHeight / 2;
-        
-        // Fond de la zone de saisie
-        batch.setColor(0.2f, 0.2f, 0.3f, 1);
-        batch.draw(whiteTexture, inputBoxX, inputBoxY, inputBoxWidth, inputBoxHeight);
-        
-        // Bordure de la zone de saisie
-        batch.setColor(inputFocused ? correctColor : textColor);
-        float borderWidth = 2;
-        // Haut
-        batch.draw(whiteTexture, inputBoxX, inputBoxY + inputBoxHeight - borderWidth, inputBoxWidth, borderWidth);
-        // Bas
-        batch.draw(whiteTexture, inputBoxX, inputBoxY, inputBoxWidth, borderWidth);
-        // Gauche
-        batch.draw(whiteTexture, inputBoxX, inputBoxY, borderWidth, inputBoxHeight);
-        // Droite
-        batch.draw(whiteTexture, inputBoxX + inputBoxWidth - borderWidth, inputBoxY, borderWidth, inputBoxHeight);
-        
-        // Texte de saisie
-        font.setColor(correctColor);
-        String displayText = inputText;
-        if (inputFocused && showCursor) {
-            displayText += "|";
-        }
-        layout.setText(font, displayText);
-        font.draw(batch, layout, 
-            inputBoxX + 10,
-            inputBoxY + inputBoxHeight / 2 + layout.height / 2);
-    }
-    
-    /**
-     * Dessine l'image adaptative qui s'ajuste à l'espace disponible tout en conservant le ratio
-     */
-    private void drawAdaptiveImage(float availableHeight) {
-        if (fullImageTexture == null || imageSquares == null) {
-            return;
-        }
-        
-        // Obtenir les dimensions originales de l'image
-        float originalWidth = fullImageTexture.getWidth();
-        float originalHeight = fullImageTexture.getHeight();
-        float aspectRatio = originalWidth / originalHeight;
-        
-        // Calculer les dimensions adaptatives
-        float screenWidth = viewport.getWorldWidth();
-        float maxWidth = screenWidth * 0.8f; // Maximum 80% de la largeur de l'écran
-        
-        float imageHeight = Math.min(availableHeight, maxWidth / aspectRatio);
-        float imageWidth = imageHeight * aspectRatio;
-        
-        // Si l'image est trop large, ajuster par la largeur
-        if (imageWidth > maxWidth) {
-            imageWidth = maxWidth;
+        // Calculer les dimensions pour remplir l'écran tout en conservant le ratio
+        if (screenWidth / aspectRatio <= screenHeight) {
+            // L'image sera limitée par la largeur
+            imageWidth = screenWidth;
             imageHeight = imageWidth / aspectRatio;
-        }
-        
-        // Centrer l'image horizontalement
-        float imageX = (screenWidth - imageWidth) / 2;
-        
-        // Positionner l'image verticalement dans l'espace disponible
-        float imageY = (availableHeight - imageHeight) / 2 + 50; // Centré avec marge
-        
-        // Calculer la taille de chaque carré
-        float squareWidth = imageWidth / GRID_COLS;
-        float squareHeight = imageHeight / GRID_ROWS;
-        
-        // Dessiner un fond noir pour l'image
-        batch.setColor(0f, 0f, 0f, 1f);
-        batch.draw(whiteTexture, imageX, imageY, imageWidth, imageHeight);
-        
-        // Dessiner seulement les carrés visibles
-        batch.setColor(1f, 1f, 1f, 1f);
-        
-        int squareIndex = 0;
-        for (int row = 0; row < GRID_ROWS; row++) {
-            for (int col = 0; col < GRID_COLS; col++) {
-                // Arrêter après 100 carrés
-                if (squareIndex >= TOTAL_IMAGE_SQUARES) {
-                    break;
-                }
-                
-                // Dessiner le carré seulement s'il est dans la liste des carrés visibles
-                if (visibleSquares.contains(squareIndex)) {
-                    float squareX = imageX + col * squareWidth;
-                    float squareY = imageY + (GRID_ROWS - 1 - row) * squareHeight; // Inverser Y pour LibGDX
-                    
-                    batch.draw(imageSquares[row][col], squareX, squareY, squareWidth, squareHeight);
-                }
-                
-                squareIndex++;
-            }
-            
-            // Arrêter après 100 carrés
-            if (squareIndex >= TOTAL_IMAGE_SQUARES) {
-                break;
-            }
-        }
-    }
-    
-    private void drawButton(Rectangle button, String text, Color color) {
-        // Fond du bouton
-        batch.setColor(0.3f, 0.3f, 0.4f, 1);
-        batch.draw(whiteTexture, button.x, button.y, button.width, button.height);
-        
-        // Bordure du bouton
-        batch.setColor(color);
-        float borderWidth = 2;
-        // Haut
-        batch.draw(whiteTexture, button.x, button.y + button.height - borderWidth, button.width, borderWidth);
-        // Bas
-        batch.draw(whiteTexture, button.x, button.y, button.width, borderWidth);
-        // Gauche
-        batch.draw(whiteTexture, button.x, button.y, borderWidth, button.height);
-        // Droite
-        batch.draw(whiteTexture, button.x + button.width - borderWidth, button.y, borderWidth, button.height);
-        
-        // Texte du bouton
-        font.setColor(color);
-        layout.setText(font, text);
-        font.draw(batch, layout, 
-            button.x + (button.width - layout.width) / 2,
-            button.y + (button.height + layout.height) / 2);
-    }
-    
-    private void drawSendButton(Rectangle button) {
-        if (sendButtonTexture != null) {
-            // Dessiner l'image du bouton validate avec une taille réduite de 50%
-            batch.setColor(1f, 1f, 1f, 1f); // Couleur blanche pour afficher l'image normalement
-            
-            // Calculer la taille du bouton avec une réduction de 50% tout en conservant les proportions
-            float originalWidth = sendButtonTexture.getWidth();
-            float originalHeight = sendButtonTexture.getHeight();
-            float buttonWidth = originalWidth * 0.5f;  // Réduction de 50%
-            float buttonHeight = originalHeight * 0.5f; // Réduction de 50%
-            
-            // Positionner le bouton pour qu'il ne recouvre pas la zone de saisie
-            // et que son centre soit aligné avec le centre de la zone de saisie
-            float drawX = button.x; // Position X du bouton (déjà calculée pour être à droite de la zone de saisie)
-            float drawY = button.y + (button.height - buttonHeight) / 2 + 3; // Centrer verticalement et descendre de 3 pixels
-            
-            batch.draw(sendButtonTexture, drawX, drawY, buttonWidth, buttonHeight);
         } else {
-            // Fallback: dessiner un bouton texte si l'image n'est pas disponible
-            drawButton(button, "Valider", textColor);
+            // L'image sera limitée par la hauteur
+            imageHeight = screenHeight;
+            imageWidth = imageHeight * aspectRatio;
         }
+        
+        // Dessiner d'abord un fond noir pour toute la zone
+        batch.setColor(0f, 0f, 0f, 1f);
+        batch.draw(whiteTexture, 0, 0, screenWidth, screenHeight);
+        
+        // Centrer l'image
+        float imageX = (screenWidth - imageWidth) / 2;
+        float imageY = (screenHeight - imageHeight) / 2;
+        
+        // Dessiner l'image complète par-dessus le fond noir avec fade-in
+        // Utiliser imageAlpha pour l'effet de fade-in, ou 1.0 si pas en transition
+        float alpha = isUsingActionBasedTransition ? imageAlpha : 1f;
+        batch.setColor(1f, 1f, 1f, alpha);
+        batch.draw(fullImageTexture, imageX, imageY, imageWidth, imageHeight);
     }
     
     private void drawInfoButton(float scaleX, float scaleY) {
@@ -2734,31 +2137,6 @@ public class MastermindGameScreen extends GameScreen {
             float drawY = infoButton.y + (infoButton.height - buttonHeight) / 2;
             
             batch.draw(infoButtonTexture, drawX, drawY, buttonWidth, buttonHeight);
-        } else {
-            // Fallback: dessiner un bouton rectangulaire simple si l'image n'est pas disponible
-            batch.setColor(0.3f, 0.6f, 0.9f, 0.8f);
-            batch.draw(whiteTexture, infoButton.x, infoButton.y, infoButton.width, infoButton.height);
-            
-            // Bordure noire
-            batch.setColor(0, 0, 0, 1);
-            float borderWidth = 2;
-            // Haut
-            batch.draw(whiteTexture, infoButton.x, infoButton.y + infoButton.height - borderWidth, infoButton.width, borderWidth);
-            // Bas
-            batch.draw(whiteTexture, infoButton.x, infoButton.y, infoButton.width, borderWidth);
-            // Gauche
-            batch.draw(whiteTexture, infoButton.x, infoButton.y, borderWidth, infoButton.height);
-            // Droite
-            batch.draw(whiteTexture, infoButton.x + infoButton.width - borderWidth, infoButton.y, borderWidth, infoButton.height);
-            
-            // Lettre "i"
-            bigFont.setColor(Color.WHITE);
-            layout.setText(bigFont, "i");
-            float centerX = infoButton.x + infoButton.width / 2;
-            float centerY = infoButton.y + infoButton.height / 2;
-            bigFont.draw(batch, layout, 
-                centerX - layout.width / 2,
-                centerY + layout.height / 2);
         }
     }
     
@@ -2776,9 +2154,6 @@ public class MastermindGameScreen extends GameScreen {
             float drawY = backButton.y + (backButton.height - buttonHeight) / 2;
             
             batch.draw(closeButtonTexture, drawX, drawY, buttonWidth, buttonHeight);
-        } else {
-            // Fallback: dessiner un bouton rectangulaire simple si l'image n'est pas disponible
-            drawButton(backButton, "Retour", textColor);
         }
     }
     
@@ -2897,6 +2272,12 @@ public class MastermindGameScreen extends GameScreen {
     @Override
     public void resize(int width, int height) {
         super.resize(width, height);
+        
+        // Recalculer les dimensions du background si disponible
+        if (backgroundTexture != null) {
+            calculateBackgroundDimensions();
+        }
+        
         // Les boutons se repositionnent automatiquement basé sur la taille de l'écran
         // Le bouton d'information se positionne selon les coordonnées du background
         updateInfoButtonPosition();
@@ -2915,12 +2296,9 @@ public class MastermindGameScreen extends GameScreen {
         infoFont.dispose();
         whiteTexture.dispose();
         if (fullImageTexture != null) fullImageTexture.dispose();
-        if (sendButtonTexture != null) sendButtonTexture.dispose();
         if (infoButtonTexture != null) infoButtonTexture.dispose();
         if (closeButtonTexture != null) closeButtonTexture.dispose();
         if (backgroundTexture != null) backgroundTexture.dispose(); // Dispose the new texture
-        if (correctSound != null) correctSound.dispose();
-        if (incorrectSound != null) incorrectSound.dispose();
         if (winSound != null) winSound.dispose();
         if (wrongSound != null) wrongSound.dispose();
         if (failedSound != null) failedSound.dispose();
@@ -2985,44 +2363,6 @@ public class MastermindGameScreen extends GameScreen {
         }
     }
     
-    /**
-     * Soumets la réponse finale et termine le jeu
-     */
-    private void submitFinalAnswer() {
-        if (finalQuestion == null || inputText.trim().isEmpty()) {
-            return;
-        }
-        
-        boolean isCorrect = finalQuestion.isAnswerCorrect(inputText, false); // case insensitive
-        
-        if (isCorrect) {
-            // Démarrer la transition avec fondu noir vers image complète
-            isTransitioning = true;
-            transitionTimer = 0;
-            
-            // Calculer le score final avec bonus pour la question finale
-            int baseScore = calculateScore();
-            int finalScore = Math.min(100, baseScore + 20); // +20% pour la question finale réussie
-            
-            if (game instanceof AdventCalendarGame) {
-                AdventCalendarGame adventGame = (AdventCalendarGame) game;
-                adventGame.setScore(dayId, finalScore);
-                adventGame.setVisited(dayId, true);
-            }
-            
-            if (winSound != null) {
-                winSound.play();
-            }
-        } else {
-            // Mauvaise réponse, permettre de réessayer
-            if (incorrectSound != null) {
-                incorrectSound.play();
-            }
-        }
-        
-        inputText = ""; // Vider le champ de saisie
-    }
-    
     private void loadGridPositions() {
         gridPositions = new Array<>();
         try {
@@ -3084,18 +2424,7 @@ public class MastermindGameScreen extends GameScreen {
         leftPanelActor = new TransitionPanelActor(true);
         rightPanelActor = new TransitionPanelActor(false);
         
-        // Créer un acteur pour le fade du background
-        backgroundFadeActor = new Actor() {
-            @Override
-            public void draw(com.badlogic.gdx.graphics.g2d.Batch batch, float parentAlpha) {
-                if (!isVisible()) return;
-                
-                float alpha = getColor().a * parentAlpha;
-                batch.setColor(QUESTION_PHASE_BG_COLOR.r, QUESTION_PHASE_BG_COLOR.g, 
-                             QUESTION_PHASE_BG_COLOR.b, alpha);
-                batch.draw(whiteTexture, 0, 0, viewport.getWorldWidth(), viewport.getWorldHeight());
-            }
-        };
+        // backgroundFadeActor supprimé - l'image sera dessinée directement avec le batch principal
         
         // Configurer les tailles et positions initiales
         float screenWidth = viewport.getWorldWidth();
@@ -3111,15 +2440,9 @@ public class MastermindGameScreen extends GameScreen {
         rightPanelActor.setPosition(halfWidth, 0);
         rightPanelActor.setVisible(false);
         
-        // Background fade initialement invisible
-        backgroundFadeActor.setSize(screenWidth, screenHeight);
-        backgroundFadeActor.setPosition(0, 0);
-        backgroundFadeActor.setVisible(false);
-        
-        // Ajouter les acteurs au stage
-        transitionStage.addActor(backgroundFadeActor);
-        transitionStage.addActor(leftPanelActor);
-        transitionStage.addActor(rightPanelActor);
+        // Ajouter seulement les panneaux au stage (l'image sera dessinée séparément)
+        transitionStage.addActor(leftPanelActor);       // Panneau gauche
+        transitionStage.addActor(rightPanelActor);      // Panneau droit
     }
     
     /**
@@ -3133,6 +2456,12 @@ public class MastermindGameScreen extends GameScreen {
         
         isUsingActionBasedTransition = true;
         
+        // Désactiver l'ancien système de transition pour éviter les conflits
+        isTransitioningToPicture = false;
+        
+        // Initialiser l'alpha pour le fade-in de l'image
+        imageAlpha = 0f;
+        
         // Configurer les textures des panneaux
         ((TransitionPanelActor) leftPanelActor).setPanelTexture(gameStateTexture);
         ((TransitionPanelActor) rightPanelActor).setPanelTexture(gameStateTexture);
@@ -3140,15 +2469,13 @@ public class MastermindGameScreen extends GameScreen {
         float screenWidth = viewport.getWorldWidth();
         float halfWidth = screenWidth * 0.5f;
         
-        // Rendre les panneaux visibles
+        // Rendre les panneaux visibles (l'image sera dessinée séparément)
         leftPanelActor.setVisible(true);
         rightPanelActor.setVisible(true);
-        backgroundFadeActor.setVisible(true);
-        backgroundFadeActor.getColor().a = 0f; // Commencer transparent
         
         // Créer la séquence d'animation
         leftPanelActor.addAction(Actions.sequence(
-            Actions.delay(SLIDING_DOOR_WAIT), // Phase d'attente
+            Actions.delay(SLIDING_DOOR_WAIT), // Phase d'attente (2.5s)
             Actions.moveBy(-halfWidth, 0, SLIDING_DOOR_OPEN_DURATION), // Glisser vers la gauche
             Actions.run(() -> {
                 // Callback à la fin de l'animation des panneaux
@@ -3157,21 +2484,16 @@ public class MastermindGameScreen extends GameScreen {
         ));
         
         rightPanelActor.addAction(Actions.sequence(
-            Actions.delay(SLIDING_DOOR_WAIT), // Phase d'attente
-            Actions.moveBy(halfWidth, 0, SLIDING_DOOR_OPEN_DURATION) // Glisser vers la droite
-        ));
-        
-        // Animation du fade vers la question finale
-        backgroundFadeActor.addAction(Actions.sequence(
-            Actions.delay(SLIDING_DOOR_WAIT + SLIDING_DOOR_OPEN_DURATION), // Attendre la fin du glissement
-            Actions.fadeIn(SLIDING_DOOR_FADE_DURATION), // Fade in du background de la question
+            Actions.delay(SLIDING_DOOR_WAIT), // Phase d'attente (2.5s)
+            Actions.moveBy(halfWidth, 0, SLIDING_DOOR_OPEN_DURATION), // Glisser vers la droite
             Actions.run(() -> {
-                // Transition terminée, passer à la phase de question
-                isTransitioningToQuestion = false;
-                finalQuestionPhase = true;
+                // Animation terminée, passer directement à la phase finale avec l'image complète
+                isTransitioningToPicture = false;
+                finalPhase = true;
+                gameFinished = true;
+                showWinImage = true;
                 isUsingActionBasedTransition = false;
-                updateSubmitButtonPositionForFinalPhase();
-                System.out.println("Transition vers question finale terminée");
+                System.out.println("Transition vers image finale terminée");
             })
         ));
         
@@ -3193,15 +2515,6 @@ public class MastermindGameScreen extends GameScreen {
                     Texture tokenTexture = new Texture(Gdx.files.internal(tokenPath));
                     tokenTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
                     tokenTextures.add(tokenTexture);
-                } else {
-                    System.err.println("Token texture non trouvée: " + tokenPath);
-                    // Créer une texture de remplacement
-                    Pixmap pixmap = new Pixmap(64, 64, Pixmap.Format.RGBA8888);
-                    pixmap.setColor(1, 0, 0, 1);
-                    pixmap.fill();
-                    Texture fallbackTexture = new Texture(pixmap);
-                    tokenTextures.add(fallbackTexture);
-                    pixmap.dispose();
                 }
                 
                 // Charger la texture de position correspondante
@@ -3210,33 +2523,9 @@ public class MastermindGameScreen extends GameScreen {
                     Texture positionTexture = new Texture(Gdx.files.internal(positionPath));
                     positionTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
                     tokenPositionTextures.add(positionTexture);
-                } else {
-                    System.err.println("Token position texture non trouvée: " + positionPath);
-                    // Créer une texture de remplacement transparente
-                    Pixmap pixmap = new Pixmap(64, 64, Pixmap.Format.RGBA8888);
-                    pixmap.setColor(0, 0, 0, 0.3f); // Gris semi-transparent
-                    pixmap.fill();
-                    Texture fallbackTexture = new Texture(pixmap);
-                    tokenPositionTextures.add(fallbackTexture);
-                    pixmap.dispose();
                 }
             } catch (Exception e) {
                 System.err.println("Erreur lors du chargement du token " + i + ": " + e.getMessage());
-                // Créer une texture de remplacement en cas d'erreur pour le token
-                Pixmap pixmap = new Pixmap(64, 64, Pixmap.Format.RGBA8888);
-                pixmap.setColor(1, 0, 0, 1);
-                pixmap.fill();
-                Texture fallbackTexture = new Texture(pixmap);
-                tokenTextures.add(fallbackTexture);
-                pixmap.dispose();
-                
-                // Créer une texture de remplacement pour la position
-                Pixmap posPixmap = new Pixmap(64, 64, Pixmap.Format.RGBA8888);
-                posPixmap.setColor(0, 0, 0, 0.3f);
-                posPixmap.fill();
-                Texture fallbackPosTexture = new Texture(posPixmap);
-                tokenPositionTextures.add(fallbackPosTexture);
-                posPixmap.dispose();
             }
         }
         
@@ -3402,45 +2691,33 @@ public class MastermindGameScreen extends GameScreen {
         }
     }
 
-    private void drawTransitionToQuestion() {
+    private void drawTransitionToPicture() {
         float screenWidth = viewport.getWorldWidth();
         float screenHeight = viewport.getWorldHeight();
 
         // Utiliser uniquement l'animation de porte coulissante
         drawSlidingDoorTransition(screenWidth, screenHeight);
-        
-        // Les boutons info et close sont maintenant gérés globalement dans renderGame()
-        // Plus besoin de les dessiner ici
     }
     
     /**
-     * Dessine l'animation de porte coulissante pour la transition vers la question finale
+     * Dessine l'animation de porte coulissante pour la transition vers l'image finale
      */
     private void drawSlidingDoorTransition(float screenWidth, float screenHeight) {
-        // Dessiner d'abord l'arrière-plan de la phase question (pas le plateau !)
-        batch.setColor(QUESTION_PHASE_BG_COLOR);
-        batch.draw(whiteTexture, 0, 0, screenWidth, screenHeight);
-        
-        // Si on est en phase de fade vers la question, superposer progressivement l'UI de question
-        if (slidingDoorFadeAlpha > 0) {
-            batch.setColor(1, 1, 1, slidingDoorFadeAlpha);
-            drawFinalQuestionPhase();
-        }
+        // Dessiner d'abord l'image complète en arrière-plan
+        batch.setColor(1, 1, 1, 1);
+        drawFinalPhase();
         
         // Créer les deux panneaux qui se déplacent
         float halfWidth = screenWidth * 0.5f;
         
         // Panneau gauche (se déplace vers la gauche)
         float leftPanelX = leftPanelOffset;
-        float leftPanelY = 0;
         float leftPanelWidth = halfWidth;
         float leftPanelHeight = screenHeight;
         
         // Panneau droit (se déplace vers la droite)  
         float rightPanelX = halfWidth + rightPanelOffset;
-        float rightPanelY = 0;
         float rightPanelWidth = halfWidth;
-        float rightPanelHeight = screenHeight;
         
         // Dessiner les panneaux avec la texture capturée du plateau de jeu
         if (gameStateTexture != null) {
@@ -3476,16 +2753,9 @@ public class MastermindGameScreen extends GameScreen {
             
             System.out.println("Dessin des panneaux - Texture: " + texW + "x" + texH + 
                              ", Panneaux: " + leftPanelWidth + "x" + leftPanelHeight);
-        } else {
-            // Fallback : utiliser la couleur de fond si la texture n'est pas disponible
-            batch.setColor(QUESTION_PHASE_BG_COLOR);
-            batch.draw(whiteTexture, leftPanelX, leftPanelY, leftPanelWidth, leftPanelHeight);
-            batch.draw(whiteTexture, rightPanelX, rightPanelY, rightPanelWidth, rightPanelHeight);
-            System.out.println("Fallback: utilisation de la couleur de fond");
         }
     }
     
-
     // Nouvelle méthode pour extraire la logique de dessin des cases et jetons
     private void drawGridAndTokens(float bgX, float bgY, float scaleX, float scaleY) {
         // Les cases restent toujours visibles (pas de fade out)
@@ -3560,6 +2830,9 @@ public class MastermindGameScreen extends GameScreen {
 
     private void disableGameElements() {
         gameElementsDisabled = true;
+        
+        // Plus besoin de préserver les positions - les boutons sont capturés avec le reste
+        
         // Libérer les ressources du jeu seulement si on n'a pas de capture en cours
         if (backgroundTexture != null && !captureNextFramePending) {
             backgroundTexture.dispose();
@@ -3610,11 +2883,4 @@ public class MastermindGameScreen extends GameScreen {
         BoxAnimation.disposeSharedFrames();
     }
 
-    private void finalizeGameElementsDisabling() {
-        // Libérer les textures qui étaient gardées pour la capture
-        if (backgroundTexture != null) {
-            backgroundTexture.dispose();
-            backgroundTexture = null;
-        }
-    }
 } 
