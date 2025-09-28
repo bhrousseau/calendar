@@ -970,8 +970,8 @@ public class MastermindGameScreen extends GameScreen {
         float baseButtonSize = 100f; // Taille un peu plus grande pour une meilleure visibilité
         
         // Marge depuis les bords du viewport
-        float marginFromEdge = 20f;
-        float spacingBetweenButtons = 10f;
+        float marginFromEdge = 30f;
+        float spacingBetweenButtons = 30f;
         
         // Position du bouton info (en haut à droite)
         float closeButtonX = viewportWidth - marginFromEdge - baseButtonSize;

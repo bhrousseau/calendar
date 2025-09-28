@@ -60,6 +60,7 @@ Paramètres :
 find-rectangles.bat image.png
 find-rectangles.bat image.png columns
 cd tools; .\find-rectangles.bat ..\assets\images\games\mmd\background\background-mask.png columns
+cd tools; .\find-rectangles.bat ..\assets\images\calendar\mask.png rows
 
 # Mode lignes
 find-rectangles.bat image.png rows
