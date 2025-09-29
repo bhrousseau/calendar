@@ -4,6 +4,7 @@ import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Screen;
+import com.widedot.calendar.display.InputManager;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -439,58 +440,20 @@ public class AdventCalendarScreen implements Screen {
 
     /**
      * Handle global input (fullscreen toggles)
+     * Délègue au gestionnaire centralisé
      */
     private void handleGlobalInput() {
-        if (Gdx.input.isKeyJustPressed(Input.Keys.F11)) {
-            toggleFullscreen();
-        }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) &&
-            (Gdx.input.isKeyPressed(Input.Keys.ALT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.ALT_RIGHT))) {
-            toggleFullscreen();
-        }
+        InputManager.handleGlobalInput();
     }
 
     /**
      * Toggle between fullscreen and windowed mode
+     * @deprecated Cette méthode n'est plus utilisée, la gestion est centralisée dans WindowManager
      */
+    @Deprecated
     private void toggleFullscreen() {
-        if (Gdx.graphics.isFullscreen()) {
-            // Passer en mode fenêtré : taille fixe ratio 16:9, optimisée pour l'écran
-            int screenWidth = Gdx.graphics.getDisplayMode().width;
-            int screenHeight = Gdx.graphics.getDisplayMode().height;
-            
-            // Option 1: Basé sur 50% de la hauteur d'écran
-            int heightBasedWindowHeight = screenHeight / 2;
-            int heightBasedWindowWidth = Math.round(heightBasedWindowHeight * 16f / 9f);
-            
-            // Option 2: Basé sur la largeur maximale de l'écran
-            int widthBasedWindowWidth = screenWidth;
-            int widthBasedWindowHeight = Math.round(widthBasedWindowWidth * 9f / 16f);
-            
-            // Choisir la plus petite des deux options
-            int windowWidth, windowHeight;
-            String method;
-            
-            if (heightBasedWindowWidth <= screenWidth) {
-                // La fenêtre basée sur la hauteur rentre dans l'écran
-                windowWidth = heightBasedWindowWidth;
-                windowHeight = heightBasedWindowHeight;
-                method = "50% hauteur écran";
-            } else {
-                // La fenêtre basée sur la hauteur est trop large, utiliser la largeur
-                windowWidth = widthBasedWindowWidth;
-                windowHeight = widthBasedWindowHeight;
-                method = "largeur écran max";
-            }
-            
-            Gdx.graphics.setWindowedMode(windowWidth, windowHeight);
-            System.out.println("Basculé en mode fenêtré (" + windowWidth + "x" + windowHeight + ") - ratio 16:9, " + method);
-        } else {
-            Gdx.graphics.setFullscreenMode(Gdx.graphics.getDisplayMode());
-            System.out.println("Basculé en plein écran (" +
-                             Gdx.graphics.getDisplayMode().width + "x" +
-                             Gdx.graphics.getDisplayMode().height + ")");
-        }
+        // Cette méthode est conservée pour compatibilité mais n'est plus utilisée
+        // La gestion est maintenant centralisée dans WindowManager via InputManager
     }
 
     /**

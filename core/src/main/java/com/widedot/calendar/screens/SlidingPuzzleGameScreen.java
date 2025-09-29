@@ -2,6 +2,8 @@ package com.widedot.calendar.screens;
 
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
+import com.widedot.calendar.display.DisplayConfig;
+import com.widedot.calendar.display.UIPositionManager;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
@@ -943,11 +945,12 @@ public class SlidingPuzzleGameScreen extends GameScreen {
             }
         }
 
-        // Mettre à jour les positions des boutons
+        // Mettre à jour les positions des boutons avec le gestionnaire centralisé
         backButton.setPosition(20, 20);
-        solveButton.setPosition(viewport.getWorldWidth() - 120, 20);
-        infoButton.setPosition(viewport.getWorldWidth() - 70, viewport.getWorldHeight() - 70);
-        closeButton.setPosition(viewport.getWorldWidth() - 50, viewport.getWorldHeight() - 50);
+        UIPositionManager.positionButtonsBottomRight(viewport, 
+            new Rectangle[]{solveButton}, 100, 50, 20, 0);
+        UIPositionManager.positionButtonsTopRight(viewport, 
+            new Rectangle[]{closeButton, infoButton}, 50, 20, 20);
 
         System.out.println("Redimensionnement: " + width + "x" + height);
         System.out.println("Viewport: " + viewport.getWorldWidth() + "x" + viewport.getWorldHeight());

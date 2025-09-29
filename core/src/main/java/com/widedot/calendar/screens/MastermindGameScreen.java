@@ -27,6 +27,7 @@ import java.util.Set;
 import com.widedot.calendar.AdventCalendarGame;
 import com.widedot.calendar.data.Theme;
 import com.widedot.calendar.config.Config;
+import com.widedot.calendar.display.DisplayConfig;
 
 /**
  * Écran de jeu pour le mini-jeu Mastermind
@@ -500,7 +501,7 @@ public class MastermindGameScreen extends GameScreen {
         
         this.backButton = new Rectangle(20, 20, 100, 50);
         // submitButton supprimé (plus de bouton de validation)
-        this.infoButton = new Rectangle(viewport.getWorldWidth() - 60, viewport.getWorldHeight() - 60, 40, 40);
+        this.infoButton = new Rectangle(DisplayConfig.WORLD_WIDTH - 60, viewport.getWorldHeight() - 60, 40, 40);
         
         // Créer texture blanche
         Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
@@ -938,7 +939,7 @@ public class MastermindGameScreen extends GameScreen {
      */
     private void calculateBackgroundDimensions() {
         // La largeur monde est fixe à 2048
-        float screenWidth = viewport.getWorldWidth();  // Toujours 2048
+        float screenWidth = DisplayConfig.WORLD_WIDTH;  // Toujours 2048
         float screenHeight = viewport.getWorldHeight(); // Variable selon aspect ratio
         float screenRatio = screenWidth / screenHeight;
         
@@ -975,7 +976,7 @@ public class MastermindGameScreen extends GameScreen {
      */
     private void updateInfoButtonPosition() {
         // Obtenir les dimensions du viewport
-        float viewportWidth = viewport.getWorldWidth();
+        float viewportWidth = DisplayConfig.WORLD_WIDTH;
         float viewportHeight = viewport.getWorldHeight();
         
         // Taille de base des boutons
@@ -1139,7 +1140,7 @@ public class MastermindGameScreen extends GameScreen {
         }
         
         // Calculer les dimensions du fond d'écran pour les coordonnées
-        float screenWidth = viewport.getWorldWidth();
+        float screenWidth = DisplayConfig.WORLD_WIDTH;
         float screenHeight = viewport.getWorldHeight();
         
         if (backgroundTexture == null) return;
@@ -1599,7 +1600,7 @@ public class MastermindGameScreen extends GameScreen {
             // L'image fait un fade-in pendant la première moitié de l'ouverture des panneaux
             if (leftPanelActor != null) {
                 // Calculer le progrès de l'animation des panneaux (0.0 = début, 1.0 = fin)
-                float screenWidth = viewport.getWorldWidth();
+                float screenWidth = DisplayConfig.WORLD_WIDTH;
                 float halfWidth = screenWidth * 0.5f;
                 float currentOffset = Math.abs(leftPanelActor.getX()); // Distance parcourue par le panneau gauche
                 float animationProgress = Math.min(1.0f, currentOffset / halfWidth);
@@ -1705,7 +1706,7 @@ public class MastermindGameScreen extends GameScreen {
                 } else if (slidingDoorTimer <= SLIDING_DOOR_WAIT + SLIDING_DOOR_OPEN_DURATION) {
                     // Phase 2: Ouverture des panneaux
                     float openProgress = (slidingDoorTimer - SLIDING_DOOR_WAIT) / SLIDING_DOOR_OPEN_DURATION;
-                    float screenWidth = viewport.getWorldWidth();
+                    float screenWidth = DisplayConfig.WORLD_WIDTH;
                     
                     // Les panneaux se déplacent vers l'extérieur
                     leftPanelOffset = -screenWidth * 0.5f * openProgress; // Panneau gauche vers la gauche
@@ -1807,7 +1808,7 @@ public class MastermindGameScreen extends GameScreen {
                 
                 // Dessiner d'abord un fond uni
                 batch.setColor(backgroundColor);
-                batch.draw(whiteTexture, 0, 0, viewport.getWorldWidth(), viewport.getWorldHeight());
+                batch.draw(whiteTexture, 0, 0, DisplayConfig.WORLD_WIDTH, viewport.getWorldHeight());
                 
                 // Puis dessiner le plateau de jeu centré
                 batch.setColor(1, 1, 1, 1);
@@ -2005,7 +2006,7 @@ public class MastermindGameScreen extends GameScreen {
     }
     
     private void drawTransition() {
-        float screenWidth = viewport.getWorldWidth();
+        float screenWidth = DisplayConfig.WORLD_WIDTH;
         float screenHeight = viewport.getWorldHeight();
         
         if (transitionTimer <= FADE_TO_BLACK_DURATION) {
@@ -2086,7 +2087,7 @@ public class MastermindGameScreen extends GameScreen {
         float aspectRatio = originalWidth / originalHeight;
         
         // Calculer les dimensions adaptatives pour utiliser tout l'écran
-        float screenWidth = viewport.getWorldWidth();
+        float screenWidth = DisplayConfig.WORLD_WIDTH;
         float screenHeight = viewport.getWorldHeight();
         
         float imageWidth, imageHeight;
@@ -2146,7 +2147,7 @@ public class MastermindGameScreen extends GameScreen {
     }
     
     private void drawInfoPanel() {
-        float screenWidth = viewport.getWorldWidth();
+        float screenWidth = DisplayConfig.WORLD_WIDTH;
         float screenHeight = viewport.getWorldHeight();
         
         // Fond semi-transparent pour conserver la visibilité du jeu
@@ -2415,7 +2416,7 @@ public class MastermindGameScreen extends GameScreen {
         // backgroundFadeActor supprimé - l'image sera dessinée directement avec le batch principal
         
         // Configurer les tailles et positions initiales
-        float screenWidth = viewport.getWorldWidth();
+        float screenWidth = DisplayConfig.WORLD_WIDTH;
         float screenHeight = viewport.getWorldHeight();
         float halfWidth = screenWidth * 0.5f;
         
@@ -2454,7 +2455,7 @@ public class MastermindGameScreen extends GameScreen {
         ((TransitionPanelActor) leftPanelActor).setPanelTexture(gameStateTexture);
         ((TransitionPanelActor) rightPanelActor).setPanelTexture(gameStateTexture);
         
-        float screenWidth = viewport.getWorldWidth();
+        float screenWidth = DisplayConfig.WORLD_WIDTH;
         float halfWidth = screenWidth * 0.5f;
         
         // Rendre les panneaux visibles (l'image sera dessinée séparément)
@@ -2680,7 +2681,7 @@ public class MastermindGameScreen extends GameScreen {
     }
 
     private void drawTransitionToPicture() {
-        float screenWidth = viewport.getWorldWidth();
+        float screenWidth = DisplayConfig.WORLD_WIDTH;
         float screenHeight = viewport.getWorldHeight();
 
         // Utiliser uniquement l'animation de porte coulissante
