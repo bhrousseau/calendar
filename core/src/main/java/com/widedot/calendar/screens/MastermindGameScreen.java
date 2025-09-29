@@ -937,21 +937,33 @@ public class MastermindGameScreen extends GameScreen {
      * Calcule les dimensions et l'échelle du background une seule fois
      */
     private void calculateBackgroundDimensions() {
-        // Avec le nouveau système, la largeur monde est fixe à 2048
+        // La largeur monde est fixe à 2048
         float screenWidth = viewport.getWorldWidth();  // Toujours 2048
         float screenHeight = viewport.getWorldHeight(); // Variable selon aspect ratio
+        float screenRatio = screenWidth / screenHeight;
         
         if (backgroundTexture != null) {
             float bgRatio = (float)backgroundTexture.getWidth() / backgroundTexture.getHeight();
             
-            // Le background s'adapte à la largeur fixe et se centre verticalement
-            currentBgWidth = screenWidth; // 2048
-            currentBgHeight = currentBgWidth / bgRatio;
-            
-            // Centrer horizontalement (toujours 0 car largeur fixe)
-            currentBgX = 0;
-            // Centrer verticalement (l'image peut déborder en haut/bas selon le viewport)
-            currentBgY = (screenHeight - currentBgHeight) / 2;
+            // Si le ratio de l'écran est plus large que 16:10 (1.6), on coupe en hauteur
+            if (screenRatio > 1.6f) {
+                // Adapter à la largeur
+                currentBgWidth = screenWidth;
+                currentBgHeight = currentBgWidth / bgRatio;
+                currentBgX = 0;
+                currentBgY = (screenHeight - currentBgHeight) / 2;
+            } else {
+                // Pour les ratios plus carrés que 16:10, adapter à la hauteur
+                currentBgHeight = screenHeight;
+                currentBgWidth = currentBgHeight * bgRatio;
+                // Si la largeur dépasse 2048, la limiter
+                if (currentBgWidth > screenWidth) {
+                    currentBgWidth = screenWidth;
+                    currentBgHeight = currentBgWidth / bgRatio;
+                }
+                currentBgX = (screenWidth - currentBgWidth) / 2;
+                currentBgY = 0;
+            }
             
             currentScaleX = currentBgWidth / backgroundTexture.getWidth();
             currentScaleY = currentBgHeight / backgroundTexture.getHeight();
