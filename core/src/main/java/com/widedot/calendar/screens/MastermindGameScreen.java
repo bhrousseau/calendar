@@ -878,7 +878,8 @@ public class MastermindGameScreen extends GameScreen {
         inputProcessor = new InputAdapter() {
             @Override
             public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-                Vector3 worldCoords = camera.unproject(new Vector3(screenX, screenY, 0));
+                Vector3 worldCoords = new Vector3(screenX, screenY, 0);
+                viewport.unproject(worldCoords);
                 handleClick(worldCoords.x, worldCoords.y);
                 return true;
             }

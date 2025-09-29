@@ -202,8 +202,8 @@ public abstract class GameScreen implements Screen {
         this.currentWidth = width;
         this.currentHeight = height;
         
-        // Utiliser le gestionnaire centralisé pour mettre à jour le viewport
-        ViewportManager.updateViewport(viewport, width, height);
+        // Utiliser le gestionnaire centralisé avec reconfiguration automatique
+        this.viewport = ViewportManager.updateViewportWithReconfiguration(viewport, width, height);
         
         // Informations de debug
         System.out.println("Viewport: " + viewport.getWorldWidth() + "x" + viewport.getWorldHeight());

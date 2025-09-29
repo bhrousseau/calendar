@@ -4,7 +4,10 @@ import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.utils.viewport.Viewport;
 import com.widedot.calendar.display.InputManager;
+import com.widedot.calendar.display.DisplayConfig;
+import com.widedot.calendar.display.ViewportManager;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -29,9 +32,8 @@ import com.widedot.calendar.screens.TransitionScreen;
  */
 public class AdventCalendarScreen implements Screen {
 
-    // Constants
-    private static final float WORLD_WIDTH = 800f;
-    private static final float WORLD_HEIGHT = 600f;
+    // Constants - utiliser le système centralisé
+    // WORLD_WIDTH et WORLD_HEIGHT sont maintenant gérés par DisplayConfig et ViewportManager
     private static final float DOOR_SLIDE_SPEED = 2.0f;
     private static final float DRAG_THRESHOLD = 10f;
     private static final int FALLBACK_TEXTURE_SIZE = 64;
@@ -48,6 +50,7 @@ public class AdventCalendarScreen implements Screen {
     // Core components
     private final AdventCalendarGame adventGame;
     private final OrthographicCamera camera;
+    private Viewport viewport;
     private final SpriteBatch batch;
     private final BitmapFont font;
     private final ThemeManager themeManager;
@@ -70,8 +73,6 @@ public class AdventCalendarScreen implements Screen {
     private final ObjectMap<Integer, Boolean> doorSliding = new ObjectMap<>();
 
     // Camera and input
-    private float currentWidth = WORLD_WIDTH;
-    private float currentHeight = WORLD_HEIGHT;
     private boolean isDragging = false;
     private boolean touchProcessed = false;
     private float lastTouchScreenX = 0f;
@@ -120,10 +121,10 @@ public class AdventCalendarScreen implements Screen {
         this.adventGame = adventGame;
         this.themeManager = ThemeManager.getInstance();
 
-        // Initialize core components directly in constructor
+        // Initialize core components avec le système centralisé
         this.camera = new OrthographicCamera();
-        this.camera.setToOrtho(false, WORLD_WIDTH, WORLD_HEIGHT);
-        this.camera.position.x = WORLD_WIDTH / 2;
+        this.viewport = ViewportManager.createViewport(camera);
+        this.camera.position.x = DisplayConfig.WORLD_WIDTH / 2;
         this.camera.update();
 
         this.batch = new SpriteBatch();
@@ -232,6 +233,7 @@ public class AdventCalendarScreen implements Screen {
      * Update camera state
      */
     private void updateCamera() {
+        viewport.apply();
         camera.update();
         batch.setProjectionMatrix(camera.combined);
     }
@@ -287,9 +289,11 @@ public class AdventCalendarScreen implements Screen {
      */
     private ForegroundDimensions calculateForegroundDimensions() {
         float aspectRatio = (float) foregroundTexture.getWidth() / foregroundTexture.getHeight();
-        float width = currentHeight * aspectRatio;
-        float x = (currentWidth - width) / 2;
-        return new ForegroundDimensions(x, 0, width, currentHeight);
+        float worldWidth = viewport.getWorldWidth();
+        float worldHeight = viewport.getWorldHeight();
+        float width = worldHeight * aspectRatio;
+        float x = (worldWidth - width) / 2;
+        return new ForegroundDimensions(x, 0, width, worldHeight);
     }
 
     /**
@@ -461,7 +465,7 @@ public class AdventCalendarScreen implements Screen {
      */
     private void handleTouchStart() {
         touchPos.set(Gdx.input.getX(), Gdx.input.getY(), 0);
-        camera.unproject(touchPos);
+        viewport.unproject(touchPos);
         lastTouchScreenX = Gdx.input.getX();
         initialTouchScreenX = Gdx.input.getX();
         isDragging = false;
@@ -481,7 +485,7 @@ public class AdventCalendarScreen implements Screen {
         
         if (isDragging) {
             float screenDelta = lastTouchScreenX - currentX;
-            float worldDelta = screenDelta * (camera.viewportWidth / Gdx.graphics.getWidth());
+            float worldDelta = screenDelta * (viewport.getWorldWidth() / Gdx.graphics.getWidth());
             camera.position.x = constrainCameraX(camera.position.x + worldDelta);
             camera.update();
             lastTouchScreenX = currentX;
@@ -608,9 +612,9 @@ public class AdventCalendarScreen implements Screen {
      */
     private float constrainCameraX(float newCameraX) {
         ForegroundDimensions dims = calculateForegroundDimensions();
-        float halfViewport = camera.viewportWidth / 2;
+        float halfViewport = viewport.getWorldWidth() / 2;
         
-        if (dims.width <= camera.viewportWidth) {
+        if (dims.width <= viewport.getWorldWidth()) {
             return dims.x + dims.width / 2;
         }
         
@@ -666,10 +670,8 @@ public class AdventCalendarScreen implements Screen {
 
     @Override
     public void resize(int width, int height) {
-        currentWidth = width;
-        currentHeight = height;
-        camera.setToOrtho(false, width, height);
-        camera.position.x = constrainCameraX(width / 2f);
+        this.viewport = ViewportManager.updateViewportWithReconfiguration(viewport, width, height);
+        camera.position.x = constrainCameraX(DisplayConfig.WORLD_WIDTH / 2f);
         camera.update();
         updateDoorPositions();
     }

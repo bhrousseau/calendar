@@ -11,6 +11,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
+import com.widedot.calendar.display.ViewportManager;
 
 /**
  * Écran de transition entre deux écrans avec effet de fondu
@@ -21,7 +22,7 @@ public class TransitionScreen implements Screen {
     private final Screen targetScreen; // Écran cible (celui d'arrivée)
     private final SpriteBatch batch;
     private final OrthographicCamera camera;
-    private final Viewport viewport;
+    private Viewport viewport;
     private final Texture blackTexture;
     
     // Variable statique pour indiquer si une transition est en cours
@@ -188,8 +189,8 @@ public class TransitionScreen implements Screen {
     
     @Override
     public void resize(int width, int height) {
-        viewport.update(width, height, true);
-        camera.position.set(camera.viewportWidth / 2, camera.viewportHeight / 2, 0);
+        this.viewport = ViewportManager.updateViewportWithReconfiguration(viewport, width, height);
+        camera.position.set(viewport.getWorldWidth() / 2, viewport.getWorldHeight() / 2, 0);
         camera.update();
         
         // Transmettre le resize uniquement à l'écran cible

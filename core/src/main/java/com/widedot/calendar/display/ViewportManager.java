@@ -97,6 +97,36 @@ public class ViewportManager {
     }
     
     /**
+     * Met à jour un viewport avec reconfiguration automatique selon le mode
+     * @param currentViewport Le viewport actuel (sera remplacé si nécessaire)
+     * @param width Nouvelle largeur
+     * @param height Nouvelle hauteur
+     * @return Le viewport à utiliser (peut être le même ou un nouveau)
+     */
+    public static Viewport updateViewportWithReconfiguration(Viewport currentViewport, int width, int height) {
+        boolean isCurrentlyFullscreen = Gdx.graphics.isFullscreen();
+        boolean needsReconfiguration = shouldReconfigureViewport(currentViewport, isCurrentlyFullscreen);
+        
+        if (needsReconfiguration) {
+            System.out.println("ViewportManager: Reconfiguration détectée - mode " + 
+                             (isCurrentlyFullscreen ? "fullscreen" : "fenêtré"));
+            
+            // Créer un nouveau viewport adapté au mode actuel
+            OrthographicCamera camera = (OrthographicCamera) currentViewport.getCamera();
+            Viewport newViewport = createViewport(camera, isCurrentlyFullscreen);
+            
+            // Conserver la position de la caméra
+            newViewport.getCamera().position.set(camera.position);
+            newViewport.update(width, height, true);
+            
+            return newViewport;
+        } else {
+            currentViewport.update(width, height, true);
+            return currentViewport;
+        }
+    }
+    
+    /**
      * Reconfigure un viewport en cas de changement de mode (fullscreen/windowed)
      * @param oldViewport L'ancien viewport
      * @param isFullscreen Le nouveau mode
@@ -112,4 +142,29 @@ public class ViewportManager {
         
         return newViewport;
     }
+    
+    /**
+     * Détermine si un viewport doit être reconfiguré selon le mode actuel
+     * @param viewport Le viewport actuel
+     * @param isFullscreen Le mode actuel
+     * @return true si une reconfiguration est nécessaire
+     */
+    private static boolean shouldReconfigureViewport(Viewport viewport, boolean isFullscreen) {
+        // Détection basée sur le type de viewport et le mode
+        if (isFullscreen) {
+            // En fullscreen, on devrait avoir ExtendViewport ou FitViewport selon le ratio
+            float screenRatio = (float) Gdx.graphics.getWidth() / Gdx.graphics.getHeight();
+            boolean shouldBeExtend = (screenRatio > DisplayConfig.RATIO_16_10 && screenRatio <= DisplayConfig.RATIO_21_9);
+            
+            if (shouldBeExtend) {
+                return !(viewport instanceof com.badlogic.gdx.utils.viewport.ExtendViewport);
+            } else {
+                return !(viewport instanceof com.badlogic.gdx.utils.viewport.FitViewport);
+            }
+        } else {
+            // En fenêtré, on devrait toujours avoir FitViewport 16:10
+            return !(viewport instanceof com.badlogic.gdx.utils.viewport.FitViewport);
+        }
+    }
+    
 }
