@@ -2,8 +2,9 @@ package com.widedot.calendar.screens;
 
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
+import com.badlogic.gdx.InputAdapter;
 import com.widedot.calendar.display.DisplayConfig;
-import com.widedot.calendar.display.UIPositionManager;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
@@ -23,15 +24,18 @@ import com.badlogic.gdx.utils.ObjectMap;
  * Écran de jeu pour le puzzle coulissant
  */
 public class SlidingPuzzleGameScreen extends GameScreen {
+    // Input processor pour les clics et raccourcis clavier
+    private InputAdapter inputProcessor;
+    
     private final BitmapFont font;
     private final GlyphLayout layout;
-    private final Rectangle backButton;
-    private final Rectangle solveButton;
     private final Rectangle infoButton;
     private final Rectangle closeButton;
     private final Color infoPanelColor;
     private boolean showInfoPanel;
     private final Texture whiteTexture;
+    private Texture infoButtonTexture;
+    private Texture closeButtonTexture;
     private Color backgroundColor;
     private boolean isTestMode; // Ajout d'une variable pour le mode test
     
@@ -145,6 +149,15 @@ public class SlidingPuzzleGameScreen extends GameScreen {
     // Variables d'animation de victoire
     private final AnimationState animationState = new AnimationState();
     private Texture fullImageTexture;
+    
+    // Variables de calcul du background mutualisées (comme MastermindGameScreen)
+    private float currentBgX, currentBgY, currentBgWidth, currentBgHeight;
+    private float currentScaleX, currentScaleY;
+    
+    // Variables pour le fondu des boutons lors de la victoire
+    private boolean isButtonsFading = false;
+    private float buttonsFadeTimer = 0f;
+    private static final float BUTTONS_FADE_DURATION = 1.0f; // Durée du fondu en secondes
 
     // Variables d'animation des tuiles
     private static class TileAnimation {
@@ -305,11 +318,9 @@ public class SlidingPuzzleGameScreen extends GameScreen {
         font.getData().setScale(1.0f);
         this.layout = new GlyphLayout();
         
-        // Initialiser les boutons
-        this.backButton = new Rectangle(20, 20, 100, 50);
-        this.solveButton = new Rectangle(viewport.getWorldWidth() - 120, 20, 100, 50);
-        this.infoButton = new Rectangle(viewport.getWorldWidth() - 70, viewport.getWorldHeight() - 70, 50, 50);
-        this.closeButton = new Rectangle(viewport.getWorldWidth() - 50, viewport.getWorldHeight() - 50, 30, 30);
+        // Initialiser les boutons (tailles seront définies dans updateButtonPositions)
+        this.infoButton = new Rectangle(0, 0, 100, 100);
+        this.closeButton = new Rectangle(0, 0, 100, 100);
         this.infoPanelColor = new Color(0.3f, 0.3f, 0.3f, 0.8f);
         this.showInfoPanel = false;
         
@@ -322,6 +333,22 @@ public class SlidingPuzzleGameScreen extends GameScreen {
         pixmap.fill();
         this.whiteTexture = new Texture(pixmap);
         pixmap.dispose();
+        
+        // Charger la texture du bouton info
+        try {
+            this.infoButtonTexture = new Texture(Gdx.files.internal("images/ui/help.png"));
+        } catch (Exception e) {
+            System.err.println("Erreur lors du chargement du bouton info: " + e.getMessage());
+            this.infoButtonTexture = null;
+        }
+        
+        // Charger la texture du bouton close
+        try {
+            this.closeButtonTexture = new Texture(Gdx.files.internal("images/ui/close.png"));
+        } catch (Exception e) {
+            System.err.println("Erreur lors du chargement du bouton close: " + e.getMessage());
+            this.closeButtonTexture = null;
+        }
 
         this.puzzleState = new int[gridSize * gridSize];
         this.gridZones = new Rectangle[gridSize * gridSize];
@@ -340,6 +367,13 @@ public class SlidingPuzzleGameScreen extends GameScreen {
         } catch (Exception e) {
             System.err.println("Erreur lors du chargement des sons: " + e.getMessage());
         }
+        
+        // Calculer les dimensions du background et positionner les boutons
+        calculateBackgroundDimensions();
+        updateButtonPositions();
+        
+        // Créer l'input processor pour les clics et raccourcis clavier
+        createInputProcessor();
 
         System.out.println("Constructeur de SlidingPuzzleGameScreen terminé");
     }
@@ -461,10 +495,7 @@ public class SlidingPuzzleGameScreen extends GameScreen {
         }
 
         // Positionner les boutons
-        backButton.setPosition(20, 20);
-        solveButton.setPosition(viewport.getWorldWidth() - 120, 20);
-        infoButton.setPosition(viewport.getWorldWidth() - 70, viewport.getWorldHeight() - 70);
-        closeButton.setPosition(viewport.getWorldWidth() - 50, viewport.getWorldHeight() - 50);
+        updateButtonPositions();
     }
 
     @Override
@@ -496,6 +527,10 @@ public class SlidingPuzzleGameScreen extends GameScreen {
                     isPuzzleSolved = true;
                     animationState.start();
                     
+                    // Démarrer le fondu des boutons
+                    isButtonsFading = true;
+                    buttonsFadeTimer = 0f;
+                    
                     // Jouer le son de résolution
                     if (solveSound != null) {
                         solveSound.play();
@@ -513,13 +548,69 @@ public class SlidingPuzzleGameScreen extends GameScreen {
         // Mettre à jour l'animation de victoire
         animationState.update(delta);
         animationState.updateVictoryMessageTimer(delta);
+        
+        // Mettre à jour le fondu des boutons
+        if (isButtonsFading) {
+            buttonsFadeTimer += delta;
+            if (buttonsFadeTimer >= BUTTONS_FADE_DURATION) {
+                buttonsFadeTimer = BUTTONS_FADE_DURATION; // Limiter à la durée maximale
+            }
+        }
+    }
+
+    /**
+     * Calcule les dimensions et l'échelle du background une seule fois (comme MastermindGameScreen)
+     */
+    private void calculateBackgroundDimensions() {
+        // La largeur monde est fixe à 2048
+        float screenWidth = DisplayConfig.WORLD_WIDTH;  // Toujours 2048
+        float screenHeight = viewport.getWorldHeight(); // Variable selon aspect ratio
+        
+        // Pour SlidingPuzzle, on utilise tout l'écran disponible
+        currentBgWidth = screenWidth;
+        currentBgHeight = screenHeight;
+        currentBgX = 0;
+        currentBgY = 0;
+        currentScaleX = 1.0f;
+        currentScaleY = 1.0f;
+    }
+    
+    /**
+     * Calcule la position des boutons d'information et close en haut à droite du viewport (comme MastermindGameScreen)
+     */
+    private void updateButtonPositions() {
+        // Obtenir les dimensions du viewport
+        float viewportWidth = DisplayConfig.WORLD_WIDTH;
+        float viewportHeight = viewport.getWorldHeight();
+        
+        // Taille de base des boutons
+        float baseButtonSize = 100f; // Taille un peu plus grande pour une meilleure visibilité
+        
+        // Marge depuis les bords du viewport
+        float marginFromEdge = 30f;
+        float spacingBetweenButtons = 30f;
+        
+        // Position du bouton close (en haut à droite) - c'est le backButton dans MastermindGameScreen
+        float closeButtonX = viewportWidth - marginFromEdge - baseButtonSize;
+        float closeButtonY = viewportHeight - marginFromEdge - baseButtonSize;
+        
+        // Position du bouton info (juste en dessous du bouton close)
+        float infoButtonX = closeButtonX;
+        float infoButtonY = closeButtonY - baseButtonSize - spacingBetweenButtons;
+        
+        // Positionner les boutons
+        infoButton.setSize(baseButtonSize, baseButtonSize);
+        infoButton.setPosition(infoButtonX, infoButtonY);
+        
+        closeButton.setSize(baseButtonSize, baseButtonSize);
+        closeButton.setPosition(closeButtonX, closeButtonY);
     }
 
     @Override
     protected void renderGame() {
-        // Dessiner le fond
+        // Dessiner le fond d'abord un fond uni (comme MastermindGameScreen)
         batch.setColor(backgroundColor);
-        batch.draw(whiteTexture, 0, 0, viewport.getWorldWidth(), viewport.getWorldHeight());
+        batch.draw(whiteTexture, 0, 0, DisplayConfig.WORLD_WIDTH, viewport.getWorldHeight());
 
         // Réinitialiser la couleur avant de dessiner les tuiles
         batch.setColor(Color.WHITE);
@@ -543,126 +634,38 @@ public class SlidingPuzzleGameScreen extends GameScreen {
             }
         }
 
-        // Si le puzzle est résolu et l'animation de victoire est terminée, afficher le message de victoire
-        if (isPuzzleSolved && animationState.shouldShowVictoryMessage()) {
-            // Dessiner un fond semi-transparent pour le message
-            float messageWidth = viewport.getWorldWidth() * 0.6f;
-            float messageHeight = viewport.getWorldHeight() * 0.2f;
-            float messageX = (viewport.getWorldWidth() - messageWidth) / 2;
-            float messageY = (viewport.getWorldHeight() - messageHeight) / 2;
+        // Dessiner l'interface de jeu
+        drawGameInterface();
 
-            batch.setColor(0, 0, 0, 0.7f);
-            batch.draw(whiteTexture, messageX, messageY, messageWidth, messageHeight);
-
-            // Afficher le message "Bravo !"
-            font.setColor(1, 1, 1, 1);
-            String victoryMessage = "Bravo !";
-            layout.setText(font, victoryMessage);
-            float textX = (viewport.getWorldWidth() - layout.width) / 2;
-            float textY = messageY + messageHeight * 0.7f;
-            // Arrondir les coordonnées pour éviter le flou
-            font.draw(batch, victoryMessage, Math.round(textX), Math.round(textY));
-
-            // Afficher un message pour indiquer de cliquer
-            String clickMessage = "Cliquez pour retourner au menu";
-            layout.setText(font, clickMessage);
-            textX = (viewport.getWorldWidth() - layout.width) / 2;
-            textY = messageY + messageHeight * 0.3f;
-            // Arrondir les coordonnées pour éviter le flou
-            font.draw(batch, clickMessage, Math.round(textX), Math.round(textY));
-        }
-
-        // Dessiner les boutons
-        batch.setColor(0.5f, 0.5f, 0.5f, 1);
-        
-        // Dessiner le bouton Retour
-        batch.draw(whiteTexture, backButton.x, backButton.y, backButton.width, backButton.height);
-        
-        // Dessiner le bouton Résoudre (en mode test uniquement)
-        if (isTestMode) {
-            batch.draw(whiteTexture, solveButton.x, solveButton.y, solveButton.width, solveButton.height);
-        }
-        
-        // Dessiner le bouton Info
-        batch.draw(whiteTexture, infoButton.x, infoButton.y, infoButton.width, infoButton.height);
-
-        // Dessiner le texte des boutons
-        font.setColor(1, 1, 1, 1);
-        
-        // Texte du bouton Retour
-        String returnText = "Retour";
-        layout.setText(font, returnText);
-        float returnTextX = backButton.x + (backButton.width - layout.width) / 2;
-        float returnTextY = backButton.y + (backButton.height + layout.height) / 2;
-        // Arrondir les coordonnées aux pixels entiers pour éviter le flou
-        font.draw(batch, returnText, Math.round(returnTextX), Math.round(returnTextY));
-
-        // Texte du bouton Résoudre (en mode test uniquement)
-        if (isTestMode) {
-            String solveText = "Résoudre";
-            layout.setText(font, solveText);
-            float solveTextX = solveButton.x + (solveButton.width - layout.width) / 2;
-            float solveTextY = solveButton.y + (solveButton.height + layout.height) / 2;
-            // Arrondir les coordonnées aux pixels entiers pour éviter le flou
-            font.draw(batch, solveText, Math.round(solveTextX), Math.round(solveTextY));
-        }
-
-        // Texte du bouton Info
-        String infoText = "Info";
-        layout.setText(font, infoText);
-        float infoTextX = infoButton.x + (infoButton.width - layout.width) / 2;
-        float infoTextY = infoButton.y + (infoButton.height + layout.height) / 2;
-        // Arrondir les coordonnées aux pixels entiers pour éviter le flou
-        font.draw(batch, infoText, Math.round(infoTextX), Math.round(infoTextY));
-
-        // Dessiner le panneau d'information si nécessaire
+        // Dessiner le panneau d'information par-dessus tout le reste s'il est visible
         if (showInfoPanel) {
-            float panelWidth = 400;
-            float panelHeight = 300;
-            float panelX = (viewport.getWorldWidth() - panelWidth) / 2;
-            float panelY = (viewport.getWorldHeight() - panelHeight) / 2;
-
-            batch.setColor(infoPanelColor);
-            batch.draw(whiteTexture, panelX, panelY, panelWidth, panelHeight);
-
-            // Dessiner les informations du tableau
-            float textMargin = 20;
-            float titleY = panelY + panelHeight - textMargin;
-            float artistY = titleY - 40;
-            float yearY = artistY - 40;
-            float descriptionY = yearY - 80;
-
-            font.setColor(1, 1, 1, 1);
-            
-            // Titre avec position arrondie pour éviter le flou
-            layout.setText(font, theme.getTitle(), Color.WHITE, panelWidth - 2 * textMargin, Align.center, false);
-            font.draw(batch, layout, Math.round(panelX + textMargin), Math.round(titleY));
-
-            // Artiste avec position arrondie
-            layout.setText(font, theme.getArtist(), Color.WHITE, panelWidth - 2 * textMargin, Align.center, false);
-            font.draw(batch, layout, Math.round(panelX + textMargin), Math.round(artistY));
-
-            // Année avec position arrondie
-            layout.setText(font, String.valueOf(theme.getYear()), Color.WHITE, panelWidth - 2 * textMargin, Align.center, false);
-            font.draw(batch, layout, Math.round(panelX + textMargin), Math.round(yearY));
-
-            // Description avec position arrondie
-            layout.setText(font, theme.getDescription(), Color.WHITE, panelWidth - 2 * textMargin, Align.center, true);
-            font.draw(batch, layout, Math.round(panelX + textMargin), Math.round(descriptionY));
+            drawInfoPanel();
         }
     }
 
     private void renderIrisOpenEffect(float progress) {
-        float screenWidth = viewport.getWorldWidth();
+        // Utiliser DisplayConfig.WORLD_WIDTH pour la cohérence (comme MastermindGameScreen)
+        float screenWidth = DisplayConfig.WORLD_WIDTH;
         float screenHeight = viewport.getWorldHeight();
         float imageWidth = fullImageTexture.getWidth();
         float imageHeight = fullImageTexture.getHeight();
+        float aspectRatio = imageWidth / imageHeight;
         
-        // Calculer le ratio pour s'assurer que l'image tient dans l'écran (zoom final)
-        float finalScale = Math.min(
-            screenWidth * 0.8f / imageWidth,
-            screenHeight * 0.8f / imageHeight
-        );
+        // Calculer le scale final pour maximiser l'image dans le viewport (comme MastermindGameScreen)
+        float finalImageWidth, finalImageHeight;
+        
+        // Calculer les dimensions pour remplir l'écran tout en conservant le ratio
+        if (screenWidth / aspectRatio <= screenHeight) {
+            // L'image sera limitée par la largeur
+            finalImageWidth = screenWidth;
+            finalImageHeight = finalImageWidth / aspectRatio;
+        } else {
+            // L'image sera limitée par la hauteur - MAXIMISER LA HAUTEUR
+            finalImageHeight = screenHeight;
+            finalImageWidth = finalImageHeight * aspectRatio;
+        }
+        
+        float finalScale = finalImageWidth / imageWidth;
         
         Theme.CropInfo squareCrop = theme.getSquareCrop();
         if (squareCrop != null) {
@@ -675,6 +678,8 @@ public class SlidingPuzzleGameScreen extends GameScreen {
             // Calculer les dimensions avec le zoom actuel
             float scaledWidth = imageWidth * currentScale;
             float scaledHeight = imageHeight * currentScale;
+            
+            // Centrer l'image à l'écran
             float x = (screenWidth - scaledWidth) / 2;
             float y = (screenHeight - scaledHeight) / 2;
 
@@ -689,6 +694,10 @@ public class SlidingPuzzleGameScreen extends GameScreen {
             float openHeight = cropHeight + (scaledHeight - cropHeight) * progress;
             float openX = x + (scaledWidth - openWidth) / 2;
             float openY = y + (scaledHeight - openHeight) / 2;
+
+            // Dessiner d'abord le fond avec la couleur définie durant le jeu
+            batch.setColor(backgroundColor);
+            batch.draw(whiteTexture, 0, 0, screenWidth, screenHeight);
 
             // Dessiner l'image complète avec l'effet d'ouverture
             batch.setColor(1f, 1f, 1f, 1f);
@@ -796,24 +805,72 @@ public class SlidingPuzzleGameScreen extends GameScreen {
         }
     }
 
+    /**
+     * Crée l'input processor pour gérer les clics et raccourcis clavier
+     */
+    private void createInputProcessor() {
+        System.out.println("Début de création de l'InputAdapter pour SlidingPuzzle...");
+        inputProcessor = new InputAdapter() {
+            @Override
+            public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+                // Désactiver les entrées pendant l'animation ou les transitions
+                if (tileAnimation.isActive() || TransitionScreen.isTransitionActive()) {
+                    return true;
+                }
+                
+                Vector3 worldCoords = new Vector3(screenX, screenY, 0);
+                viewport.unproject(worldCoords);
+                handleClick(worldCoords.x, worldCoords.y);
+                return true;
+            }
+            
+            @Override
+            public boolean keyDown(int keycode) {
+                // Gestion de la touche R pour résoudre (en mode test uniquement)
+                if (keycode == Input.Keys.R && isTestMode && !isPuzzleSolved) {
+                    solveGameWithKeyboard();
+                    return true;
+                }
+                
+                // Gestion de la touche N pour déclencher la phase finale (en mode test uniquement)
+                if (keycode == Input.Keys.N && isTestMode && !isPuzzleSolved) {
+                    triggerVictoryPhase();
+                    return true;
+                }
+                
+                return false;
+            }
+        };
+        System.out.println("InputAdapter créé avec succès pour SlidingPuzzle");
+    }
+    
+    @Override
+    protected void onScreenActivated() {
+        super.onScreenActivated();
+        // Activer l'input processor quand l'écran devient actif
+        Gdx.input.setInputProcessor(inputProcessor);
+    }
+    
+    @Override
+    protected void onScreenDeactivated() {
+        super.onScreenDeactivated();
+        // Désactiver l'input processor quand l'écran devient inactif
+        Gdx.input.setInputProcessor(null);
+    }
+    
     @Override
     protected void handleInput() {
-        // Désactiver les entrées pendant l'animation ou les transitions
-        if (tileAnimation.isActive() || TransitionScreen.isTransitionActive()) {
-            return;
-        }
-
-        if (Gdx.input.justTouched()) {
-            System.out.println("Toucher détecté dans SlidingPuzzleGameScreen");
-
-            float touchX = Gdx.input.getX();
-            float touchY = Gdx.input.getY();
-
-            // Convertir les coordonnées de l'écran en coordonnées du monde
-            Vector3 worldPos = new Vector3(touchX, touchY, 0);
-            viewport.unproject(worldPos);
-
-            System.out.println("Position du toucher: (" + worldPos.x + ", " + worldPos.y + ")");
+        // La gestion des entrées est déléguée à l'InputProcessor créé dans createInputProcessor()
+        // Cette méthode peut rester vide car toutes les interactions sont gérées via les clics et raccourcis clavier
+    }
+    
+    /**
+     * Gère les clics de souris/tactiles
+     */
+    private void handleClick(float worldX, float worldY) {
+        if (true) {
+            System.out.println("Clic détecté dans SlidingPuzzleGameScreen");
+            System.out.println("Position du clic: (" + worldX + ", " + worldY + ")");
 
             // Si le puzzle est résolu, retourner au menu sur n'importe quel clic
             if (isPuzzleSolved) {
@@ -829,61 +886,109 @@ public class SlidingPuzzleGameScreen extends GameScreen {
                 return;
             }
 
-            if (backButton.contains(worldPos.x, worldPos.y)) {
-                System.out.println("Bouton Retour cliqué");
-                returnToMainMenu();
-            } else if (isTestMode && solveButton.contains(worldPos.x, worldPos.y)) {
-                System.out.println("Bouton Résoudre cliqué (mode test)");
-                if (game instanceof AdventCalendarGame) {
-                    AdventCalendarGame adventGame = (AdventCalendarGame) game;
-                    adventGame.setScore(dayId, 100);
-                    adventGame.setVisited(dayId, true);
+            // Désactiver les clics sur les boutons s'ils sont en train de disparaître
+            if (!isButtonsFading) {
+                if (closeButton.contains(worldX, worldY)) {
+                    System.out.println("Bouton Close cliqué");
+                    returnToMainMenu();
+                } else if (infoButton.contains(worldX, worldY)) {
+                    System.out.println("Bouton Info cliqué");
+                    showInfoPanel = true;
+                } else {
+                    handleTileClick(worldX, worldY);
                 }
-                // Jouer le son de résolution en mode test aussi
-                if (solveSound != null) {
-                    solveSound.play();
-                }
-                returnToMainMenu();
-            } else if (infoButton.contains(worldPos.x, worldPos.y)) {
-                System.out.println("Bouton Info cliqué");
-                showInfoPanel = true;
             } else {
-                // Gérer le déplacement des tuiles
-                for (int positionIndex = 0; positionIndex < gridZones.length; positionIndex++) {
-                    if (gridZones[positionIndex].contains(worldPos.x, worldPos.y)) {
-                        // Ignorer le clic si c'est sur la case vide
-                        if (positionIndex == emptyTileIndex) {
-                            System.out.println("Clic sur la case vide (position " + positionIndex + ") - Ignoré");
-                            break;
-                        }
-
-                        int tileNumber = puzzleState[positionIndex];
-                        System.out.println("Tuile numéro " + tileNumber + " cliquée (position " + positionIndex + ")");
-                        System.out.println("Case vide actuelle: position " + emptyTileIndex);
-
-                        if (isAdjacent(positionIndex, emptyTileIndex)) {
-                            System.out.println("Déplacement de la tuile " + tileNumber + " (position " + positionIndex + ") vers la case vide (position " + emptyTileIndex + ")");
-
-                            // Jouer le son de déplacement
-                            if (slidingSound != null) {
-                                System.out.println("Son de déplacement joué");
-                                slidingSound.play();
-                            }
-                            else {
-                                System.out.println("ERREUR: slidingSound est null");
-                            }
-
-                            // Initialiser l'animation
-                            Vector3 start = new Vector3(gridZones[positionIndex].x, gridZones[positionIndex].y, 0);
-                            Vector3 end = new Vector3(gridZones[emptyTileIndex].x, gridZones[emptyTileIndex].y, 0);
-                            tileAnimation.start(positionIndex, start, end);
-                        } else {
-                            System.out.println("Déplacement impossible - Tuile " + tileNumber + " (position " + positionIndex + ") non adjacente à la case vide (position " + emptyTileIndex + ")");
-                        }
-                        break;
-                    }
-                }
+                // Si les boutons sont en train de disparaître, gérer seulement les clics sur les tuiles
+                handleTileClick(worldX, worldY);
             }
+        }
+    }
+    
+    /**
+     * Gère les clics sur les tuiles du puzzle
+     */
+    private void handleTileClick(float worldX, float worldY) {
+        // Gérer le déplacement des tuiles
+        for (int positionIndex = 0; positionIndex < gridZones.length; positionIndex++) {
+            if (gridZones[positionIndex].contains(worldX, worldY)) {
+                // Ignorer le clic si c'est sur la case vide
+                if (positionIndex == emptyTileIndex) {
+                    System.out.println("Clic sur la case vide (position " + positionIndex + ") - Ignoré");
+                    break;
+                }
+
+                int tileNumber = puzzleState[positionIndex];
+                System.out.println("Tuile numéro " + tileNumber + " cliquée (position " + positionIndex + ")");
+                System.out.println("Case vide actuelle: position " + emptyTileIndex);
+
+                if (isAdjacent(positionIndex, emptyTileIndex)) {
+                    System.out.println("Déplacement de la tuile " + tileNumber + " (position " + positionIndex + ") vers la case vide (position " + emptyTileIndex + ")");
+
+                    // Jouer le son de déplacement
+                    if (slidingSound != null) {
+                        System.out.println("Son de déplacement joué");
+                        slidingSound.play();
+                    }
+                    else {
+                        System.out.println("ERREUR: slidingSound est null");
+                    }
+
+                    // Initialiser l'animation
+                    Vector3 start = new Vector3(gridZones[positionIndex].x, gridZones[positionIndex].y, 0);
+                    Vector3 end = new Vector3(gridZones[emptyTileIndex].x, gridZones[emptyTileIndex].y, 0);
+                    tileAnimation.start(positionIndex, start, end);
+                } else {
+                    System.out.println("Déplacement impossible - Tuile " + tileNumber + " (position " + positionIndex + ") non adjacente à la case vide (position " + emptyTileIndex + ")");
+                }
+                break;
+            }
+        }
+    }
+    
+    /**
+     * Résout le puzzle automatiquement via raccourci clavier R (mode test uniquement)
+     */
+    private void solveGameWithKeyboard() {
+        System.out.println("Résolution automatique du puzzle coulissant via touche R (mode test)");
+        
+        if (game instanceof AdventCalendarGame) {
+            AdventCalendarGame adventGame = (AdventCalendarGame) game;
+            adventGame.setScore(dayId, 100);
+            adventGame.setVisited(dayId, true);
+        }
+        
+        // Jouer le son de résolution
+        if (solveSound != null) {
+            solveSound.play();
+        }
+        
+        // Retourner au menu immédiatement
+        returnToMainMenu();
+    }
+    
+    /**
+     * Déclenche la phase de victoire via raccourci clavier N (mode test uniquement)
+     */
+    private void triggerVictoryPhase() {
+        System.out.println("Déclenchement de la phase de victoire du puzzle coulissant via touche N (mode test)");
+        
+        // Simuler une victoire comme si le puzzle venait d'être résolu
+        isPuzzleSolved = true;
+        animationState.start();
+        
+        // Démarrer le fondu des boutons
+        isButtonsFading = true;
+        buttonsFadeTimer = 0f;
+        
+        // Jouer le son de résolution
+        if (solveSound != null) {
+            solveSound.play();
+        }
+        
+        if (game instanceof AdventCalendarGame) {
+            AdventCalendarGame adventGame = (AdventCalendarGame) game;
+            adventGame.setScore(dayId, 100);
+            adventGame.setVisited(dayId, true);
         }
     }
 
@@ -898,6 +1003,12 @@ public class SlidingPuzzleGameScreen extends GameScreen {
         if (fullImageTexture != null) {
             fullImageTexture.dispose();
         }
+        if (infoButtonTexture != null) {
+            infoButtonTexture.dispose();
+        }
+        if (closeButtonTexture != null) {
+            closeButtonTexture.dispose();
+        }
         if (solveSound != null) {
             solveSound.dispose();
         }
@@ -906,12 +1017,153 @@ public class SlidingPuzzleGameScreen extends GameScreen {
         }
     }
 
+    /**
+     * Dessine l'interface de jeu (boutons, etc.)
+     */
+    private void drawGameInterface() {
+        // Dessiner les boutons avec leurs textures (comme MastermindGameScreen)
+        drawCloseButton();
+        drawInfoButton();
+    }
+    
+    private void drawInfoButton() {
+        if (infoButtonTexture != null) {
+            // Calculer l'alpha pour le fondu
+            float alpha = getButtonAlpha();
+            
+            // Dessiner l'image du bouton info avec l'alpha approprié
+            batch.setColor(1f, 1f, 1f, alpha);
+            
+            // Utiliser la taille du rectangle du bouton (définie dans updateButtonPositions)
+            float buttonWidth = infoButton.width;
+            float buttonHeight = infoButton.height;
+            
+            // Dessiner le bouton à sa position
+            batch.draw(infoButtonTexture, infoButton.x, infoButton.y, buttonWidth, buttonHeight);
+        }
+    }
+    
+    private void drawCloseButton() {
+        if (closeButtonTexture != null) {
+            // Calculer l'alpha pour le fondu
+            float alpha = getButtonAlpha();
+            
+            // Dessiner l'image du bouton close avec l'alpha approprié
+            batch.setColor(1f, 1f, 1f, alpha);
+            
+            // Utiliser la taille du rectangle du bouton (définie dans updateButtonPositions)
+            float buttonWidth = closeButton.width;
+            float buttonHeight = closeButton.height;
+            
+            // Dessiner le bouton à sa position
+            batch.draw(closeButtonTexture, closeButton.x, closeButton.y, buttonWidth, buttonHeight);
+        }
+    }
+    
+    /**
+     * Calcule l'alpha des boutons en fonction de l'état du fondu
+     */
+    private float getButtonAlpha() {
+        if (!isButtonsFading) {
+            return 1f; // Boutons complètement visibles
+        }
+        
+        // Calculer le progrès du fondu (0 = visible, 1 = invisible)
+        float fadeProgress = buttonsFadeTimer / BUTTONS_FADE_DURATION;
+        fadeProgress = Math.min(1f, fadeProgress); // Limiter à 1
+        
+        // Retourner l'alpha inversé (1 - progress pour aller de visible à invisible)
+        return 1f - fadeProgress;
+    }
+    
+    /**
+     * Dessine le panneau d'information (comme MastermindGameScreen)
+     */
+    private void drawInfoPanel() {
+        float screenWidth = DisplayConfig.WORLD_WIDTH;
+        float screenHeight = viewport.getWorldHeight();
+        
+        // Fond semi-transparent pour conserver la visibilité du jeu
+        batch.setColor(0, 0, 0, 0.4f);
+        batch.draw(whiteTexture, 0, 0, screenWidth, screenHeight);
+        
+        // Calculer la taille adaptative du panneau
+        float minPanelWidth = Math.max(400, screenWidth * 0.5f);
+        float maxPanelWidth = Math.min(600, screenWidth * 0.9f);
+        float panelWidth = Math.min(maxPanelWidth, minPanelWidth);
+        
+        float minPanelHeight = Math.max(300, screenHeight * 0.4f);
+        float maxPanelHeight = Math.min(500, screenHeight * 0.8f);
+        float panelHeight = Math.min(maxPanelHeight, minPanelHeight);
+        
+        float panelX = (screenWidth - panelWidth) / 2;
+        float panelY = (screenHeight - panelHeight) / 2;
+        
+        // Fond du panneau avec coins arrondis simulés
+        batch.setColor(0.95f, 0.95f, 0.98f, 0.95f);
+        batch.draw(whiteTexture, panelX, panelY, panelWidth, panelHeight);
+        
+        // Bordure du panneau avec effet d'ombre
+        float shadowOffset = 3;
+        batch.setColor(0, 0, 0, 0.3f);
+        batch.draw(whiteTexture, panelX + shadowOffset, panelY - shadowOffset, panelWidth, panelHeight);
+        
+        // Bordure principale
+        batch.setColor(0.3f, 0.4f, 0.7f, 1);
+        float borderWidth = 2;
+        // Haut
+        batch.draw(whiteTexture, panelX, panelY + panelHeight - borderWidth, panelWidth, borderWidth);
+        // Bas
+        batch.draw(whiteTexture, panelX, panelY, panelWidth, borderWidth);
+        // Gauche
+        batch.draw(whiteTexture, panelX, panelY, borderWidth, panelHeight);
+        // Droite
+        batch.draw(whiteTexture, panelX + panelWidth - borderWidth, panelY, borderWidth, panelHeight);
+        
+        // Dessiner les informations du tableau
+        float textMargin = 20;
+        float titleY = panelY + panelHeight - textMargin;
+        float artistY = titleY - 40;
+        float yearY = artistY - 40;
+        float descriptionY = yearY - 80;
+
+        font.setColor(0.2f, 0.3f, 0.8f, 1);
+        
+        // Titre
+        layout.setText(font, theme.getTitle(), Color.WHITE, panelWidth - 2 * textMargin, Align.center, false);
+        font.draw(batch, layout, Math.round(panelX + textMargin), Math.round(titleY));
+
+        // Artiste
+        font.setColor(0.1f, 0.1f, 0.2f, 1);
+        layout.setText(font, theme.getArtist(), Color.WHITE, panelWidth - 2 * textMargin, Align.center, false);
+        font.draw(batch, layout, Math.round(panelX + textMargin), Math.round(artistY));
+
+        // Année
+        layout.setText(font, String.valueOf(theme.getYear()), Color.WHITE, panelWidth - 2 * textMargin, Align.center, false);
+        font.draw(batch, layout, Math.round(panelX + textMargin), Math.round(yearY));
+
+        // Description
+        layout.setText(font, theme.getDescription(), Color.WHITE, panelWidth - 2 * textMargin, Align.center, true);
+        font.draw(batch, layout, Math.round(panelX + textMargin), Math.round(descriptionY));
+        
+        // Indicateur de fermeture
+        font.setColor(0.5f, 0.5f, 0.6f, 1);
+        String closeHint = "Tapez pour fermer";
+        layout.setText(font, closeHint);
+        font.draw(batch, layout, 
+            panelX + panelWidth - layout.width - 10,
+            panelY + 15);
+    }
+
     @Override
     public void resize(int width, int height) {
         super.resize(width, height);
 
         currentWidth = width;
         currentHeight = height;
+        
+        // Recalculer les dimensions du background (comme MastermindGameScreen)
+        calculateBackgroundDimensions();
         
         // Recalculer la taille des tuiles et l'espacement
         float availableWidth = viewport.getWorldWidth() - (2 * GRID_MARGIN);
@@ -945,12 +1197,8 @@ public class SlidingPuzzleGameScreen extends GameScreen {
             }
         }
 
-        // Mettre à jour les positions des boutons avec le gestionnaire centralisé
-        backButton.setPosition(20, 20);
-        UIPositionManager.positionButtonsBottomRight(viewport, 
-            new Rectangle[]{solveButton}, 100, 50, 20, 0);
-        UIPositionManager.positionButtonsTopRight(viewport, 
-            new Rectangle[]{closeButton, infoButton}, 50, 20, 20);
+        // Mettre à jour les positions des boutons (comme MastermindGameScreen)
+        updateButtonPositions();
 
         System.out.println("Redimensionnement: " + width + "x" + height);
         System.out.println("Viewport: " + viewport.getWorldWidth() + "x" + viewport.getWorldHeight());
