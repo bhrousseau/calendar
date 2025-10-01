@@ -20,8 +20,11 @@
       "theme": "pearl",
       "parameters": {
         "size": 3,
-        "bgColor": "80,80,80",
-        "shuffle": 500
+        "bgColor": "30,30,30",
+        "bgHue": 288,
+        "bgSaturation": 100,
+        "bgLightness": -80,
+        "shuffle": 10
       }
     },
     {

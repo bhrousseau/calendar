@@ -19,6 +19,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.audio.Sound;
 import com.widedot.calendar.config.Config;
 import com.badlogic.gdx.utils.ObjectMap;
+import com.widedot.calendar.effects.HSLColorFilter;
 
 /**
  * Écran de jeu pour le puzzle coulissant
@@ -61,6 +62,12 @@ public class SlidingPuzzleGameScreen extends GameScreen {
     private Texture puzzleTexture; // Texture du puzzle
     private TextureRegion[] puzzleTiles; // Régions de texture pour chaque tuile
     private Theme theme; // Le thème du jeu
+    private Texture backgroundTexture; // Texture du background
+    
+    // Paramètres du filtre de couleur pour le background (gris par défaut)
+    private float backgroundHue = 0f;
+    private float backgroundSaturation = 0f;
+    private float backgroundLightness = 0f;
 
     // Variables d'animation
     private static class AnimationState {
@@ -212,6 +219,9 @@ public class SlidingPuzzleGameScreen extends GameScreen {
         return horizontalAdjacent || verticalAdjacent;
     }
 
+    
+    
+
     /**
      * Initialise un état du puzzle résoluble en simulant des mouvements valides
      */
@@ -310,6 +320,22 @@ public class SlidingPuzzleGameScreen extends GameScreen {
             if (parameters.containsKey("animationSpeed")) {
                 this.animationSpeed = ((Number)parameters.get("animationSpeed")).floatValue();
             }
+            
+            // Paramètres du filtre de couleur du background
+            if (parameters.containsKey("bgHue")) {
+                float hue = ((Number)parameters.get("bgHue")).floatValue();
+                this.backgroundHue = Math.max(0, Math.min(360, hue));
+            }
+            
+            if (parameters.containsKey("bgSaturation")) {
+                float saturation = ((Number)parameters.get("bgSaturation")).floatValue();
+                this.backgroundSaturation = Math.max(0, Math.min(100, saturation));
+            }
+            
+            if (parameters.containsKey("bgLightness")) {
+                float lightness = ((Number)parameters.get("bgLightness")).floatValue();
+                this.backgroundLightness = Math.max(-100, Math.min(100, lightness));
+            }
         }
         
         // Initialisation des couleurs et éléments UI
@@ -348,6 +374,28 @@ public class SlidingPuzzleGameScreen extends GameScreen {
         } catch (Exception e) {
             System.err.println("Erreur lors du chargement du bouton close: " + e.getMessage());
             this.closeButtonTexture = null;
+        }
+        
+        // Charger la texture du background avec filtre de couleur
+        try {
+            // Charger l'image en tant que Pixmap pour pouvoir la modifier
+            Pixmap backgroundPixmap = new Pixmap(Gdx.files.internal("images/games/spz/background-0.png"));
+            
+            // Appliquer le filtre de couleur HSL
+            HSLColorFilter.applyHSLFilter(backgroundPixmap, backgroundHue, backgroundSaturation, backgroundLightness);
+            
+            // Créer la texture à partir du Pixmap modifié
+            this.backgroundTexture = new Texture(backgroundPixmap);
+            
+            // Libérer le Pixmap car il n'est plus nécessaire
+            backgroundPixmap.dispose();
+            
+            System.out.println("Background chargé avec filtre HSL - Teinte: " + backgroundHue + 
+                             ", Saturation: " + backgroundSaturation + 
+                             ", Luminosité: " + backgroundLightness);
+        } catch (Exception e) {
+            System.err.println("Erreur lors du chargement du background: " + e.getMessage());
+            this.backgroundTexture = null;
         }
 
         this.puzzleState = new int[gridSize * gridSize];
@@ -608,9 +656,16 @@ public class SlidingPuzzleGameScreen extends GameScreen {
 
     @Override
     protected void renderGame() {
-        // Dessiner le fond d'abord un fond uni (comme MastermindGameScreen)
-        batch.setColor(backgroundColor);
-        batch.draw(whiteTexture, 0, 0, DisplayConfig.WORLD_WIDTH, viewport.getWorldHeight());
+        // Dessiner le background ou le fond uni selon l'état du jeu
+        if (backgroundTexture != null && !animationState.isActive() && !animationState.isComplete()) {
+            // Dessiner le background pendant le jeu normal
+            batch.setColor(Color.WHITE);
+            batch.draw(backgroundTexture, 0, 0, DisplayConfig.WORLD_WIDTH, viewport.getWorldHeight());
+        } else {
+            // Dessiner un fond uni pendant les animations ou si le background n'est pas disponible
+            batch.setColor(backgroundColor);
+            batch.draw(whiteTexture, 0, 0, DisplayConfig.WORLD_WIDTH, viewport.getWorldHeight());
+        }
 
         // Réinitialiser la couleur avant de dessiner les tuiles
         batch.setColor(Color.WHITE);
@@ -1014,6 +1069,9 @@ public class SlidingPuzzleGameScreen extends GameScreen {
         }
         if (slidingSound != null) {
             slidingSound.dispose();
+        }
+        if (backgroundTexture != null) {
+            backgroundTexture.dispose();
         }
     }
 
