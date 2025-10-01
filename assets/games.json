@@ -21,9 +21,9 @@
       "parameters": {
         "size": 3,
         "bgColor": "30,30,30",
-        "bgHue": 288,
-        "bgSaturation": 100,
-        "bgLightness": -80,
+        "bgHue": 226,
+        "bgSaturation": 90,
+        "bgLightness": 75,
         "shuffle": 10
       }
     },
