@@ -98,6 +98,33 @@
           "textColor": "50,50,100"
         }
       }
+    },
+    "CGG": {
+      "name": "crystalizeGuess",
+      "defaultParameters": {
+        "maxAttempts": 5,
+        "initialCrystalSize": 150,
+        "bgColor": "0,0,0"
+      },
+      "parameterTypes": {
+        "maxAttempts": "int",
+        "initialCrystalSize": "int",
+        "bgColor": "string"
+      },
+      "presets": {
+        "easy": {
+          "maxAttempts": 7,
+          "initialCrystalSize": 400
+        },
+        "medium": {
+          "maxAttempts": 5,
+          "initialCrystalSize": 600
+        },
+        "hard": {
+          "maxAttempts": 3,
+          "initialCrystalSize": 800
+        }
+      }
     }
   }
 } 
