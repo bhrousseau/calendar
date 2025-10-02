@@ -1,195 +1,245 @@
 {
-  "games": [
-    {
-      "reference": "CGG_mona_lisa",
-      "gameTemplate": "CGG",
-      "theme": "mona_lisa",
-      "presets": ["medium"]
-    },
-    {
-      "reference": "SPZ_composition_1916",
-      "gameTemplate": "SPZ",
-      "theme": "composition_1916"
-    },
-    {
-      "reference": "SPZ_guernica",
-      "gameTemplate": "SPZ",
-      "theme": "guernica",
-      "parameters": {
-        "bgColor": "40,80,120"
-      },
-      "presets": ["hard"]
-    },
-    {
-      "reference": "SPZ_pearl",
-      "gameTemplate": "SPZ",
-      "theme": "pearl",
-      "parameters": {
-        "size": 3,
-        "bgColor": "30,30,30",
-        "bgHue": 226,
-        "bgSaturation": 90,
-        "bgLightness": 75,
-        "shuffle": 10
-      }
-    },
-    {
-      "reference": "SPZ_starry_night",
-      "gameTemplate": "SPZ",
-      "theme": "starry_night",
-      "presets": ["hard"]
-    },
-    {
-      "reference": "SPZ_kiss",
-      "gameTemplate": "SPZ",
-      "theme": "kiss",
-      "presets": ["easy", "bgWhite"]
-    },
-    {
-      "reference": "SPZ_on_white_ii",
-      "gameTemplate": "SPZ",
-      "theme": "on_white_ii"
-    },
-    {
-      "reference": "SPZ_mona_lisa",
-      "gameTemplate": "SPZ",
-      "theme": "mona_lisa"
-    },
-    {
-      "reference": "SPZ_impression",
-      "gameTemplate": "SPZ",
-      "theme": "impression"
-    },
-    {
-      "reference": "SPZ_nympheas",
-      "gameTemplate": "SPZ",
-      "theme": "nympheas"
-    },
-    {
-      "reference": "SPZ_the_false_mirror",
-      "gameTemplate": "SPZ",
-      "theme": "the_false_mirror"
-    },
-    {
-      "reference": "SPZ_composition_viii",
-      "gameTemplate": "SPZ",
-      "theme": "composition_viii"
-    },
-    {
-      "reference": "SPZ_wave",
-      "gameTemplate": "SPZ",
-      "theme": "wave"
-    },
-    {
-      "reference": "SPZ_broadway",
-      "gameTemplate": "SPZ",
-      "theme": "broadway"
-    },
-    {
-      "reference": "SPZ_son_of_man",
-      "gameTemplate": "SPZ",
-      "theme": "son_of_man"
-    },
-    {
-      "reference": "SPZ_vertumnus",
-      "gameTemplate": "SPZ",
-      "theme": "vertumnus"
-    },
-    {
-      "reference": "SPZ_blue_fiddler",
-      "gameTemplate": "SPZ",
-      "theme": "blue_fiddler"
-    },
-    {
-      "reference": "SPZ_three_musicians",
-      "gameTemplate": "SPZ",
-      "theme": "three_musicians"
-    },
-    {
-      "reference": "SPZ_i_and_village",
-      "gameTemplate": "SPZ",
-      "theme": "i_and_village"
-    },
-    {
-      "reference": "SPZ_sea_of_ice",
-      "gameTemplate": "SPZ",
-      "theme": "sea_of_ice"
-    },
-    {
-      "reference": "SPZ_numbers_constellations",
-      "gameTemplate": "SPZ",
-      "theme": "numbers_constellations"
-    },
-    {
-      "reference": "SPZ_card_players",
-      "gameTemplate": "SPZ",
-      "theme": "card_players"
-    },
-    {
-      "reference": "SPZ_scapigliata",
-      "gameTemplate": "SPZ",
-      "theme": "scapigliata"
-    },
-    {
-      "reference": "SPZ_the_milkmaid",
-      "gameTemplate": "SPZ",
-      "theme": "the_milkmaid"
-    },
-    {
-      "reference": "SPZ_tree_of_life",
-      "gameTemplate": "SPZ",
-      "theme": "tree_of_life"
-    },
-    {
-      "reference": "QNA_general_knowledge",
-      "gameTemplate": "QNA",
-      "theme": "vertumnus",
-      "parameters": {
-        "questionsFile": "questions.json"
-      }
-    },
-    {
-      "reference": "QNA_case_sensitive",
-      "gameTemplate": "QNA",
-      "theme": "guernica",
-      "parameters": {
-        "questionsFile": "questions.json",
-        "caseSensitive": true
-      },
-      "presets": ["darkTheme"]
-    },
-    {
-      "reference": "QNA_light_theme",
-      "gameTemplate": "QNA",
-      "theme": "starry_night",
-      "presets": ["lightTheme"]
-    },
-    {
-      "reference": "QNA_art_questions",
-      "gameTemplate": "QNA",
-      "theme": "mona_lisa",
-      "parameters": {
-        "questionsFile": "art_questions.json"
-      },
-      "presets": ["darkTheme"]
-    },
-    {
-      "reference": "MMD_mona_lisa",
-      "gameTemplate": "MMD",
-      "theme": "mona_lisa",
-      "presets": ["hard"]
-    },
-    {
-      "reference": "MMD_composition_1916",
-      "gameTemplate": "MMD",
-      "theme": "composition_1916",
-      "presets": ["medium"]
-    },
-    {
-      "reference": "MMD_guernica",
-      "gameTemplate": "MMD",
-      "theme": "guernica",
-      "presets": ["hard"]
-    }
-  ]
+"games": [
+	{
+		"reference": "CGG_mona_lisa",
+		"gameTemplate": "CGG",
+		"theme": "mona_lisa",
+		"parameters": {
+			"maxAttempts": 4,
+			"initialCrystalSize": 303,
+			"randomness": 0.0,
+			"edgeThickness": 0.0,
+			"stretch": 1.0,
+			"fadeEdges": false,
+			"edgeColor": "0,000,0,000,0,000,1,000"
+		}
+	},
+	{
+		"reference": "CGG_pearl",
+		"gameTemplate": "CGG",
+		"theme": "pearl",
+		"parameters": {
+			"maxAttempts": 4,
+			"initialCrystalSize": 252,
+			"randomness": 0.0,
+			"edgeThickness": 0.0,
+			"stretch": 1.0,
+			"fadeEdges": false,
+			"edgeColor": "0,000,0,000,0,000,1,000"
+		}
+	},
+	{
+		"reference": "SPZ_composition_1916",
+		"gameTemplate": "SPZ",
+		"theme": "composition_1916"
+	},
+	{
+		"reference": "SPZ_guernica",
+		"gameTemplate": "SPZ",
+		"theme": "guernica",
+		"parameters": {
+			"bgColor": "40,80,120"
+		},
+		"presets": [
+			"hard"
+		]
+	},
+	{
+		"reference": "SPZ_pearl",
+		"gameTemplate": "SPZ",
+		"theme": "pearl",
+		"parameters": {
+			"size": 3,
+			"bgColor": "30,30,30",
+			"bgHue": 226,
+			"bgSaturation": 90,
+			"bgLightness": 75,
+			"shuffle": 10
+		}
+	},
+	{
+		"reference": "SPZ_starry_night",
+		"gameTemplate": "SPZ",
+		"theme": "starry_night",
+		"presets": [
+			"hard"
+		],
+		"parameters": {
+			"size": 4,
+			"bgColor": "0,0,0",
+			"bgHue": 240.0,
+			"bgSaturation": 50.0,
+			"bgLightness": -80.0,
+			"shuffle": 100,
+			"animationSpeed": 10.0
+		}
+	},
+	{
+		"reference": "SPZ_kiss",
+		"gameTemplate": "SPZ",
+		"theme": "kiss",
+		"presets": [
+			"easy",
+			"bgWhite"
+		]
+	},
+	{
+		"reference": "SPZ_on_white_ii",
+		"gameTemplate": "SPZ",
+		"theme": "on_white_ii"
+	},
+	{
+		"reference": "SPZ_mona_lisa",
+		"gameTemplate": "SPZ",
+		"theme": "mona_lisa"
+	},
+	{
+		"reference": "SPZ_impression",
+		"gameTemplate": "SPZ",
+		"theme": "impression"
+	},
+	{
+		"reference": "SPZ_nympheas",
+		"gameTemplate": "SPZ",
+		"theme": "nympheas"
+	},
+	{
+		"reference": "SPZ_the_false_mirror",
+		"gameTemplate": "SPZ",
+		"theme": "the_false_mirror"
+	},
+	{
+		"reference": "SPZ_composition_viii",
+		"gameTemplate": "SPZ",
+		"theme": "composition_viii"
+	},
+	{
+		"reference": "SPZ_wave",
+		"gameTemplate": "SPZ",
+		"theme": "wave"
+	},
+	{
+		"reference": "SPZ_broadway",
+		"gameTemplate": "SPZ",
+		"theme": "broadway"
+	},
+	{
+		"reference": "SPZ_son_of_man",
+		"gameTemplate": "SPZ",
+		"theme": "son_of_man"
+	},
+	{
+		"reference": "SPZ_vertumnus",
+		"gameTemplate": "SPZ",
+		"theme": "vertumnus"
+	},
+	{
+		"reference": "SPZ_blue_fiddler",
+		"gameTemplate": "SPZ",
+		"theme": "blue_fiddler"
+	},
+	{
+		"reference": "SPZ_three_musicians",
+		"gameTemplate": "SPZ",
+		"theme": "three_musicians"
+	},
+	{
+		"reference": "SPZ_i_and_village",
+		"gameTemplate": "SPZ",
+		"theme": "i_and_village"
+	},
+	{
+		"reference": "SPZ_sea_of_ice",
+		"gameTemplate": "SPZ",
+		"theme": "sea_of_ice"
+	},
+	{
+		"reference": "SPZ_numbers_constellations",
+		"gameTemplate": "SPZ",
+		"theme": "numbers_constellations"
+	},
+	{
+		"reference": "SPZ_card_players",
+		"gameTemplate": "SPZ",
+		"theme": "card_players"
+	},
+	{
+		"reference": "SPZ_scapigliata",
+		"gameTemplate": "SPZ",
+		"theme": "scapigliata"
+	},
+	{
+		"reference": "SPZ_the_milkmaid",
+		"gameTemplate": "SPZ",
+		"theme": "the_milkmaid"
+	},
+	{
+		"reference": "SPZ_tree_of_life",
+		"gameTemplate": "SPZ",
+		"theme": "tree_of_life"
+	},
+	{
+		"reference": "QNA_general_knowledge",
+		"gameTemplate": "QNA",
+		"theme": "vertumnus",
+		"parameters": {
+			"questionsFile": "questions.json"
+		}
+	},
+	{
+		"reference": "QNA_case_sensitive",
+		"gameTemplate": "QNA",
+		"theme": "guernica",
+		"parameters": {
+			"questionsFile": "questions.json",
+			"caseSensitive": true
+		},
+		"presets": [
+			"darkTheme"
+		]
+	},
+	{
+		"reference": "QNA_light_theme",
+		"gameTemplate": "QNA",
+		"theme": "starry_night",
+		"presets": [
+			"lightTheme"
+		]
+	},
+	{
+		"reference": "QNA_art_questions",
+		"gameTemplate": "QNA",
+		"theme": "mona_lisa",
+		"parameters": {
+			"questionsFile": "art_questions.json"
+		},
+		"presets": [
+			"darkTheme"
+		]
+	},
+	{
+		"reference": "MMD_mona_lisa",
+		"gameTemplate": "MMD",
+		"theme": "mona_lisa",
+		"presets": [
+			"hard"
+		]
+	},
+	{
+		"reference": "MMD_composition_1916",
+		"gameTemplate": "MMD",
+		"theme": "composition_1916",
+		"presets": [
+			"medium"
+		]
+	},
+	{
+		"reference": "MMD_guernica",
+		"gameTemplate": "MMD",
+		"theme": "guernica",
+		"presets": [
+			"hard"
+		]
+	}
+]
 }

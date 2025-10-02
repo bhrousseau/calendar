@@ -20,6 +20,8 @@ import com.badlogic.gdx.audio.Sound;
 import com.widedot.calendar.config.Config;
 import com.badlogic.gdx.utils.ObjectMap;
 import com.widedot.calendar.effects.HSLColorFilter;
+import com.widedot.calendar.debug.SlidingPuzzleDebugManager;
+import com.widedot.calendar.config.DayMappingManager;
 
 /**
  * Écran de jeu pour le puzzle coulissant
@@ -53,8 +55,8 @@ public class SlidingPuzzleGameScreen extends GameScreen {
     private float animationSpeed; // Vitesse de l'animation (tuiles par seconde)
     private int shuffleMoves; // Nombre de mouvements pour mélanger le puzzle
     
-    private final int[] puzzleState; // État actuel du puzzle (index = position, valeur = numéro de tuile)
-    private final Rectangle[] gridZones; // Positions des tuiles (index = position)
+    private int[] puzzleState; // État actuel du puzzle (index = position, valeur = numéro de tuile)
+    private Rectangle[] gridZones; // Positions des tuiles (index = position)
     private float tileSize; // Taille dynamique des tuiles
     private float tileSpacing; // Espacement dynamique entre les tuiles
     private int emptyTileIndex; // Position de la case vide
@@ -63,6 +65,11 @@ public class SlidingPuzzleGameScreen extends GameScreen {
     private TextureRegion[] puzzleTiles; // Régions de texture pour chaque tuile
     private Theme theme; // Le thème du jeu
     private Texture backgroundTexture; // Texture du background
+    
+    // Système de debug
+    private SlidingPuzzleDebugManager debugManager;
+    private ObjectMap<String, Object> gameParameters;
+    private String gameReference;
     
     // Paramètres du filtre de couleur pour le background (gris par défaut)
     private float backgroundHue = 0f;
@@ -274,6 +281,10 @@ public class SlidingPuzzleGameScreen extends GameScreen {
         super(dayId, game);
         
         this.theme = theme;
+        this.gameParameters = parameters; // Stocker les paramètres pour le debug
+        
+        // Obtenir la référence du jeu pour la sauvegarde
+        this.gameReference = DayMappingManager.getInstance().getGameReferenceForDay(dayId);
         
         // Initialiser les paramètres avec des valeurs par défaut
         this.gridSize = 4;
@@ -289,10 +300,7 @@ public class SlidingPuzzleGameScreen extends GameScreen {
         if (parameters != null) {
             // Taille de la grille
             if (parameters.containsKey("size")) {
-                int size = ((Number)parameters.get("size")).intValue();
-                if (size >= 2 && size <= 6) {
-                    this.gridSize = size;
-                }
+                this.gridSize = ((Number)parameters.get("size")).intValue();
             }
             
             // Couleur de fond
@@ -398,16 +406,6 @@ public class SlidingPuzzleGameScreen extends GameScreen {
             this.backgroundTexture = null;
         }
 
-        this.puzzleState = new int[gridSize * gridSize];
-        this.gridZones = new Rectangle[gridSize * gridSize];
-        
-        // Initialiser tous les Rectangle du tableau gridZones
-        for (int i = 0; i < gridZones.length; i++) {
-            gridZones[i] = new Rectangle(0, 0, 1, 1); // Création avec valeurs par défaut
-        }
-        
-        this.emptyTileIndex = gridSize * gridSize - 1;
-        
         // Charger le son de résolution
         try {
             this.solveSound = Gdx.audio.newSound(Gdx.files.internal(SOLVE_SOUND_PATH));
@@ -416,15 +414,278 @@ public class SlidingPuzzleGameScreen extends GameScreen {
             System.err.println("Erreur lors du chargement des sons: " + e.getMessage());
         }
         
+        // Initialiser les tableaux (uniquement dans le constructeur)
+        this.puzzleState = new int[gridSize * gridSize];
+        this.gridZones = new Rectangle[gridSize * gridSize];
+        
+        // Initialiser tous les Rectangle du tableau gridZones
+        for (int i = 0; i < gridZones.length; i++) {
+            gridZones[i] = new Rectangle(0, 0, 1, 1);
+        }
+        
+        this.emptyTileIndex = gridSize * gridSize - 1;
+        
+        // Initialiser complètement le jeu (méthode factorisée)
+        initializeGameCompletely();
+        
+        // Créer l'input processor
+        createInputProcessor();
+    }
+    
+    /**
+     * Initialise complètement le jeu (méthode factorisée)
+     */
+    private void initializeGameCompletely() {
+        System.out.println("Initialisation complète du puzzle coulissant pour le jour " + dayId);
+        
+        // Recharger le background avec les nouveaux paramètres de couleur
+        reloadBackgroundTexture();
+        
+        // Recharger la texture du puzzle si nécessaire
+        reloadPuzzleTexture();
+        
+        // Redimensionner les tableaux avec la nouvelle taille
+        int totalTiles = gridSize * gridSize;
+        this.puzzleState = new int[totalTiles];
+        this.gridZones = new Rectangle[totalTiles];
+        
+        // Initialiser tous les Rectangle du tableau gridZones
+        for (int i = 0; i < gridZones.length; i++) {
+            gridZones[i] = new Rectangle(0, 0, 1, 1);
+        }
+        
+        this.emptyTileIndex = totalTiles - 1;
+        
         // Calculer les dimensions du background et positionner les boutons
         calculateBackgroundDimensions();
         updateButtonPositions();
         
-        // Créer l'input processor pour les clics et raccourcis clavier
-        createInputProcessor();
-
-        System.out.println("Constructeur de SlidingPuzzleGameScreen terminé");
+        // Créer les tuiles du puzzle
+        createPuzzleTiles();
+        
+        // Initialiser le jeu (recalcule tileSize et tileSpacing)
+        initializeGame();
+        
+        // Forcer le recalcul des dimensions après initializeGame
+        System.out.println("Dimensions recalculées - tileSize: " + tileSize + ", tileSpacing: " + tileSpacing);
+        
+        // Vérifier les dimensions des gridZones
+        if (gridZones != null && gridZones.length > 0) {
+            System.out.println("gridZones[0] - x: " + gridZones[0].x + ", y: " + gridZones[0].y + 
+                             ", width: " + gridZones[0].width + ", height: " + gridZones[0].height);
+            System.out.println("gridZones[1] - x: " + gridZones[1].x + ", y: " + gridZones[1].y + 
+                             ", width: " + gridZones[1].width + ", height: " + gridZones[1].height);
+        }
     }
+    
+    /**
+     * Recharge la texture du puzzle si nécessaire
+     */
+    private void reloadPuzzleTexture() {
+        // Vérifier si la texture du puzzle est déjà chargée
+        if (puzzleTexture != null) {
+            return; // Déjà chargée, pas besoin de recharger
+        }
+        
+        // Charger la texture du puzzle (même logique que dans le constructeur)
+        String fullImagePath = this.theme.getFullImagePath();
+        if (fullImagePath == null || fullImagePath.isEmpty()) {
+            throw new IllegalStateException("Le chemin d'image du thème est invalide");
+        }
+        
+        try {
+            System.out.println("Chargement de la texture depuis: " + fullImagePath);
+            puzzleTexture = new Texture(Gdx.files.internal(fullImagePath));
+            fullImageTexture = new Texture(Gdx.files.internal(fullImagePath));
+        } catch (Exception e) {
+            System.err.println("Erreur lors du chargement de la texture: " + e.getMessage());
+            e.printStackTrace();
+            throw new IllegalStateException("Erreur lors du chargement de la texture: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Recharge la texture de background avec les paramètres actuels
+     */
+    private void reloadBackgroundTexture() {
+        try {
+            // Libérer l'ancienne texture si elle existe
+            if (backgroundTexture != null) {
+                backgroundTexture.dispose();
+            }
+            
+            // Charger l'image en tant que Pixmap pour pouvoir la modifier
+            Pixmap backgroundPixmap = new Pixmap(Gdx.files.internal("images/games/spz/background-0.png"));
+            
+            // Appliquer le filtre de couleur HSL
+            HSLColorFilter.applyHSLFilter(backgroundPixmap, backgroundHue, backgroundSaturation, backgroundLightness);
+            
+            // Créer la texture à partir du Pixmap modifié
+            this.backgroundTexture = new Texture(backgroundPixmap);
+            
+            // Libérer le Pixmap car il n'est plus nécessaire
+            backgroundPixmap.dispose();
+            
+            System.out.println("Background rechargé avec filtre HSL - Teinte: " + backgroundHue + 
+                             ", Saturation: " + backgroundSaturation + 
+                             ", Luminosité: " + backgroundLightness);
+        } catch (Exception e) {
+            System.err.println("Erreur lors du rechargement du background: " + e.getMessage());
+            this.backgroundTexture = null;
+        }
+    }
+
+    /**
+     * Initialise le système de debug
+     */
+    private void initializeDebugManager() {
+        debugManager = new SlidingPuzzleDebugManager(font);
+        debugManager.setChangeCallback(new SlidingPuzzleDebugManager.DebugChangeCallback() {
+            @Override
+            public void onDebugParameterChanged() {
+                // Appliquer les paramètres de debug sans recharger depuis JSON
+                applyDebugSettings();
+                // Recharger le jeu avec les nouveaux paramètres
+                initializeGameCompletely();
+            }
+            
+            @Override
+            public void onDebugSettingsSaved() {
+                // Ne plus recharger sur la sauvegarde, juste afficher la confirmation
+                System.out.println("Paramètres sauvegardés dans games.json");
+            }
+        });
+        
+        // Définir la référence du jeu pour la sauvegarde
+        debugManager.setCurrentGameReference(gameReference);
+        
+        // Initialiser le debug avec les paramètres du jeu
+        debugManager.initializeFromGameParameters(gameParameters);
+    }
+    
+    /**
+     * Applique les paramètres de debug
+     */
+    private void applyDebugSettings() {
+        if (debugManager != null && debugManager.isDebugMode()) {
+            // Appliquer les paramètres de debug
+            gridSize = debugManager.getDebugSize();
+            shuffleMoves = debugManager.getDebugShuffle();
+            animationSpeed = debugManager.getDebugAnimationSpeed();
+            
+            // Appliquer les paramètres de couleur RGB
+            backgroundColor = new Color(
+                debugManager.getDebugBgColorR() / 255f,
+                debugManager.getDebugBgColorG() / 255f,
+                debugManager.getDebugBgColorB() / 255f,
+                1.0f
+            );
+            
+            // Appliquer les paramètres HSL
+            backgroundHue = debugManager.getDebugBackgroundHue();
+            backgroundSaturation = debugManager.getDebugBackgroundSaturation();
+            backgroundLightness = debugManager.getDebugBackgroundLightness();
+            
+            // Recalculer les dimensions et repositionner les éléments
+            calculateBackgroundDimensions();
+            updateButtonPositions();
+        }
+    }
+    
+    /**
+     * Recharge le jeu depuis le fichier games.json après sauvegarde
+     */
+    private void reloadGameFromJson() {
+        try {
+            // Recharger les paramètres depuis games.json
+            String jsonContent = Gdx.files.local("games.json").readString();
+            com.badlogic.gdx.utils.JsonReader jsonReader = new com.badlogic.gdx.utils.JsonReader();
+            com.badlogic.gdx.utils.JsonValue root = jsonReader.parse(jsonContent);
+            com.badlogic.gdx.utils.JsonValue gamesArray = root.get("games");
+
+            // Trouver le jeu actuel
+            com.badlogic.gdx.utils.JsonValue targetGame = null;
+            for (com.badlogic.gdx.utils.JsonValue game : gamesArray) {
+                if (gameReference.equals(game.getString("reference"))) {
+                    targetGame = game;
+                    break;
+                }
+            }
+            
+            if (targetGame != null) {
+                com.badlogic.gdx.utils.JsonValue parameters = targetGame.get("parameters");
+                if (parameters != null) {
+                    System.out.println("Rechargement des paramètres depuis games.json...");
+                    
+                    // Recharger TOUS les paramètres depuis le JSON (comme dans le constructeur)
+                    if (parameters.has("size")) {
+                        gridSize = parameters.getInt("size");
+                    }
+                    if (parameters.has("bgColor")) {
+                        String bgColor = parameters.getString("bgColor");
+                        parseBackgroundColor(bgColor);
+                        System.out.println("Nouvelle couleur de fond: " + bgColor);
+                    }
+                    if (parameters.has("shuffle")) {
+                        shuffleMoves = parameters.getInt("shuffle");
+                        System.out.println("Nouveau nombre de mélanges: " + shuffleMoves);
+                    }
+                    if (parameters.has("animationSpeed")) {
+                        animationSpeed = parameters.getFloat("animationSpeed");
+                        System.out.println("Nouvelle vitesse d'animation: " + animationSpeed);
+                    }
+                    
+                    // Paramètres du filtre de couleur du background (manquants dans le reload)
+                    if (parameters.has("bgHue")) {
+                        float hue = parameters.getFloat("bgHue");
+                        backgroundHue = Math.max(0, Math.min(360, hue));
+                        System.out.println("Nouvelle teinte de fond: " + backgroundHue);
+                    }
+                    if (parameters.has("bgSaturation")) {
+                        float saturation = parameters.getFloat("bgSaturation");
+                        backgroundSaturation = Math.max(0, Math.min(100, saturation));
+                        System.out.println("Nouvelle saturation de fond: " + backgroundSaturation);
+                    }
+                    if (parameters.has("bgLightness")) {
+                        float lightness = parameters.getFloat("bgLightness");
+                        backgroundLightness = Math.max(-100, Math.min(100, lightness));
+                        System.out.println("Nouvelle luminosité de fond: " + backgroundLightness);
+                    }
+                    
+                    // Réinitialiser l'état du jeu
+                    isPuzzleSolved = false;
+                    
+                    // Utiliser la méthode factorisée pour l'initialisation complète
+                    System.out.println("Relancement de l'initialisation complète du jeu...");
+                    initializeGameCompletely();
+                    
+                    System.out.println("Jeu rechargé avec les nouveaux paramètres");
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Erreur lors du rechargement depuis games.json: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Parse une couleur de fond au format "r,g,b" et met à jour backgroundColor
+     */
+    private void parseBackgroundColor(String colorStr) {
+        try {
+            String[] parts = colorStr.split(",");
+            if (parts.length == 3) {
+                float r = Integer.parseInt(parts[0]) / 255f;
+                float g = Integer.parseInt(parts[1]) / 255f;
+                float b = Integer.parseInt(parts[2]) / 255f;
+                backgroundColor = new Color(r, g, b, 1.0f);
+            }
+        } catch (NumberFormatException e) {
+            System.err.println("Format de couleur invalide: " + colorStr + ", utilisation de la couleur par défaut");
+            backgroundColor = new Color(0, 0, 0, 1); // Noir par défaut
+        }
+    }
+    
 
     @Override
     protected Theme loadTheme(int day) {
@@ -507,7 +768,13 @@ public class SlidingPuzzleGameScreen extends GameScreen {
             availableHeight / (gridSize + (gridSize - 1) * SPACING_RATIO)
         );
         
-        tileSize = maxTileSize;
+        // S'assurer que tileSize reste positif
+        if (maxTileSize <= 0) {
+            System.err.println("ATTENTION: Grille trop grande pour l'espace disponible. Utilisation d'une taille minimale.");
+            maxTileSize = Math.min(availableWidth, availableHeight) / gridSize;
+        }
+        
+        tileSize = Math.max(maxTileSize, 10.0f); // Taille minimale de 10 pixels
         tileSpacing = tileSize * SPACING_RATIO;
 
         // Calculer la taille totale de la grille
@@ -548,6 +815,11 @@ public class SlidingPuzzleGameScreen extends GameScreen {
 
     @Override
     protected void updateGame(float delta) {
+        // Mettre à jour le debug manager
+        if (debugManager != null) {
+            debugManager.update(delta);
+        }
+        
         if (tileAnimation.isActive()) {
             tileAnimation.update(delta, animationSpeed);
             
@@ -696,6 +968,11 @@ public class SlidingPuzzleGameScreen extends GameScreen {
         if (showInfoPanel) {
             drawInfoPanel();
         }
+        
+        // Display debug interface
+        if (debugManager != null) {
+            debugManager.drawDebugInfo(batch, viewport.getWorldHeight());
+        }
     }
 
     private void renderIrisOpenEffect(float progress) {
@@ -764,9 +1041,20 @@ public class SlidingPuzzleGameScreen extends GameScreen {
                 (int)(openHeight / currentScale),
                 false, false);
         }
+        
+        // Afficher l'interface de debug
+        if (debugManager != null) {
+            debugManager.drawDebugInfo(batch, viewport.getWorldHeight());
+        }
     }
 
     private void renderMergingTiles(float fadeProgress, float mergeProgress) {
+        // Vérifications de sécurité
+        if (emptyTileIndex < 0 || emptyTileIndex >= puzzleTiles.length || emptyTileIndex >= gridZones.length) {
+            System.err.println("emptyTileIndex hors limites dans renderMergingTiles: " + emptyTileIndex + " (puzzleTiles.length=" + puzzleTiles.length + ", gridZones.length=" + gridZones.length + ")");
+            return;
+        }
+        
         // Dessiner la case vide avec fade in
         if (fadeProgress < 1f) {
             batch.setColor(1f, 1f, 1f, fadeProgress);
@@ -784,7 +1072,7 @@ public class SlidingPuzzleGameScreen extends GameScreen {
         // Dessiner toutes les tuiles avec l'espacement réduit
         batch.setColor(Color.WHITE);
         for (int i = 0; i < gridZones.length; i++) {
-            if (i != emptyTileIndex) {
+            if (i != emptyTileIndex && i < puzzleTiles.length) {
                 if (mergeProgress < 1f) {
                     renderMergingTile(i, mergeProgress);
                 } else {
@@ -795,6 +1083,12 @@ public class SlidingPuzzleGameScreen extends GameScreen {
     }
 
     private void renderMergingTile(int index, float mergeProgress) {
+        // Vérifications de sécurité
+        if (index < 0 || index >= puzzleState.length || index >= gridZones.length) {
+            System.err.println("Index hors limites dans renderMergingTile: " + index + " (puzzleState.length=" + puzzleState.length + ", gridZones.length=" + gridZones.length + ")");
+            return;
+        }
+        
         int tileNumber = puzzleState[index];
         float x = gridZones[index].x;
         float y = gridZones[index].y;
@@ -841,9 +1135,23 @@ public class SlidingPuzzleGameScreen extends GameScreen {
     }
 
     private void renderNormalPuzzle() {
-        for (int i = 0; i < gridZones.length; i++) {
+        // Calculer le nombre total de tuiles pour la grille actuelle
+        int totalTiles = gridSize * gridSize;
+        
+        for (int i = 0; i < Math.min(totalTiles, gridZones.length); i++) {
             if (i != emptyTileIndex && (!tileAnimation.isActive() || i != tileAnimation.getTileIndex())) {
+                // Vérifications de sécurité
+                if (i >= puzzleState.length || i >= puzzleTiles.length) {
+                    System.err.println("Index hors limites dans renderNormalPuzzle: " + i + " (puzzleState.length=" + puzzleState.length + ", puzzleTiles.length=" + puzzleTiles.length + ")");
+                    continue;
+                }
+                
                 int tileNumber = puzzleState[i];
+                if (tileNumber < 0 || tileNumber >= puzzleTiles.length) {
+                    System.err.println("tileNumber hors limites: " + tileNumber + " (puzzleTiles.length=" + puzzleTiles.length + ")");
+                    continue;
+                }
+                
                 batch.draw(puzzleTiles[tileNumber], 
                     gridZones[i].x, 
                     gridZones[i].y, 
@@ -854,9 +1162,15 @@ public class SlidingPuzzleGameScreen extends GameScreen {
 
         // Dessiner la tuile en cours d'animation
         if (tileAnimation.isActive()) {
-            int tileNumber = puzzleState[tileAnimation.getTileIndex()];
-            Vector3 currentPos = tileAnimation.getCurrentPosition();
-            batch.draw(puzzleTiles[tileNumber], currentPos.x, currentPos.y, tileSize, tileSize);
+            int animTileIndex = tileAnimation.getTileIndex();
+            // Vérifications de sécurité
+            if (animTileIndex >= 0 && animTileIndex < puzzleState.length && animTileIndex < puzzleTiles.length) {
+                int tileNumber = puzzleState[animTileIndex];
+                if (tileNumber >= 0 && tileNumber < puzzleTiles.length) {
+                    Vector3 currentPos = tileAnimation.getCurrentPosition();
+                    batch.draw(puzzleTiles[tileNumber], currentPos.x, currentPos.y, tileSize, tileSize);
+                }
+            }
         }
     }
 
@@ -881,6 +1195,12 @@ public class SlidingPuzzleGameScreen extends GameScreen {
             
             @Override
             public boolean keyDown(int keycode) {
+                System.out.println("Touche pressée: " + keycode + " (D=" + Input.Keys.D + ")");
+                // Gestion du debug
+                if (debugManager != null && debugManager.handleKeyDown(keycode)) {
+                    return true;
+                }
+                
                 // Gestion de la touche R pour résoudre (en mode test uniquement)
                 if (keycode == Input.Keys.R && isTestMode && !isPuzzleSolved) {
                     solveGameWithKeyboard();
@@ -895,6 +1215,15 @@ public class SlidingPuzzleGameScreen extends GameScreen {
                 
                 return false;
             }
+            
+            @Override
+            public boolean keyUp(int keycode) {
+                // Gestion du debug
+                if (debugManager != null && debugManager.handleKeyUp(keycode)) {
+                    return true;
+                }
+                return false;
+            }
         };
         System.out.println("InputAdapter créé avec succès pour SlidingPuzzle");
     }
@@ -902,6 +1231,11 @@ public class SlidingPuzzleGameScreen extends GameScreen {
     @Override
     protected void onScreenActivated() {
         super.onScreenActivated();
+        
+        System.out.println("onScreenActivated appelé");
+        // Initialiser le système de debug après que l'écran soit complètement initialisé
+        initializeDebugManager();
+        
         // Activer l'input processor quand l'écran devient actif
         Gdx.input.setInputProcessor(inputProcessor);
     }
@@ -1246,12 +1580,17 @@ public class SlidingPuzzleGameScreen extends GameScreen {
         for (int row = 0; row < gridSize; row++) {
             for (int col = 0; col < gridSize; col++) {
                 int positionIndex = row * gridSize + col;
-                gridZones[positionIndex].set(
-                    marginX + col * (tileSize + tileSpacing),
-                    marginY + row * (tileSize + tileSpacing),
-                    tileSize,
-                    tileSize
-                );
+                // Vérification de sécurité pour éviter les erreurs d'index
+                if (positionIndex < gridZones.length) {
+                    gridZones[positionIndex].set(
+                        marginX + col * (tileSize + tileSpacing),
+                        marginY + row * (tileSize + tileSpacing),
+                        tileSize,
+                        tileSize
+                    );
+                } else {
+                    System.err.println("Index hors limites dans resize: " + positionIndex + " (gridZones.length=" + gridZones.length + ", gridSize=" + gridSize + ")");
+                }
             }
         }
 

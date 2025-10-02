@@ -1,9 +1,9 @@
 {
   "dayMapping": {
-    "1": "CGG_mona_lisa",
-    "2": "MMD_mona_lisa",
+    "4": "CGG_mona_lisa",
+    "2": "CGG_pearl",
     "3": "QNA_general_knowledge",
-    "4": "SPZ_starry_night",
+    "1": "SPZ_starry_night",
     "5": "SPZ_kiss",
     "6": "SPZ_on_white_ii",
     "7": "SPZ_mona_lisa",

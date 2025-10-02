@@ -103,26 +103,27 @@
       "name": "crystalizeGuess",
       "defaultParameters": {
         "maxAttempts": 5,
-        "initialCrystalSize": 150,
-        "bgColor": "0,0,0"
+        "initialCrystalSize": 320,
+        "bgColor": "0,0,0",
+        "randomness": 0.0,
+        "edgeThickness": 0,
+        "stretch": 1.0,
+        "edgeColor": "0,0,0,1",
+        "fadeEdges": false
       },
       "parameterTypes": {
         "maxAttempts": "int",
         "initialCrystalSize": "int",
-        "bgColor": "string"
+        "bgColor": "string",
+        "randomness": "float",
+        "edgeThickness": "float",
+        "stretch": "float",
+        "edgeColor": "string",
+        "fadeEdges": "boolean"
       },
       "presets": {
         "easy": {
-          "maxAttempts": 7,
-          "initialCrystalSize": 400
-        },
-        "medium": {
-          "maxAttempts": 5,
-          "initialCrystalSize": 600
-        },
-        "hard": {
-          "maxAttempts": 3,
-          "initialCrystalSize": 800
+          "initialCrystalSize": 200,
         }
       }
     }
