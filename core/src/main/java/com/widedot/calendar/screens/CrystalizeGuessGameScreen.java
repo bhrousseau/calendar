@@ -59,6 +59,13 @@ public class CrystalizeGuessGameScreen extends GameScreen {
     private boolean gameFinished;
     private Theme theme;
     
+    // Input system
+    private StringBuilder userInput;
+    private boolean isInputActive;
+    private String correctAnswer;
+    private int wrongAnswers;
+    private boolean hasUsedHelp;
+    
     // Image textures
     private Texture originalImageTexture;
     private Texture currentCrystalizedTexture; // Texture actuellement affichée
@@ -203,6 +210,16 @@ public class CrystalizeGuessGameScreen extends GameScreen {
         this.gameWon = false;
         this.gameFinished = false;
         this.showInfoPanel = false;
+        
+        // Initialiser le système d'input
+        this.userInput = new StringBuilder();
+        this.isInputActive = false;
+        this.correctAnswer = theme.getTitle(); // Utiliser le titre du thème comme réponse correcte
+        this.wrongAnswers = 0;
+        this.hasUsedHelp = false;
+        
+        // Initialiser la taille de cristal actuelle
+        this.currentCrystalSize = initialCrystalSize;
         
         // Créer l'input processor
         createInputProcessor();
@@ -475,6 +492,23 @@ public class CrystalizeGuessGameScreen extends GameScreen {
                     return true;
                 }
                 
+                // Gestion de l'input utilisateur
+                if (isInputActive && !gameFinished) {
+                    if (keycode == Input.Keys.ENTER) {
+                        submitAnswer();
+                        return true;
+                    } else if (keycode == Input.Keys.BACKSPACE) {
+                        if (userInput.length() > 0) {
+                            userInput.deleteCharAt(userInput.length() - 1);
+                        }
+                        return true;
+                    } else if (keycode == Input.Keys.ESCAPE) {
+                        isInputActive = false;
+                        userInput.setLength(0);
+                        return true;
+                    }
+                }
+                
                 // Déléguer la gestion du debug au debug manager
                 if (debugManager.handleKeyDown(keycode)) {
                     return true;
@@ -487,6 +521,16 @@ public class CrystalizeGuessGameScreen extends GameScreen {
             public boolean keyUp(int keycode) {
                 // Déléguer la gestion du debug au debug manager
                 if (debugManager.handleKeyUp(keycode)) {
+                    return true;
+                }
+                return false;
+            }
+            
+            @Override
+            public boolean keyTyped(char character) {
+                // Gestion de la saisie de texte
+                if (isInputActive && !gameFinished && character >= 32 && character <= 126) {
+                    userInput.append(character);
                     return true;
                 }
                 return false;
@@ -551,21 +595,24 @@ public class CrystalizeGuessGameScreen extends GameScreen {
         }
         
         if (submitButton.contains(x, y) && !gameFinished) {
-            makeGuess();
+            // Activer l'input au lieu de faire une tentative
+            isInputActive = !isInputActive;
+            if (!isInputActive) {
+                userInput.setLength(0);
+            }
             return;
         }
     }
     
-    private void makeGuess() {
+    private void submitAnswer() {
         if (gameFinished || isAnimating) return;
         
-        currentAttempt++;
+        String answer = userInput.toString().trim();
+        if (answer.isEmpty()) return;
         
-        // Démarrer l'animation de cristallisation
-        startCrystalizeAnimation();
-        
-        // Vérifier si c'est gagné (dernière tentative)
-        if (currentAttempt >= maxAttempts) {
+        // Vérifier si la réponse est correcte
+        if (answer.equalsIgnoreCase(correctAnswer)) {
+            // Réponse correcte - gagner le jeu
             gameWon = true;
             gameFinished = true;
             
@@ -580,26 +627,57 @@ public class CrystalizeGuessGameScreen extends GameScreen {
                 adventGame.setScore(dayId, finalScore);
                 adventGame.setVisited(dayId, true);
             }
+            
+            // Démarrer l'animation de révélation finale
+            startFinalRevealAnimation();
         } else {
-            // Jouer le son de tentative
+            // Réponse incorrecte
+            wrongAnswers++;
+            
             if (wrongSound != null) {
                 wrongSound.play();
             }
+            
+            // Vider l'input
+            userInput.setLength(0);
+            
+            // Si 5 mauvaises réponses, améliorer l'image
+            if (wrongAnswers >= 5 && !hasUsedHelp) {
+                hasUsedHelp = true;
+                improveImage();
+            }
         }
+    }
+    
+    private void improveImage() {
+        // Améliorer l'image en réduisant le crystal size à 75
+        System.out.println("Amélioration de l'image après 5 mauvaises réponses");
+        startCrystalizeAnimation(75);
+    }
+    
+    private void startFinalRevealAnimation() {
+        System.out.println("Animation de révélation finale");
+        isAnimating = true;
+        animationTime = 0.0f;
+        startCrystalSize = (int) currentCrystalSize;
+        endCrystalSize = 1; // Révéler complètement l'image
     }
     
     /**
      * Démarre l'animation de cristallisation
      */
     private void startCrystalizeAnimation() {
-        System.out.println("=== DÉBUT ANIMATION cristallisation pour tentative " + currentAttempt + " ===");
+        startCrystalizeAnimation(endCrystalSize);
+    }
+    
+    /**
+     * Démarre l'animation de cristallisation avec une taille cible spécifique
+     */
+    private void startCrystalizeAnimation(int targetCrystalSize) {
+        System.out.println("=== DÉBUT ANIMATION cristallisation vers " + targetCrystalSize + " ===");
         
-        // Calculer les tailles de cristaux de début et fin
-        float startProgress = (float) (currentAttempt - 1) / maxAttempts;
-        float endProgress = (float) currentAttempt / maxAttempts;
-        
-        startCrystalSize = (int) (initialCrystalSize * (1.0f - startProgress) + 1);
-        endCrystalSize = (int) (initialCrystalSize * (1.0f - endProgress) + 1);
+        startCrystalSize = (int) currentCrystalSize;
+        endCrystalSize = targetCrystalSize;
         
         System.out.println("Animation de " + startCrystalSize + " à " + endCrystalSize);
         
@@ -634,8 +712,10 @@ public class CrystalizeGuessGameScreen extends GameScreen {
     private void revealMore() {
         System.out.println("Révéler plus (mode test - touche N)");
         
-        if (currentAttempt < maxAttempts) {
-            makeGuess();
+        // En mode test, améliorer l'image directement
+        if (!hasUsedHelp) {
+            hasUsedHelp = true;
+            improveImage();
         }
     }
     
@@ -722,9 +802,17 @@ public class CrystalizeGuessGameScreen extends GameScreen {
     private void finishCrystalizeAnimation() {
         System.out.println("=== FIN ANIMATION cristallisation ===");
         
+        // Mettre à jour la taille de cristal actuelle
+        currentCrystalSize = endCrystalSize;
+        
         disposeOldTexture();
         updateCurrentTexture();
         resetAnimation();
+        
+        // Si c'est l'animation de révélation finale, afficher l'image complète
+        if (gameWon && endCrystalSize <= 1) {
+            System.out.println("Révélation finale terminée");
+        }
     }
     
     
@@ -873,7 +961,8 @@ public class CrystalizeGuessGameScreen extends GameScreen {
         
         if (!gameFinished) {
             drawSubmitButton();
-            drawAttemptCounter();
+            drawUserInput();
+            drawInstructions();
         } else if (gameWon) {
             drawVictoryMessage();
         }
@@ -913,20 +1002,39 @@ public class CrystalizeGuessGameScreen extends GameScreen {
         
         // Texte
         font.setColor(1, 1, 1, 1);
-        String text = "Révéler plus";
+        String text = isInputActive ? "Valider (Entrée)" : "Taper le nom";
         layout.setText(font, text);
         font.draw(batch, layout, 
                  submitButton.x + (submitButton.width - layout.width) / 2,
                  submitButton.y + (submitButton.height + layout.height) / 2);
     }
     
-    private void drawAttemptCounter() {
-        font.setColor(1, 1, 1, 1);
-        String text = "Tentatives: " + currentAttempt + " / " + maxAttempts;
-        layout.setText(font, text);
+    private void drawUserInput() {
+        if (isInputActive) {
+            font.setColor(1, 1, 1, 1);
+            String inputText = "Votre réponse: " + userInput.toString() + "_";
+            layout.setText(font, inputText);
+            font.draw(batch, layout, 
+                     (DisplayConfig.WORLD_WIDTH - layout.width) / 2,
+                     submitButton.y + submitButton.height + 30);
+        }
+    }
+    
+    private void drawInstructions() {
+        font.setColor(0.8f, 0.8f, 0.8f, 1);
+        String instruction;
+        if (hasUsedHelp) {
+            instruction = "Plus d'aide disponible. Trouvez le nom du tableau ou de l'auteur.";
+        } else if (wrongAnswers >= 3) {
+            instruction = "Après 5 mauvaises réponses, l'image s'améliorera.";
+        } else {
+            instruction = "Devinez le nom du tableau ou de l'auteur. Cliquez sur le bouton pour taper.";
+        }
+        
+        layout.setText(font, instruction);
         font.draw(batch, layout, 
                  (DisplayConfig.WORLD_WIDTH - layout.width) / 2,
-                 viewport.getWorldHeight() - 50);
+                 submitButton.y - 30);
     }
     
     private void drawVictoryMessage() {
