@@ -43,6 +43,7 @@ public class AdventCalendarScreen implements Screen {
     private static final String SHADOW_TEXTURE_PATH = "images/calendar/shadow.png";
     private static final String MASK_JSON_PATH = "images/calendar/mask.json";
     private static final String DOOR_IMAGE_PATH_PREFIX = "images/calendar/door-";
+    private static final String ARROW_TEXTURE_PATH = "images/calendar/arrow.png";
     private static final String LOCKED_SOUND_PATH = "audio/locked.mp3";
     private static final String OPEN_SOUND_PATH = "audio/open2.mp3";
     private static final String ENTER_SOUND_PATH = "audio/enter.mp3";
@@ -58,6 +59,7 @@ public class AdventCalendarScreen implements Screen {
     // Textures
     private final Texture foregroundTexture;
     private final Texture shadowTexture;
+    private final Texture arrowTexture;
     private final ObjectMap<String, Texture> themeIconTextures = new ObjectMap<>();
     private final ObjectMap<Integer, Texture> doorTextures = new ObjectMap<>();
 
@@ -71,6 +73,13 @@ public class AdventCalendarScreen implements Screen {
     private final ObjectMap<Integer, Rectangle> boxes = new ObjectMap<>();
     private final ObjectMap<Integer, Float> doorSlideProgress = new ObjectMap<>();
     private final ObjectMap<Integer, Boolean> doorSliding = new ObjectMap<>();
+    
+    // Arrow animation
+    private float arrowAnimationTime = 0f;
+    private static final float ARROW_ANIMATION_SPEED = 2.0f;
+    private static final float ARROW_AMPLITUDE = 8.0f;
+    private static final float ARROW_ZOOM_MIN = 0.8f;  // Zoom minimum (en haut)
+    private static final float ARROW_ZOOM_MAX = 1.2f; // Zoom maximum (en bas)
 
     // Camera and input
     private boolean isDragging = false;
@@ -133,6 +142,7 @@ public class AdventCalendarScreen implements Screen {
         // Load resources
         this.foregroundTexture = loadTextureSafe(FOREGROUND_TEXTURE_PATH);
         this.shadowTexture = loadTextureSafe(SHADOW_TEXTURE_PATH);
+        this.arrowTexture = loadTextureSafe(ARROW_TEXTURE_PATH);
         loadSounds();
 
         // Initialize door system
@@ -210,12 +220,14 @@ public class AdventCalendarScreen implements Screen {
     public void render(float delta) {
         clearScreen();
         updateDoorAnimations(delta);
+        updateArrowAnimation(delta);
         updateCamera();
         
         batch.begin();
         renderPaintingIcons();
         renderForegroundAndShadow();
         renderDoors();
+        renderArrowAnimations();
         batch.end();
         
         handleInput();
@@ -240,15 +252,19 @@ public class AdventCalendarScreen implements Screen {
 
     /**
      * Render painting icons in background
+     * Only show images when the game is completed (score > 0)
      */
     private void renderPaintingIcons() {
         for (int dayId = 1; dayId <= 24; dayId++) {
             Rectangle box = boxes.get(dayId);
             if (box == null) continue;
 
-            Texture themeIcon = getThemeIconForDay(dayId);
-            if (themeIcon != null) {
-                renderScaledIcon(themeIcon, box);
+            // Only show the image if the game is completed (score > 0)
+            if (adventGame.getScore(dayId) > 0) {
+                Texture themeIcon = getThemeIconForDay(dayId);
+                if (themeIcon != null) {
+                    renderScaledIcon(themeIcon, box);
+                }
             }
         }
     }
@@ -420,6 +436,55 @@ public class AdventCalendarScreen implements Screen {
                 doorSlideProgress.put(dayId, progress);
             }
         }
+    }
+
+    /**
+     * Update arrow animation timing
+     */
+    private void updateArrowAnimation(float delta) {
+        arrowAnimationTime += delta * ARROW_ANIMATION_SPEED;
+    }
+
+    /**
+     * Render arrow animations in foreground for all opened doors but not completed games
+     */
+    private void renderArrowAnimations() {
+        for (int dayId = 1; dayId <= 24; dayId++) {
+            Rectangle box = boxes.get(dayId);
+            if (box == null) continue;
+
+            // Show arrow animation only for opened doors (visited) but not completed games
+            if (adventGame.isVisited(dayId) && adventGame.getScore(dayId) == 0) {
+                renderArrowAnimation(box);
+            }
+        }
+    }
+
+    /**
+     * Render arrow animation in the center of the box
+     */
+    private void renderArrowAnimation(Rectangle box) {
+        if (arrowTexture == null) return;
+        
+        // Calculate sinusoidal movement
+        float offsetY = (float) Math.sin(arrowAnimationTime) * ARROW_AMPLITUDE;
+        
+        // Calculate zoom effect based on position
+        // When arrow is at top (sin = -1), zoom is maximum
+        // When arrow is at bottom (sin = 1), zoom is minimum
+        float sinValue = (float) Math.sin(arrowAnimationTime);
+        float zoomFactor = ARROW_ZOOM_MAX - (ARROW_ZOOM_MAX - ARROW_ZOOM_MIN) * (sinValue + 1.0f) / 2.0f;
+        
+        // Calculate arrow position (in lower part of box)
+        float baseArrowSize = Math.min(box.width, box.height) * 0.5f; // 50% of box size
+        float arrowSize = baseArrowSize * zoomFactor;
+        float arrowX = box.x + (box.width - arrowSize) / 2;
+        // Position in lower part: more towards the bottom
+        float lowerPartCenter = box.y + box.height * 0.10f; // 5% down the box (lower part)
+        float arrowY = lowerPartCenter - arrowSize / 2 + offsetY;
+        
+        // Draw the arrow
+        batch.draw(arrowTexture, arrowX, arrowY, arrowSize, arrowSize);
     }
 
     /**
