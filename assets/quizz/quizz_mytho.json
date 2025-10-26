@@ -1,0 +1,244 @@
+{
+  "questions": [
+    {
+      "id": 1,
+      "question": "Quel est le dieu grec du ciel et souverain des dieux de l’Olympe ?",
+      "answer": "Zeus",
+      "alternatives": ["zeus"]
+    },
+    {
+      "id": 2,
+      "question": "Quel est l’équivalent romain de Zeus ?",
+      "answer": "Jupiter",
+      "alternatives": ["jupiter"]
+    },
+    {
+      "id": 3,
+      "question": "Qui est la déesse grecque de la sagesse et de la stratégie guerrière ?",
+      "answer": "Athéna",
+      "alternatives": ["Athena", "athena","athéna"]
+    },
+    {
+      "id": 4,
+      "question": "Quel est le nom romain d’Athéna ?",
+      "answer": "Minerve",
+      "alternatives": ["minerve"]
+    },
+    {
+      "id": 5,
+      "question": "Quel dieu grec règne sur les mers et les océans ?",
+      "answer": "Poséidon",
+      "alternatives": ["poseidon", "Poseidon", "poséidon"]
+    },
+    {
+      "id": 6,
+      "question": "Quel est l’équivalent romain de Poséidon ?",
+      "answer": "Neptune",
+      "alternatives": ["neptune"]
+    },
+    {
+      "id": 7,
+      "question": "Qui est le dieu grec des enfers ?",
+      "answer": "Hadès",
+      "alternatives": ["hades","Hades","hadès"]
+    },
+    {
+      "id": 8,
+      "question": "Quel est le nom romain d’Hadès ?",
+      "answer": "Pluton",
+      "alternatives": ["pluton"]
+    },
+    {
+      "id": 9,
+      "question": "Quelle déesse grecque est associée à l’amour et à la beauté ?",
+      "answer": "Aphrodite",
+      "alternatives": ["aphrodite"]
+    },
+    {
+      "id": 10,
+      "question": "Quel est le nom romain d’Aphrodite ?",
+      "answer": "Vénus",
+      "alternatives": ["vénus","venus","Venus"]
+    },
+    {
+      "id": 11,
+      "question": "Qui est le dieu grec de la guerre ?",
+      "answer": "Arès",
+      "alternatives": ["ares","Ares","arès"]
+    },
+    {
+      "id": 12,
+      "question": "Quel est l’équivalent romain d’Arès ?",
+      "answer": "Mars",
+      "alternatives": ["mars"]
+    },
+    {
+      "id": 13,
+      "question": "Quel dieu grec est associé à la forge et au feu ?",
+      "answer": "Héphaïstos",
+      "alternatives": ["héphaïstos","Héphaïstos","hephaïstos","hephaistos","Hephaïstos","Hephaistos","héphaistos","Héphaistos"]
+    },
+    {
+      "id": 14,
+      "question": "Quel est le nom romain d’Héphaïstos ?",
+      "answer": "Vulcain",
+      "alternatives": ["vulcain"]
+    },
+    {
+      "id": 15,
+      "question": "Qui est le dieu grec du soleil, de la musique et de la prophétie ?",
+      "answer": "Apollon",
+      "alternatives": ["apollon"]
+    },
+    {
+      "id": 16,
+      "question": "Quel est le nom romain d’Apollon ?",
+      "answer": "Apollon",
+      "alternatives": ["apollon","Apollo","apollo"]
+    },
+    {
+      "id": 17,
+      "question": "Quelle déesse grecque est la sœur jumelle d’Apollon ?",
+      "answer": "Artémis",
+      "alternatives": ["artémis","Artemis","artemis"]
+    },
+    {
+      "id": 18,
+      "question": "Quel est le nom romain d’Artémis ?",
+      "answer": "Diane",
+      "alternatives": ["diane"]
+    },
+    {
+      "id": 19,
+      "question": "Qui est la déesse grecque du foyer et de la famille ?",
+      "answer": "Hestia",
+      "alternatives": ["hestia"]
+    },
+    {
+      "id": 20,
+      "question": "Quel est le nom romain d’Hestia ?",
+      "answer": "Vesta",
+      "alternatives": ["vesta"]
+    },
+    {
+      "id": 21,
+      "question": "Quelle déesse grecque est la sœur de Zeus et déesse du mariage ?",
+      "answer": "Héra",
+      "alternatives": ["héra","Hera","hera"]
+    },
+    {
+      "id": 22,
+      "question": "Quel est le nom romain d’Héra ?",
+      "answer": "Junon",
+      "alternatives": ["junon"]
+    },
+    {
+      "id": 23,
+      "question": "Qui est le messager des dieux dans la mythologie grecque ?",
+      "answer": "Hermès",
+      "alternatives": ["hermès","Hermes","hermes"]
+    },
+    {
+      "id": 24,
+      "question": "Quel est le nom romain d’Hermès ?",
+      "answer": "Mercure",
+      "alternatives": ["mercure"]
+    },
+    {
+      "id": 25,
+      "question": "Quel dieu grec est associé au vin et à la fête ?",
+      "answer": "Dionysos",
+      "alternatives": ["dionysos"]
+    },
+    {
+      "id": 26,
+      "question": "Quel est le nom romain de Dionysos ?",
+      "answer": "Bacchus",
+      "alternatives": ["bacchus"]
+    },
+    {
+      "id": 27,
+      "question": "Qui est la déesse grecque de l’agriculture et des moissons ?",
+      "answer": "Déméter",
+      "alternatives": ["demeter","Demeter","deméter","Deméter","déméter", "démeter","Démeter"]
+    },
+    {
+      "id": 28,
+      "question": "Quel est le nom romain de Déméter ?",
+      "answer": "Cérès",
+      "alternatives": ["cérès","Céres","céres","Cerès","cerès","Ceres","ceres"]
+    },
+    {
+      "id": 29,
+      "question": "Quel titan grec est le père de Zeus, Poséidon et Hadès ?",
+      "answer": "Cronos",
+      "alternatives": ["cronos","Kronos","kronos"]
+    },
+    {
+      "id": 30,
+      "question": "Quel est l’équivalent romain de Cronos ?",
+      "answer": "Saturne",
+      "alternatives": ["saturne"]
+    },
+    {
+      "id": 31,
+      "question": "Quel dieu romain est associé au commencement et aux portes ?",
+      "answer": "Janus",
+      "alternatives": ["janus"]
+    },
+    {
+      "id": 32,
+      "question": "Quelle déesse grecque protège les femmes enceintes et les naissances ?",
+      "answer": "Ilithye",
+      "alternatives": ["ilithye","Ilithye","ilithy","Ilithy","Eileithuia","eileithuia","Ilithyes","ilithyes" ]
+    },
+    {
+      "id": 33,
+      "question": "Quel dieu grec a été punit pour avoir donné le feu aux hommes ?",
+      "answer": "Prométhée",
+      "alternatives": ["prométhée","Prométhée","prométhee","Prométhee","promethee","Promethee","promethée","Promethée","Prometheus","prometheus"]
+    },
+    {
+      "id": 34,
+      "question": "Quelle créature grecque garde les enfers ?",
+      "answer": "Cerbère",
+      "alternatives": ["cerbère","Cerbère","cerbere","Cerbere","cerberus","Cerberus","le cerbère","le Cerbère","lecerbere","le Cerbere","lecerbere","le cerbere","Cerbere","cerberus","Cerberus"]
+    },
+    {
+      "id": 35,
+      "question": "Quelle déesse grecque est la mère de Perséphone ?",
+      "answer": "Déméter",
+      "alternatives": ["demeter","Demeter","deméter","Deméter","déméter", "démeter","Démeter"]
+    },
+    {
+      "id": 36,
+      "question": "Quelle déesse grecque est associé à la victoire ?",
+      "answer": "Niké",
+      "alternatives": ["niké","Niké","nike","Nike"]
+    },
+    {
+      "id": 37,
+      "question": "Quel dieu grec conduit les âmes aux enfers ?",
+      "answer": "Hermès",
+      "alternatives": ["hermès","Hermes","hermes"]
+    },
+    {
+      "id": 38,
+      "question": "Quel est le dieu romain des champs et des bergers ?",
+      "answer": "Faunus",
+      "alternatives": ["faunus","Faunus","faun","Faun","faune","Faune"]
+    },
+    {
+      "id": 39,
+      "question": "Quel dieu grec personnifie le sommeil ?",
+      "answer": "Hypnos",
+      "alternatives": ["hypnos","Hypnos","hypnôs","Hypnôs"]
+    },
+    {
+      "id": 40,
+      "question": "Quel dieu grec personnifie la mort ?",
+      "answer": "Thanatos",
+      "alternatives": ["thanatos","Thanatos","thánatos","Thánatos"]
+    }
+  ]
+} 

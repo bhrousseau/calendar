@@ -1,0 +1,246 @@
+{
+  "questions": [
+      {
+        "id": 1,
+        "question": "Spécialité sucrée à base d'amandes et de melon confit ?",
+        "answer": "Calissons d'Aix-en-Provence",
+        "alternatives": ["Calissons", "Calisson d’Aix", "Calissons d'Aix", "le calisson", "les calissons"]
+      },
+      {
+        "id": 2,
+        "question": "Quelle confiserie célèbre, à base de sucre mentholé, vient de Cambrai ?",
+        "answer": "Bêtises de Cambrai",
+        "alternatives": ["les betises", "les bêtises", "Bêtises", "Bêtises de Cambrai"]
+      },
+      {
+        "id": 3,
+        "question": "Quel plat à base de purée de pommes de terre et de tome fraîche est typique de l'Aubrac ?",
+        "answer": "Aligot",
+        "alternatives": ["l'Aligot", "l'aligot", "Aligot"]
+      },
+      {
+        "id": 4,
+        "question": "Quel plat traditionnel du Sud-Ouest associe haricots blancs, confit de canard et saucisse ?",
+        "answer": "Cassoulet",
+        "alternatives": ["le Cassoulet", "le cassoulet", "Cassoulet"]
+      },
+      {
+        "id": 5,
+        "question": "Quel fromage à pâte molle et croûte fleurie est produit en Normandie ?",
+        "answer": "Camembert",
+        "alternatives": ["le Camembert", "le camembert", "Camembert", "Camembert de Normandie"]
+      },
+      {
+        "id": 6,
+        "question": "Quel biscuit breton est connu pour sa texture sablée et son goût de beurre salé ?",
+        "answer": "Palet breton",
+        "alternatives": ["le Palet breton", "le palet breton", "Palet breton", "les palets bretons", "Palets bretons"]
+      },
+      {
+        "id": 7,
+        "question": "Quel fromage de chèvre est une spécialité de la région Centre-Val de Loire, notamment à Chavignol ?",
+        "answer": "Crottin de Chavignol",
+        "alternatives": ["le Crottin de Chavignol", "le crottin de chavignol", "Crottin de Chavignol", "le crottin", "Crottin"]
+      },
+      {
+        "id": 8,
+        "question": "Quel petit gâteau moelleux, parfumé à la rose ou à l’amande, est une spécialité de Nancy ?",
+        "answer": "Macarons de Nancy",
+        "alternatives": ["Macarons de Nancy", "les macarons", "Macarons", "le macaron"]
+      },
+      {
+        "id": 9,
+        "question": "Quel plat savoyard est à base de pommes de terre, oignons, reblochon et lardons ?",
+        "answer": "Tartiflette",
+        "alternatives": ["la Tartiflette", "la tartiflette", "Tartiflette"]
+      },
+      {
+        "id": 10,
+        "question": "Quelle région française est réputée pour ses crèpes et ses galettes ?",
+        "answer": "Bretagne",
+        "alternatives": ["Bretagne", "La Bretagne", "la Bretagne"]
+      },
+      {
+        "id": 11,
+        "question": "Quel biscuit salé en forme de torsade est une spécialité de la région de Strasbourg ?",
+        "answer": "Bretzel",
+        "alternatives": ["le Bretzel", "le bretzel", "le Bretzel alsacien", "Bretzel de Strasbourg", "le bretzel", "les bretzels"]
+      },
+      {
+        "id": 12,
+        "question": "Quelle confiserie est constituée d'une amande enrobée d'une fine couche de sucre ?",
+        "answer": "la dragée",
+        "alternatives": ["la dragée", "les dragées", "dragée"]
+      },
+      {
+        "id": 13,
+        "question": "Quel fromage bleu est affiné dans des caves naturelles du département de l’Aveyron ?",
+        "answer": "Roquefort",
+        "alternatives": ["Roquefort", "le roquefort"]
+      },
+      {
+        "id": 14,
+        "question": "Quelle confiserie tendre aux noisettes est typique de Montélimar ?",
+        "answer": "Nougat de Montélimar",
+        "alternatives": ["Nougat de Montélimar", "Nougat", "le nougat", "les nougats", "le nougat blanc"]
+      },
+      {
+        "id": 15,
+        "question": "Quel saucisson frais corsé est une spécialité de Corse ?",
+        "answer": "Figatellu",
+        "alternatives": ["Figatellu", "Figatellu corse", "le figatellu", "figatellu corse", "la figatelle"]
+      },
+      {
+        "id": 16,
+        "question": "Quelle tarte composée de brioche et de crème doit sont nom à une ville de Provence-Alpes-Côte d'Azur ?",
+        "answer": "Tarte tropézienne",
+        "alternatives": ["Tarte tropézienne","la tarte tropézienne","la tropézienne","tropézienne", "une tropézienne"]
+      },
+      {
+        "id": 17,
+        "question": "Dans le nord de la France, c'est la star des friteries, tout le monde sait ce qu’il y a dedans, mais personne ne le dit.",
+        "answer": "la fricadelle",
+        "alternatives": ["fricandelle", "la fricandelle", "fricadelle", "la fricadelle"]
+      },
+      {
+        "id": 18,
+        "question": "Quel fromage savoyard est utilisé traditionnellement dans la tartiflette ?",
+        "answer": "Reblochon",
+        "alternatives": ["Reblochon", "le reblochon"]
+      },
+      {
+        "id": 19,
+        "question": "Quel petit gâteau moelleux en forme de coquillage est une spécialité de Lorraine ?",
+        "answer": "Madeleine",
+        "alternatives": ["Madeleine", "la madeleine", "Madeleine de Commercy"]
+      },
+      {
+        "id": 20,
+        "question": "Quelle région est réputée pour ses truffes noires ?",
+        "answer": "Périgord",
+        "alternatives": ["Périgord", "le périgord", "le périgord noir"]
+      },
+      {
+        "id": 21,
+        "question": "Quel petit gâteau à la croûte caramélisée est une spécialité bordelaise ?",
+        "answer": "Canelé",
+        "alternatives": ["Canelé", "Canelé de Bordeaux", "Cannelé", "le canelé", "les canelés", "le canelé de Bordeaux", "le canelé de Bordeaux", "le canelé de bordeaux", "le canelé de bordeaux"]
+      },
+      {
+        "id": 22,
+        "question": "Quelle saucisse fumée est une spécialité de la Franche-Comté ?",
+        "answer": "Saucisse de Montbéliard",
+        "alternatives": ["Montbéliard","Saucisse de Montbéliard", "Saucisse de Montbeliard", "la saucisse de Montbéliard", "la saucisse de Montbeliard", "la saucisse de Montbéliard", "la saucisse de Montbeliard"]
+      },
+      {
+        "id": 23,
+        "question": "Quelle est la spécialité fine et forte de Dijon?",
+        "answer": "la moutarde",
+        "alternatives": ["la moutarde", "la moutarde de Dijon", "la moutarde de dijon", "la Moutarde", "la moutarde de Dijon", "la moutarde de dijon", "la Moutarde", "la moutarde de Dijon", "la moutarde de dijon", "la Moutarde"]
+      },
+      {
+        "id": 24,
+        "question": "Quel est ce bonbon de forme octogonale de couleur blanche connu pour ses propriétés digestives tenant son nom de la ville où il est fabriqué à partir des eaux de la station thermale.",
+        "answer": "Pastille Vichy",
+        "alternatives": ["La pastille de Vichy", "vichy", "pastille vichy", "Vichy", "Pastille Vichy", "bonbon vichy", "bonbon de vichy"]
+      },
+      {
+        "id": 25,
+        "question": "Quel est ceplat provençal à base de légumes mijotés ?",
+        "answer": "Ratatouille",
+        "alternatives": ["Ratatouille", "la ratatouille", "la ratatouille de Provence", "la ratatouille de Provence", "la ratatouille de provence","tian","piperade","bohémienne"]
+      },
+      {
+        "id": 26,
+        "question": "Quelle petite pastille carrée de couleur noire à la réglisse est vendue dans une boîte métallique jaune et ronde?",
+        "answer": "Cachou",
+        "alternatives": ["Cachou", "le cachou", "le cachou lajaunie", "cachou lajaunie"]
+      },
+      {
+        "id": 27,
+        "question": "Spécialité champenoise caractérisée par sa couleur et sa ville d'origine ?",
+        "answer": "biscuit rose",
+        "alternatives": ["biscuit rose de Reims", "biscuit rose", "le biscuit rose", "le biscuit rose de Reims"]
+      },
+      {
+        "id": 28,
+        "question": "Comment s'appelle cette brioche garnie de pralines rouges ?",
+        "answer": "le saint genix",
+        "alternatives": ["Gâteau de Saint-Genix", "le saint genix", "le saint genix de Saint-Genix", "un saint genix", "un saint-genix"]
+      },
+      {
+        "id": 29,
+        "question": "Sucrerie élaborée à partir d'amandes broyées et de sucre de canne, agrémentée d'amandes grillées caramélisées enrobées de chocolat noir. Parfumé à l'eau-de-vie de gingembre et rehaussé d'une rasade d'Armagnac. ?",
+        "answer": "Coucougnette",
+        "alternatives": ["Coucougnettes", "Coucougnette", "la coucougnette", "les coucougnettes", "coucougnette"]
+      },
+      {
+        "id": 30,
+        "question": "Quelle tarte salée est une spécialité de Lorraine ?",
+        "answer": "Quiche lorraine",
+        "alternatives": ["Quiche lorraine", "Quiche", "la quiche", "la quiche lorraine"]
+      },
+      {
+        "id": 31,
+        "question": "Quel plat alsacien est un mélange de chou fermenté, saucisses et pommes de terre ?",
+        "answer": "Choucroute garnie",
+        "alternatives": ["Choucroute garnie", "Choucroute", "la choucroute", "la choucroute garnie"]
+      },
+      {
+        "id": 32,
+        "question": "Quel fromage à pâte molle à croûte lavée produit en Bourgogne ?",
+        "answer": "Epoisses",
+        "alternatives": ["Epoisses", "l'Epoisses", "l'epoisses", "l'époisses","Epoisses de Bourgogne", "époisses", "époisses de Bourgogne"]
+      },
+      {
+        "id": 33,
+        "question": "Quel dessert parisien est une pâtisserie allongée à base de pâte à choux et crème ?",
+        "answer": "Éclair au chocolat",
+        "alternatives": ["Éclair au chocolat", "Éclair", "l'éclair", "l'éclair au chocolat"]
+      },
+      {
+        "id": 34,
+        "question": "Quelle soupe de poissons est une spécialité de Marseille ?",
+        "answer": "Bouillabaisse",
+        "alternatives": ["Bouillabaisse","la bouillabaisse", "la bouillabaisse de Marseille"]
+      },
+      {
+        "id": 35,
+        "question": "Quelle spécialité de Noël est un pain à pâte à la levure lourde, souvent farcie de pâte d'amande, avec des fruits secs et confits et diverses épices. ?",
+        "answer": "Christstollen",
+        "alternatives": ["Christstollen","le Christstollen","le christstollen", "stollen","le stollen", "Weihnachtsstollen", "weihnachtsstollen", "Weihnachtsstollen de Weihnachtsstollen"]
+      },
+      {
+        "id": 36,
+        "question": "Quelle spécialité bretonne est à base de pâte levée feuilletée, de beurre demi-sel et de sucre caramélisé ?",
+        "answer": "Kouign-Amann",
+        "alternatives": ["Kouign-Amann", "le Kouign-Amann", "le kouign-amann", "le kouign-amann de Douarnenez"]
+      },
+      {
+        "id": 37,
+        "question": "Quelle spécialité lyonnaise à base de farine, de beurre, de lait et d'œufs sont souvent servies avec une sauce Nantua ?",
+        "answer": "les quenelles",
+        "alternatives": ["les quenelles", "la quenelle", "la quenelle lyonnaise", "la quenelle lyonnaise", "quenelle", "quenelle lyonnaise"]
+      },
+      {
+        "id": 38,
+        "question": "Quel biscuit sucré au parfum de fleur d'oranger est typique de Provence ?",
+        "answer": "Navette",
+        "alternatives": ["Navette", "Navette de Marseille", "la navette", "la navette de Marseille"]
+      },
+      {
+        "id": 39,
+        "question": "Quelle pâtisserie à base de pâte feuilletée et de fruits rouges est une spécialité d'Alsace ?",
+        "answer": "Kougelhopf",
+        "alternatives": ["Kougelhopf", "Kouglof", "Kugelhopf"]
+      },
+      {
+        "id": 40,
+        "question": "Quel plat de la gastronomie Lilloise est une tartine de pain grillé moutardée, garnie de fromage fondu à la bière et de jambon ?",
+        "answer": "Welsh",
+        "alternatives": ["le Welsh", "le welsh", "le welsh Lillois", "le welsh lillois"]
+      }
+    ]
+  
+
+} 

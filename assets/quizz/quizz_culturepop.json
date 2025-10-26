@@ -1,0 +1,275 @@
+{
+  "questions": [
+    {
+      "id": 1,
+      "question": "Quel groupe britannique a chanté 'Bohemian Rhapsody' ?",
+      "answer": "Queen",
+      "alternatives": ["QUEEN", "Le groupe Queen", "Queen (UK)"]
+    },
+    {
+      "id": 2,
+      "question": "Quel film a rendu célèbre le personnage de Dark Vador ?",
+      "answer": "Star Wars",
+      "alternatives": ["La Guerre des étoiles", "star war"]
+    },
+    {
+      "id": 3,
+      "question": "Quel chanteur est surnommé le 'Roi de la Pop' ?",
+      "answer": "Michael Jackson",
+      "alternatives": ["M. Jackson", "MJ", "Michael J. Jackson"]
+    },
+    {
+      "id": 4,
+      "question": "Quel film a popularisé la chanson 'My Heart Will Go On' ?",
+      "answer": "Titanic",
+      "alternatives": ["Titanic (1997)", "Film Titanic", "Titanic de James Cameron"]
+    },
+    {
+      "id": 5,
+      "question": "Quelle série met en scène un professeur de chimie devenu trafiquant de drogue ?",
+      "answer": "Breaking Bad",
+      "alternatives": ["BreakingBad", "Série Breaking Bad", "Breaking Bad (AMC)"]
+    },
+    {
+      "id": 6,
+      "question": "Quel chanteur canadien a interprété 'Baby' en 2010 ?",
+      "answer": "Justin Bieber",
+      "alternatives": ["J. Bieber", "Justin Drew Bieber", "Bieber"]
+    },
+    {
+      "id": 7,
+      "question": "Quel film de science-fiction met en scène un robot nommé R2-D2 ?",
+      "answer": "Star Wars",
+      "alternatives": ["La Guerre des étoiles", "star war"]
+    },
+    {
+      "id": 8,
+      "question": "Quelle chanteuse américaine a interprété 'Like a Virgin' ?",
+      "answer": "Madonna",
+      "alternatives": ["Madonna Louise Ciccone", "madonna","Madonna","madonna louise ciccone","Madona"]
+    },
+    {
+      "id": 9,
+      "question": "Quel super-héros est aussi connu sous le nom de Bruce Wayne ?",
+      "answer": "Batman",
+      "alternatives": ["Le batman","batman", "Batman (DC Comics)"]
+    },
+    {
+      "id": 10,
+      "question": "Quel groupe a chanté 'Smells Like Teen Spirit' en 1991 ?",
+      "answer": "Nirvana",
+      "alternatives": ["Groupe Nirvana", "Nirvana (grunge)", "Nirvana (Seattle)"]
+    },
+    {
+      "id": 11,
+      "question": "Quel film met en scène un extraterrestre à vélo ?",
+      "answer": "E.T. l’extra-terrestre",
+      "alternatives": ["e.t.","E.T.","E.T. l’extra-terrestre","ET the Extra-Terrestrial", "E.T. (1982)","ET","et", "E T","E-T","E.T","E.T. l’extra-terrestre","ET the Extra-Terrestrial", "E.T. (1982)"]
+    },
+    {
+      "id": 12,
+      "question": "Quel groupe coréen est connu pour le tube 'Dynamite' ?",
+      "answer": "BTS",
+      "alternatives": ["Bangtan Boys", "BTS (방탄소년단)", "Beyond The Scene"]
+    },
+    {
+      "id": 13,
+      "question": "Quel chanteur français a popularisé la chanson 'Formidable' ?",
+      "answer": "Stromae",
+      "alternatives": ["Paul Van Haver", "Stromaé", "stromae", "Stromae (Belgique)"]
+    },
+    {
+      "id": 14,
+      "question": "Quelle saga de films met en scène un jeune sorcier ?",
+      "answer": "Harry Potter",
+      "alternatives": ["Harry Potter (films)", "Harry Potter", "HP"]
+    },
+    {
+      "id": 15,
+      "question": "Quel chanteur a sorti l’album 'Thriller' en 1982 ?",
+      "answer": "Michael Jackson",
+      "alternatives": ["MJ", "M. Jackson", "Michael J. Jackson"]
+    },
+    {
+      "id": 16,
+      "question": "Quelle série met en scène des adolescents dans la ville de Hawkins ?",
+      "answer": "Stranger Things",
+      "alternatives": ["StrangerThings", "Stranger Things (Netflix)", "Série Stranger Things"]
+    },
+    {
+      "id": 17,
+      "question": "Quel est le nom de la chanteuse du tube 'Rolling in the Deep' ?",
+      "answer": "Adele",
+      "alternatives": ["Adele Adkins", "Adèle", "Adele Laurie Blue Adkins"]
+    },
+    {
+      "id": 18,
+      "question": "Quel acteur incarne le personnage de Tony Stark dans le film Iron Man ?",
+      "answer": "Robert Downey Jr.",
+      "alternatives": ["Robert Downey Junior", "R. Downey Jr", "Robert J. Downey Jr.","Robert Downey Jr.","Robert Downey","Robert Downey Jr","Robert Downey Junior","R. Downey Jr","Robert J. Downey Jr."]
+    },
+    {
+      "id": 19,
+      "question": "Quel film d’animation met en scène des jouets qui prennent vie ?",
+      "answer": "Toy Story",
+      "alternatives": ["ToyStory", "Histoire de jouets", "Toy Story (Pixar)"]
+    },
+    {
+      "id": 20,
+      "question": "Quel rappeur américain a sorti l’album 'The Marshall Mathers LP' ?",
+      "answer": "Eminem",
+      "alternatives": ["Slim Shady", "Marshall Mathers", "Eminem (rappeur)"]
+    },
+    {
+      "id": 21,
+      "question": "Quel chanteur britannique est connu pour 'Shape of You' ?",
+      "answer": "Ed Sheeran",
+      "alternatives": ["Edward Sheeran", "E. Sheeran", "Ed Sheeran (UK)"]
+    },
+    {
+      "id": 22,
+      "question": "Quel film met en scène un ogre vert dont le meilleur ami est un âne ?",
+      "answer": "Shrek",
+      "alternatives": ["Film Shrek", "Shrek (DreamWorks)", "Shrek le film","shrek","Shrek","shrek le film","Shrek (DreamWorks)","Shrek (DreamWorks) Shrek"]
+    },
+    {
+      "id": 23,
+      "question": "Quelle chanteuse américaine a interprété la chanson 'Shallow' dans le film 'A Star is Born' ?",
+      "answer": "Lady Gaga",
+      "alternatives": ["Stefani Germanotta", "Lady GaGa", "Mother Monster","lady gaga","Lady Gaga","lady gaga","Lady Gaga","Mother Monster","mother monster"]
+    },
+    {
+      "id": 24,
+      "question": "Quel jeu vidéo met en scène un plombier et son frère ?",
+      "answer": "Super Mario",
+      "alternatives": ["Mario Bros", "Super Mario Bros", "Mario","mario","Mario Bros","Super Mario Bros","Mario","mario bros","super mario bros","mario bros","super mario bros"]
+    },
+    {
+      "id": 25,
+      "question": "Dans quel film de 1994, Tom Hanks raconte l'histoire de sa vie parsemée d'événements historiques marquants ?",
+      "answer": "Forrest Gump",
+      "alternatives": ["Film Forrest Gump", "Forrest Gump (1994)", "Forrest Gump le film","forrest gump","Forrest Gump","forrest gump le film","Forrest Gump (1994)","Forrest Gump (1994) Forrest Gump"]
+    },
+    {
+      "id": 26,
+      "question": "Quelle chanteuse est connue pour le tube 'Umbrella' ?",
+      "answer": "Rihanna",
+      "alternatives": ["Robyn Rihanna Fenty", "Rihanna Fenty", "RiRi"]
+    },
+    {
+      "id": 27,
+      "question": "Quel film d’animation de Disney met en scène Simba ?",
+      "answer": "Le Roi Lion",
+      "alternatives": ["The Lion King", "Roi Lion", "Le Roi Lion (Disney)"]
+    },
+    {
+      "id": 28,
+      "question": "Quelle série met en scène des zombies et Rick Grimes ?",
+      "answer": "The Walking Dead",
+      "alternatives": ["Walking Dead", "TWD", "The Walking Dead (AMC)"]
+    },
+    {
+      "id": 29,
+      "question": "Quel chanteur français est surnommé 'le Taulier' ?",
+      "answer": "Johnny Hallyday",
+      "alternatives": ["Halliday","Hallyday", "Jean-Philippe Smet", "Hallyday Johnny", "Johnny H.","hallyday johnny","Hallyday Johnny","Johnny H.","Johnny Hallyday","Johnny Hallyday Johnny Hallyday"]
+    },
+    {
+      "id": 30,
+      "question": "Quelle chanteuse a interprété 'Hello' en 2015 ?",
+      "answer": "Adele",
+      "alternatives": ["Adèle", "Adele Laurie Blue Adkins", "Adele (UK)"]
+    },
+    {
+      "id": 31,
+      "question": "Quel groupe a sorti 'Viva la Vida' en 2008 ?",
+      "answer": "Coldplay",
+      "alternatives": ["Cold Play", "Groupe Coldplay", "Coldplay (UK)"]
+    },
+    {
+      "id": 32,
+      "question": "Quel film raconte l’histoire d’un jeune magicien nommé Harry Potter ?",
+      "answer": "Harry Potter à l’école des sorciers",
+      "alternatives": ["Harry Potter 1", "Harry Potter and the Philosopher’s Stone", "Harry Potter et la pierre philosophale"]
+    },
+    {
+      "id": 33,
+      "question": "Quel chanteur a interprété 'Someone You Loved' ?",
+      "answer": "Lewis Capaldi",
+      "alternatives": ["L. Capaldi", "Lewis Marc Capaldi", "Lewis Capaldi (UK)"]
+    },
+    {
+      "id": 34,
+      "question": "Quel super-héros est aussi connu sous le nom de Peter Parker ?",
+      "answer": "Spider-Man",
+      "alternatives": ["Spiderman", "L’homme-araignée", "Spider Man"]
+    },
+    {
+      "id": 35,
+      "question": "Quelle série télévisée met en scène des trônes et des dragons ?",
+      "answer": "Game of Thrones",
+      "alternatives": ["Le Trône de Fer", "GameOfThrones", "GOT"]
+    },
+    {
+      "id": 36,
+      "question": "Quel chanteur coréen a popularisé la chanson 'Gangnam Style' ?",
+      "answer": "PSY",
+      "alternatives": ["Psy", "Park Jae-sang", "PSY (Corée du Sud)"]
+    },
+    {
+      "id": 37,
+      "question": "Quel duo français est derrière le tube 'Get Lucky' ?",
+      "answer": "Daft Punk",
+      "alternatives": ["DAFTPUNK", "Daft-Punk", "Thomas Bangalter et Guy-Manuel de Homem-Christo"]
+    },
+    {
+      "id": 38,
+      "question": "Quel film met en scène un ogre vert et un âne bavard ?",
+      "answer": "Shrek",
+      "alternatives": ["Film Shrek", "Shrek (DreamWorks)", "Shrek le film"]
+    },
+    {
+      "id": 39,
+      "question": "Quel chanteur canadien a interprété 'Blinding Lights' ?",
+      "answer": "The Weeknd",
+      "alternatives": ["Abel Tesfaye", "TheWeekend", "The Weeknd (Canada)"]
+    },
+    {
+      "id": 40,
+      "question": "Quel film de 1985 met en scène Marty McFly et le docteur Emmett Brown ?",
+      "answer": "Retour vers le futur",
+      "alternatives": ["Back to the Future", "Back to the Future (1985)","retour vers le futur","Retour vers le futur","Back to the Future","Back to the Future (1985)","Back to the Future (1985) Back to the Future"]
+    },
+    {
+      "id": 41,
+      "question": "Quelle chanteuse américaine a interprété 'Shake It Off' ?",
+      "answer": "Taylor Swift",
+      "alternatives": ["T. Swift", "Taylor A. Swift", "Taylor Swift (USA)"]
+    },
+    {
+      "id": 42,
+      "question": "Quel groupe britannique a interprété 'Wonderwall' ?",
+      "answer": "Oasis",
+      "alternatives": ["le groupe oasis","Groupe Oasis", "Oasis (UK)", "Oasis Band"]
+    },
+    {
+      "id": 43,
+      "question": "Quelle série humoristique met en scène un groupe d’amis à New York ?",
+      "answer": "Friends",
+      "alternatives": ["FRIENDS", "Friends (NBC)", "la série Friends","Friends","Friends (NBC)","Friends (NBC) Friends"]
+    },
+    {
+      "id": 44,
+      "question": "Quel film d’animation présente Elsa et Anna ?",
+      "answer": "La Reine des Neiges",
+      "alternatives": ["Frozen", "Frozen (Disney)", "La Reine des Neiges (2013)"]
+    },
+    {
+      "id": 45,
+      "question": "Quel chanteur a popularisé la chanson 'Shape of My Heart' ?",
+      "answer": "Sting",
+      "alternatives": ["Gordon Sumner", "Sting (The Police)", "Sting (UK)"]
+    }
+  ]
+  
+} 
