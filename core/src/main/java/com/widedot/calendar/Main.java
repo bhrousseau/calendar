@@ -39,7 +39,7 @@ public class Main extends Game {
     
     @Override
     public void resize(int width, int height) {
-        System.out.println("Main.resize appelé avec dimensions: " + width + "x" + height);
+        Gdx.app.log("Main", "resize appelé avec dimensions: " + width + "x" + height);
         super.resize(width, height);
         game.resize(width, height);
     }

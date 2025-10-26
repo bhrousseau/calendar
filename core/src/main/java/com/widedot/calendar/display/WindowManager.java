@@ -25,7 +25,7 @@ public class WindowManager {
     public static void switchToFullscreen() {
         DisplayMode displayMode = Gdx.graphics.getDisplayMode();
         Gdx.graphics.setFullscreenMode(displayMode);
-        System.out.println("Basculé en plein écran (" + 
+        Gdx.app.log("WindowManager", "Basculé en plein écran (" + 
                          displayMode.width + "x" + displayMode.height + ")");
     }
     
@@ -35,7 +35,7 @@ public class WindowManager {
     public static void switchToWindowed() {
         WindowSize optimalSize = calculateOptimalWindowSize();
         Gdx.graphics.setWindowedMode(optimalSize.width, optimalSize.height);
-        System.out.println("Basculé en mode fenêtré (" + 
+        Gdx.app.log("WindowManager", "Basculé en mode fenêtré (" + 
                          optimalSize.width + "x" + optimalSize.height + 
                          ") - ratio 16:10, " + optimalSize.method);
     }

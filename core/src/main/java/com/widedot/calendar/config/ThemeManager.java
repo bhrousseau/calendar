@@ -86,9 +86,9 @@ public class ThemeManager {
                 allThemes.add(theme);
             }
             
-            System.out.println("Chargement de " + allThemes.size + " thèmes réussi");
+            Gdx.app.log("ThemeManager", "Chargement de " + allThemes.size + " thèmes réussi");
         } catch (Exception e) {
-            System.err.println("Erreur lors du chargement des thèmes: " + e.getMessage());
+            Gdx.app.error("ThemeManager", "Erreur lors du chargement des thèmes: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -117,9 +117,9 @@ public class ThemeManager {
                 }
             }
             
-            System.out.println("Chargement de " + dayToThemeMap.size + " correspondances jour -> thème réussi");
+            Gdx.app.log("ThemeManager", "Chargement de " + dayToThemeMap.size + " correspondances jour -> thème réussi");
         } catch (Exception e) {
-            System.err.println("Erreur lors du chargement des correspondances jour -> thème: " + e.getMessage());
+            Gdx.app.error("ThemeManager", "Erreur lors du chargement des correspondances jour -> thème: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -140,16 +140,16 @@ public class ThemeManager {
      */
     public Theme getThemeByDay(int dayId) {
         String themeName = dayToThemeMap.get(dayId);
-        System.out.println("Recherche de thème pour le jour " + dayId + ": " + (themeName != null ? themeName : "non trouvé"));
+        Gdx.app.log("ThemeManager", "Recherche de thème pour le jour " + dayId + ": " + (themeName != null ? themeName : "non trouvé"));
         
         if (themeName == null) {
-            System.out.println("Aucun thème associé au jour " + dayId + ". Jour-thèmes disponibles: " + getDayToThemeKeys());
+            Gdx.app.log("ThemeManager", "Aucun thème associé au jour " + dayId + ". Jour-thèmes disponibles: " + getDayToThemeKeys());
             return null;
         }
         
         Theme theme = themesByName.get(themeName);
         if (theme == null) {
-            System.out.println("Thème '" + themeName + "' référencé mais non trouvé dans les thèmes disponibles: " + getThemeNames());
+            Gdx.app.log("ThemeManager", "Thème '" + themeName + "' référencé mais non trouvé dans les thèmes disponibles: " + getThemeNames());
         }
         
         return theme;

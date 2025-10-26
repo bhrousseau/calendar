@@ -3,7 +3,7 @@
 <head>
   <title>Calendar Game</title>
   <meta http-equiv="content-type" content="text/html; charset=UTF-8">
-  <meta id="gameViewport" name="viewport" content="width=device-width initial-scale=1">
+  <meta id="gameViewport" name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
   <style>
     html, body {
       width: 100%;
@@ -12,6 +12,8 @@
       padding: 0;
       overflow: hidden;
       background-color: #000000;
+      touch-action: manipulation;
+      overscroll-behavior: none;
     }
     #embed-html {
       width: 100%;
@@ -20,6 +22,7 @@
     canvas {
       cursor: default;
       outline: none;
+      touch-action: manipulation;
     }
   </style>
 </head>
@@ -29,19 +32,5 @@
   
   <!-- Script LibGDX -->
   <script type="text/javascript" src="html/html.nocache.js"></script>
-  
-  <!-- Script pour détecter si le jeu se charge -->
-  <script>
-    // Vérifier si un canvas est créé dans embed-html
-    setTimeout(function() {
-      var container = document.getElementById('embed-html');
-      if (container && container.getElementsByTagName('canvas').length > 0) {
-        document.body.style.backgroundColor = 'green';
-        document.body.insertAdjacentHTML('beforeend', '<p style="color:yellow">Canvas trouvé!</p>');
-      } else {
-        document.body.insertAdjacentHTML('beforeend', '<p style="color:yellow">Aucun canvas trouvé après 3s</p>');
-      }
-    }, 3000);
-  </script>
 </body>
 </html> 

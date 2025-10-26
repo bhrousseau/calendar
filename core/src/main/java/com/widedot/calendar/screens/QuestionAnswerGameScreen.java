@@ -184,7 +184,7 @@ public class QuestionAnswerGameScreen extends GameScreen {
         
         // Vérifier si on est en mode test via Config
         this.isTestMode = Config.getInstance().isTestModeEnabled();
-        System.out.println("Mode test QuestionAnswer: " + isTestMode);
+        Gdx.app.log("QuestionAnswerGameScreen", "Mode test QuestionAnswer: " + isTestMode);
         
         // Initialiser les éléments UI
         this.font = new BitmapFont();
@@ -208,7 +208,7 @@ public class QuestionAnswerGameScreen extends GameScreen {
         try {
             this.sendButtonTexture = new Texture(Gdx.files.internal("images/ui/send.jpg"));
         } catch (Exception e) {
-            System.err.println("Erreur lors du chargement du bouton send: " + e.getMessage());
+            Gdx.app.error("QuestionAnswerGameScreen", "Erreur lors du chargement du bouton send: " + e.getMessage());
             this.sendButtonTexture = null;
         }
         
@@ -248,7 +248,7 @@ public class QuestionAnswerGameScreen extends GameScreen {
                 return new Color(r, g, b, 1);
             }
         } catch (NumberFormatException e) {
-            System.err.println("Format de couleur invalide: " + colorStr);
+            Gdx.app.error("QuestionAnswerGameScreen", "Format de couleur invalide: " + colorStr);
         }
         return new Color(1, 1, 1, 1);
     }
@@ -259,7 +259,7 @@ public class QuestionAnswerGameScreen extends GameScreen {
             this.incorrectSound = Gdx.audio.newSound(Gdx.files.internal(INCORRECT_SOUND_PATH));
             this.winSound = Gdx.audio.newSound(Gdx.files.internal(WIN_SOUND_PATH));
         } catch (Exception e) {
-            System.err.println("Erreur lors du chargement des sons: " + e.getMessage());
+            Gdx.app.error("QuestionAnswerGameScreen", "Erreur lors du chargement des sons: " + e.getMessage());
         }
     }
     
@@ -281,6 +281,20 @@ public class QuestionAnswerGameScreen extends GameScreen {
             
             @Override
             public boolean keyDown(int keycode) {
+                // Alt+R : Résoudre automatiquement le jeu (mode test uniquement)
+                if (keycode == Input.Keys.R && isTestMode && !gameFinished && 
+                    (Gdx.input.isKeyPressed(Input.Keys.ALT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.ALT_RIGHT))) {
+                    solveGame();
+                    return true;
+                }
+                
+                // Alt+N : Déclencher la phase de victoire (mode test uniquement)
+                if (keycode == Input.Keys.N && isTestMode && !gameFinished && 
+                    (Gdx.input.isKeyPressed(Input.Keys.ALT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.ALT_RIGHT))) {
+                    triggerVictoryPhase();
+                    return true;
+                }
+                
                 if (gameFinished || showFeedback) return false;
                 
                 if (keycode == Input.Keys.BACKSPACE && inputText.length() > 0) {
@@ -307,7 +321,7 @@ public class QuestionAnswerGameScreen extends GameScreen {
                 
                 // Si le jeu est terminé, retourner au menu sur n'importe quel clic
                 if (gameFinished) {
-                    System.out.println("Retour au menu après victoire");
+                    Gdx.app.log("QuestionAnswerGameScreen", "Retour au menu après victoire");
                     returnToMainMenu();
                     return true;
                 }
@@ -319,7 +333,7 @@ public class QuestionAnswerGameScreen extends GameScreen {
                     submitAnswer();
                     return true;
                 } else if (isTestMode && solveButton.contains(worldPos.x, worldPos.y)) {
-                    System.out.println("Bouton Résoudre cliqué (mode test) - QuestionAnswer");
+                    Gdx.app.log("QuestionAnswerGameScreen", "Bouton Résoudre cliqué (mode test) - QuestionAnswer");
                     solveGame();
                     return true;
                 }
@@ -375,7 +389,7 @@ public class QuestionAnswerGameScreen extends GameScreen {
                     // Découper l'image en carrés une fois qu'elle est chargée
                     createImageSquares();
                 } catch (Exception e) {
-                    System.err.println("Erreur lors du chargement de la texture du thème: " + e.getMessage());
+                    Gdx.app.error("QuestionAnswerGameScreen", "Erreur lors du chargement de la texture du thème: " + e.getMessage());
                 }
             }
         }
@@ -482,6 +496,16 @@ public class QuestionAnswerGameScreen extends GameScreen {
         updateButtonPositions();
     }
     
+    /**
+     * Déclenche la phase de victoire (mode test - touche N)
+     */
+    private void triggerVictoryPhase() {
+        Gdx.app.log("QuestionAnswerGameScreen", "Déclenchement de la phase de victoire (mode test - touche N)");
+        
+        // Utiliser la méthode solveGame() existante
+        solveGame();
+    }
+    
     private void loadFinalQuestion() {
         // Charger la question spécifique au thème depuis le fichier JSON
         if (theme != null) {
@@ -496,7 +520,7 @@ public class QuestionAnswerGameScreen extends GameScreen {
                     // Découper l'image en carrés après rechargement
                     createImageSquares();
                 } catch (Exception e) {
-                    System.err.println("Erreur rechargement texture: " + e.getMessage());
+                    Gdx.app.error("QuestionAnswerGameScreen", "Erreur rechargement texture: " + e.getMessage());
                 }
             }
             
@@ -524,7 +548,7 @@ public class QuestionAnswerGameScreen extends GameScreen {
                     return;
                 }
             } catch (Exception e) {
-                System.err.println("Erreur lors du chargement de la question finale: " + e.getMessage());
+                Gdx.app.error("QuestionAnswerGameScreen", "Erreur lors du chargement de la question finale: " + e.getMessage());
             }
             
             // Fallback: utiliser les métadonnées du thème
@@ -601,7 +625,7 @@ public class QuestionAnswerGameScreen extends GameScreen {
             }
 
         } catch (Exception e) {
-            System.err.println("Erreur lors du chargement des questions: " + e.getMessage());
+            Gdx.app.error("QuestionAnswerGameScreen", "Erreur lors du chargement des questions: " + e.getMessage());
             // Créer une question par défaut en cas d'erreur
             questions.add(new QuestionData("Question par défaut?", "réponse"));
         }
@@ -1292,7 +1316,7 @@ public class QuestionAnswerGameScreen extends GameScreen {
      * Résout automatiquement le jeu (mode test)
      */
     private void solveGame() {
-        System.out.println("Résolution automatique du jeu QuestionAnswer (mode test)");
+        Gdx.app.log("QuestionAnswerGameScreen", "Résolution automatique du jeu QuestionAnswer (mode test)");
         
         if (game instanceof AdventCalendarGame) {
             AdventCalendarGame adventGame = (AdventCalendarGame) game;

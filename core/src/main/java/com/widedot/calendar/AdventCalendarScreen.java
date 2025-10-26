@@ -3,6 +3,7 @@ package com.widedot.calendar;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.widedot.calendar.display.InputManager;
@@ -87,6 +88,7 @@ public class AdventCalendarScreen implements Screen {
     private float lastTouchScreenX = 0f;
     private float initialTouchScreenX = 0f;
     private final Vector3 touchPos = new Vector3();
+    private InputAdapter inputProcessor;
 
     /**
      * Door position data structure for JSON-based layout
@@ -150,6 +152,9 @@ public class AdventCalendarScreen implements Screen {
 
         // Set initial window size
         resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        
+        // Create input processor for better HTML compatibility
+        createInputProcessor();
     }
 
     /**
@@ -218,6 +223,9 @@ public class AdventCalendarScreen implements Screen {
 
     @Override
     public void render(float delta) {
+        // Gestion des touches globales (F11 pour plein écran)
+        InputManager.handleGlobalInput();
+        
         clearScreen();
         updateDoorAnimations(delta);
         updateArrowAnimation(delta);
@@ -230,7 +238,8 @@ public class AdventCalendarScreen implements Screen {
         renderArrowAnimations();
         batch.end();
         
-        handleInput();
+        // Input is now handled by InputProcessor for better HTML compatibility
+        // Touch/click input handled in InputProcessor
     }
 
     /**
@@ -488,7 +497,65 @@ public class AdventCalendarScreen implements Screen {
     }
 
     /**
-     * Handle user input (touch/mouse)
+     * Create input processor for better HTML compatibility
+     */
+    private void createInputProcessor() {
+        inputProcessor = new InputAdapter() {
+            @Override
+            public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+                if (TransitionScreen.isTransitionActive()) return true;
+                
+                touchPos.set(screenX, screenY, 0);
+                viewport.unproject(touchPos);
+                lastTouchScreenX = screenX;
+                initialTouchScreenX = screenX;
+                isDragging = false;
+                touchProcessed = false;
+                return true;
+            }
+            
+            @Override
+            public boolean touchDragged(int screenX, int screenY, int pointer) {
+                if (TransitionScreen.isTransitionActive()) return true;
+                
+                float currentX = screenX;
+                float deltaX = Math.abs(currentX - lastTouchScreenX);
+                
+                if (!isDragging && deltaX > DRAG_THRESHOLD) {
+                    isDragging = true;
+                }
+                
+                if (isDragging) {
+                    float screenDelta = lastTouchScreenX - currentX;
+                    float worldDelta = screenDelta * (viewport.getWorldWidth() / Gdx.graphics.getWidth());
+                    camera.position.x = constrainCameraX(camera.position.x + worldDelta);
+                    camera.update();
+                    lastTouchScreenX = currentX;
+                }
+                return true;
+            }
+            
+            @Override
+            public boolean touchUp(int screenX, int screenY, int pointer, int button) {
+                if (TransitionScreen.isTransitionActive()) return true;
+                
+                // Vérifier si il y a eu un mouvement significatif depuis le début du toucher
+                float totalMovement = Math.abs(screenX - initialTouchScreenX);
+                
+                // Ne traiter comme un clic que s'il n'y a pas eu de drag ET pas de mouvement significatif
+                if (!isDragging && totalMovement <= DRAG_THRESHOLD) {
+                    processClick();
+                }
+                
+                touchProcessed = true;
+                isDragging = false;
+                return true;
+            }
+        };
+    }
+
+    /**
+     * Handle user input (touch/mouse) - Legacy method for compatibility
      */
     private void handleInput() {
         if (TransitionScreen.isTransitionActive()) return;
@@ -496,15 +563,8 @@ public class AdventCalendarScreen implements Screen {
         // Gestion des raccourcis fullscreen
         handleGlobalInput();
         
-        if (Gdx.input.justTouched()) {
-            handleTouchStart();
-        }
-        
-        if (Gdx.input.isTouched()) {
-            handleTouchContinue();
-        } else if (!touchProcessed) {
-            handleTouchEnd();
-        }
+        // Input is now handled by InputProcessor for better HTML compatibility
+        // This method is kept for compatibility but should not be used
     }
 
     /**
@@ -591,24 +651,33 @@ public class AdventCalendarScreen implements Screen {
      */
     private void handleDoorClick(int dayId) {
         DoorState state = getDoorState(dayId);
+        int score = adventGame.getScore(dayId);
+        
+        // Vérifier si le jeu précédent est résolu (sauf pour le jour 1)
+        boolean canOpen = dayId == 1 || adventGame.getScore(dayId - 1) > 0;
         
         // Debug: Afficher l'état complet de la porte
         Gdx.app.log("AdventCalendarScreen", "Door " + dayId + " clicked - isLocked: " + state.isLocked + 
                    ", isVisited: " + state.isVisited + ", isSliding: " + state.isSliding + 
-                   ", slideProgress: " + state.slideProgress);
+                   ", slideProgress: " + state.slideProgress + ", score: " + score + 
+                   ", canOpen: " + canOpen + (dayId > 1 ? ", prevScore: " + adventGame.getScore(dayId - 1) : ""));
         
         if (state.isLocked) {
             // Porte verrouillée : Juste jouer le son, pas de déverrouillage par clic
             Gdx.app.log("AdventCalendarScreen", "Door " + dayId + " is locked - playing locked sound");
             playSound(lockedSound);
+        } else if (!canOpen) {
+            // Jeu précédent non résolu : Son de porte fermée
+            Gdx.app.log("AdventCalendarScreen", "Door " + dayId + " - previous game not solved (day " + (dayId - 1) + ") - locked sound");
+            playSound(lockedSound);
         } else if (!state.isVisited && !state.isSliding) {
-            // Porte déverrouillée : Démarrer l'animation d'ouverture
+            // Porte déverrouillée ET jeu précédent résolu ET jamais visitée : Démarrer l'animation d'ouverture
             Gdx.app.log("AdventCalendarScreen", "Starting opening animation for door " + dayId);
             doorSliding.put(dayId, true);
             playSound(openSound);
         } else if (state.isVisited) {
-            // Porte ouverte : Lancer le jeu
-            Gdx.app.log("AdventCalendarScreen", "Launching game for door " + dayId);
+            // Porte visitée : Lancer le jeu (que le score soit 0 ou > 0)
+            Gdx.app.log("AdventCalendarScreen", "Door " + dayId + " opened - launching game (score: " + score + ")");
             playSound(enterSound);
             adventGame.launchGame(dayId);
         } else {
@@ -765,8 +834,19 @@ public class AdventCalendarScreen implements Screen {
         }
     }
 
-    @Override public void show() {}
-    @Override public void hide() {}
+    @Override 
+    public void show() {
+        Gdx.app.log("AdventCalendarScreen", "Screen shown");
+        // Activer l'input processor pour la navigation par glisser-déposer
+        if (inputProcessor != null) {
+            Gdx.input.setInputProcessor(inputProcessor);
+        }
+    }
+    @Override 
+    public void hide() {
+        // Désactiver l'input processor quand l'écran devient inactif
+        Gdx.input.setInputProcessor(null);
+    }
     @Override public void pause() {}
     @Override public void resume() {}
 }

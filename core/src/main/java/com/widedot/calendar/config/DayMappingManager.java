@@ -55,9 +55,9 @@ public class DayMappingManager {
                 }
             }
             
-            System.out.println("Chargement de " + dayMappings.size + " correspondances jour -> jeu réussi");
+            Gdx.app.log("DayMappingManager", "Chargement de " + dayMappings.size + " correspondances jour -> jeu réussi");
         } catch (Exception e) {
-            System.err.println("Erreur lors du chargement des mappings jour -> jeu: " + e.getMessage());
+            Gdx.app.error("DayMappingManager", "Erreur lors du chargement des mappings jour -> jeu: " + e.getMessage());
             e.printStackTrace();
         }
     }

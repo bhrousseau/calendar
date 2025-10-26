@@ -1,0 +1,216 @@
+---
+alwaysApply: true
+---
+
+# Règles de compatibilité HTML/GWT pour le projet Calendar
+
+## 🚫 Interdictions strictes pour la compatibilité GWT
+
+### String.format() - INTERDIT
+- **NE JAMAIS** utiliser `String.format()` dans le code
+- **Remplacer par** : `GwtCompatibleFormatter.formatFloat()` ou `GwtCompatibleFormatter.format()`
+- **Raison** : GWT ne supporte pas `String.format()`
+
+### Classes Java non supportées par GWT
+- **INTERDIT** : `java.util.Formatter`
+- **INTERDIT** : `java.text.DecimalFormat`
+- **INTERDIT** : `java.util.Locale` (sauf les constantes)
+- **INTERDIT** : `java.util.Currency`
+- **INTERDIT** : `java.util.TimeZone`
+
+### Réflexion (Reflection) - INTERDIT
+- **INTERDIT** : `Class.forName()`
+- **INTERDIT** : `getClass().getMethod()`
+- **INTERDIT** : `getClass().getField()`
+- **INTERDIT** : `newInstance()` sur des classes dynamiques
+
+### I/O et fichiers - RESTRICTIONS
+- **INTERDIT** : `java.io.File`
+- **INTERDIT** : `java.nio.file.*`
+- **AUTORISÉ** : `Gdx.files.internal()` uniquement
+- **AUTORISÉ** : `Gdx.files.external()` avec précaution
+
+### Gestion des entrées (Input) - RESTRICTIONS
+- **INTERDIT** : `Gdx.input.justTouched()` et `Gdx.input.isTouched()` en mode HTML
+- **INTERDIT** : Gestion directe des événements tactiles sans InputProcessor
+- **RAISON** : Comportement différent entre desktop et HTML/GWT
+- **OBLIGATOIRE** : Utiliser `InputAdapter` pour toutes les interactions tactiles
+
+## ✅ Bonnes pratiques obligatoires
+
+### Formatage des nombres
+```java
+// ❌ INTERDIT
+String.format("%.2f", value)
+
+// ✅ OBLIGATOIRE
+GwtCompatibleFormatter.formatFloat(value, 2)
+```
+
+### Gestion des exceptions
+```java
+// ✅ OBLIGATOIRE - Toujours gérer les exceptions GWT
+try {
+    // Code qui peut échouer en GWT
+} catch (Exception e) {
+    Gdx.app.log("Error", "GWT compatible error handling: " + e.getMessage());
+}
+```
+
+### Imports spécifiques GWT
+```java
+// ✅ OBLIGATOIRE pour les nouvelles classes
+import com.widedot.calendar.utils.GwtCompatibleFormatter;
+```
+
+### Gestion des entrées (Input) - OBLIGATOIRE
+```java
+// ❌ INTERDIT - Ne fonctionne pas en HTML
+if (Gdx.input.justTouched()) {
+    handleTouchStart();
+}
+if (Gdx.input.isTouched()) {
+    handleTouchContinue();
+}
+
+// ✅ OBLIGATOIRE - InputProcessor compatible HTML
+private InputAdapter inputProcessor;
+
+private void createInputProcessor() {
+    inputProcessor = new InputAdapter() {
+        @Override
+        public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+            // Gestion du début de toucher
+            return true;
+        }
+        
+        @Override
+        public boolean touchDragged(int screenX, int screenY, int pointer) {
+            // Gestion du glisser-déposer
+            return true;
+        }
+        
+        @Override
+        public boolean touchUp(int screenX, int screenY, int pointer, int button) {
+            // Gestion de la fin de toucher
+            return true;
+        }
+    };
+}
+
+@Override
+public void show() {
+    // Activer l'input processor
+    if (inputProcessor != null) {
+        Gdx.input.setInputProcessor(inputProcessor);
+    }
+}
+
+@Override
+public void hide() {
+    // Désactiver l'input processor
+    Gdx.input.setInputProcessor(null);
+}
+```
+
+## 📝 Communication avec l'utilisateur
+
+### Règle de concision - OBLIGATOIRE
+- **NE PAS** créer de documents récapitulatifs automatiquement
+- **NE PAS** générer de longues explications
+- **ÊTRE CONCIS** : Se concentrer sur les actions et corrections
+- **ÉVITER** : Markdown élaborés, tableaux complexes, longues documentations
+- **PRIVILÉGIER** : Résumés courts (3-5 lignes max), code commenté
+- **RAISON** : Les tokens de sortie coûtent très cher à l'utilisateur
+
+### Quand documenter
+- **UNIQUEMENT** si l'utilisateur le demande explicitement
+- **UNIQUEMENT** pour des bugs critiques nécessitant une trace
+- **Format** : Court et factuel (100-200 mots max)
+
+## 🔧 Règles de développement
+
+### Avant chaque commit
+1. **Vérifier** qu'aucun `String.format()` n'est présent
+2. **Vérifier** qu'aucun `Gdx.input.justTouched()` ou `Gdx.input.isTouched()` n'est utilisé
+3. **Tester** la compilation GWT : `.\gradlew.bat :html:draftCompileGwt`
+4. **Vérifier** que le serveur HTML démarre : `.\gradlew.bat :html:superDev`
+5. **Tester** la navigation par glisser-déposer en mode HTML
+
+### Structure des fichiers
+- **Toujours** placer les utilitaires GWT dans `core/src/main/java/com/widedot/calendar/utils/`
+- **Éviter** les dépendances circulaires entre modules
+- **Utiliser** `PlatformFactory` pour les fonctionnalités spécifiques à la plateforme
+
+### Gestion des assets
+- **Toujours** utiliser `Gdx.files.internal()` pour les assets
+- **Vérifier** que tous les assets sont dans le répertoire `assets/`
+- **Tester** l'accès aux assets via le serveur de développement
+
+### Gestion des entrées (Input)
+- **Toujours** utiliser `InputAdapter` pour les interactions tactiles
+- **Activer** l'InputProcessor dans `show()` et le désactiver dans `hide()`
+- **Éviter** les appels directs à `Gdx.input` dans la boucle de rendu
+- **Tester** la navigation par glisser-déposer sur desktop ET HTML
+
+## 🚨 Points de vigilance
+
+### Debug et logging
+- **Utiliser** `Gdx.app.log()` au lieu de `System.out.println()`
+- **Éviter** les logs trop verbeux en mode production
+- **Tester** les messages d'erreur en mode HTML
+
+### Performance
+- **Minimiser** les allocations d'objets dans les boucles de rendu
+- **Utiliser** les pools d'objets LibGDX quand possible
+- **Éviter** les opérations coûteuses dans `render()`
+
+### Compatibilité navigateurs
+- **Tester** sur Chrome, Firefox, Safari, Edge
+- **Vérifier** la compatibilité mobile
+- **Utiliser** les viewports responsives
+
+### Navigation et interactions
+- **Tester** la navigation par glisser-déposer sur desktop ET HTML
+- **Vérifier** que les clics fonctionnent correctement
+- **S'assurer** que les InputProcessors sont correctement activés/désactivés
+- **Éviter** les conflits entre différents InputProcessors
+
+## 📋 Checklist de validation
+
+Avant de marquer une fonctionnalité comme "HTML compatible" :
+
+- [ ] Aucun `String.format()` utilisé
+- [ ] Aucun `Gdx.input.justTouched()` ou `Gdx.input.isTouched()` utilisé
+- [ ] InputProcessors correctement implémentés et activés
+- [ ] Compilation GWT réussie sans erreurs
+- [ ] Serveur de développement accessible sur http://localhost:8080
+- [ ] Assets chargés correctement
+- [ ] Interface responsive fonctionnelle
+- [ ] Navigation par glisser-déposer fonctionnelle (desktop ET HTML)
+- [ ] Sons et musiques joués
+- [ ] Mini-jeux fonctionnels
+- [ ] Sauvegarde/chargement des données
+- [ ] Gestion des erreurs robuste
+
+## 🔄 Maintenance continue
+
+### Surveillance des dépendances
+- **Vérifier** que les nouvelles dépendances sont compatibles GWT
+- **Éviter** les bibliothèques qui utilisent la réflexion
+- **Préférer** les alternatives LibGDX quand possible
+
+### Tests réguliers
+- **Exécuter** `.\gradlew.bat :html:clean` avant chaque test
+- **Vérifier** que tous les modules compilent
+- **Tester** le déploiement avec `.\gradlew.bat :html:dist`
+- **Tester** la navigation par glisser-déposer sur desktop ET HTML
+- **Vérifier** que tous les InputProcessors fonctionnent correctement
+
+### Détection de problèmes d'input
+- **Si** une interaction ne fonctionne pas en HTML mais fonctionne en desktop
+- **Vérifier** l'utilisation de `Gdx.input` direct dans le code
+- **Remplacer** par `InputProcessor` si nécessaire
+- **Tester** immédiatement après modification
+
+Ces règles garantissent que votre jeu reste 100% compatible avec le mode HTML/GWT de LibGDX.

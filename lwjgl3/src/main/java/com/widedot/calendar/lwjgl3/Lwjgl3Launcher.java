@@ -5,6 +5,7 @@ import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
 import com.widedot.calendar.Main;
 import com.widedot.calendar.platform.PlatformFactory;
 import com.widedot.calendar.platform.Lwjgl3Platform;
+import com.widedot.calendar.platform.PlatformRegistry;
 
 /** Launches the desktop (LWJGL3) application. */
 public class Lwjgl3Launcher {
@@ -17,6 +18,8 @@ public class Lwjgl3Launcher {
             public void create() {
                 // Initialiser la plateforme après que LibGDX soit prêt
                 PlatformFactory.setPlatform(new Lwjgl3Platform());
+                // Enregistrer l'info de plateforme pour le système d'input
+                PlatformRegistry.set(new DesktopPlatformInfo());
                 super.create();
             }
         }, config);
@@ -35,9 +38,9 @@ public class Lwjgl3Launcher {
         //// useful for testing performance, but can also be very stressful to some hardware.
         //// You may also need to configure GPU drivers to fully disable Vsync; this can cause screen tearing.
 
-        // Démarrer automatiquement en plein écran avec la résolution native
-        configuration.setFullscreenMode(Lwjgl3ApplicationConfiguration.getDisplayMode());
-        configuration.setResizable(false); // Pas de redimensionnement en mode fenêtré
+        // Démarrer en mode fenêtré avec une taille raisonnable
+        configuration.setWindowedMode(1280, 720);
+        configuration.setResizable(true); // Permettre le redimensionnement
         
         //// You can change these files; they are in lwjgl3/src/main/resources/ .
         //// They can also be loaded from the root of assets/ .

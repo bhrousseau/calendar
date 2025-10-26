@@ -1,5 +1,7 @@
 package com.widedot.calendar.debug;
 
+import com.widedot.calendar.utils.GwtCompatibleFormatter;
+
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
@@ -142,7 +144,7 @@ public class SlidingPuzzleDebugManager {
                 debugBgColorB = Integer.parseInt(parts[2]);
             }
         } catch (NumberFormatException e) {
-            System.err.println("Format de couleur invalide: " + colorStr + ", utilisation des valeurs par défaut");
+            Gdx.app.error("SlidingPuzzleDebugManager", "Format de couleur invalide: " + colorStr + ", utilisation des valeurs par défaut");
             debugBgColorR = 0;
             debugBgColorG = 0;
             debugBgColorB = 0;
@@ -153,12 +155,14 @@ public class SlidingPuzzleDebugManager {
      * Gère les événements clavier
      */
     public boolean handleKeyDown(int keycode) {
-        if (keycode == Input.Keys.D) {
+        // Alt+D pour activer/désactiver le mode debug
+        if (keycode == Input.Keys.D && (Gdx.input.isKeyPressed(Input.Keys.ALT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.ALT_RIGHT))) {
             debugMode = !debugMode;
             return true;
         }
 
-        if (keycode == Input.Keys.S && debugMode) {
+        // Alt+S pour sauvegarder les paramètres (uniquement en mode debug)
+        if (keycode == Input.Keys.S && debugMode && (Gdx.input.isKeyPressed(Input.Keys.ALT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.ALT_RIGHT))) {
             saveCurrentSettings();
             return true;
         }
@@ -338,7 +342,7 @@ public class SlidingPuzzleDebugManager {
      */
     private void saveCurrentSettings() {
         if (currentGameReference == null || currentGameReference.isEmpty()) {
-            System.err.println("Impossible de sauvegarder : référence du jeu non définie");
+            Gdx.app.error("SlidingPuzzleDebugManager", "Impossible de sauvegarder : référence du jeu non définie");
             return;
         }
 
@@ -362,7 +366,7 @@ public class SlidingPuzzleDebugManager {
             }
 
             if (targetGame == null) {
-                System.err.println("Jeu non trouvé dans games.json: " + currentGameReference);
+                Gdx.app.error("SlidingPuzzleDebugManager", "Jeu non trouvé dans games.json: " + currentGameReference);
                 return;
             }
 
@@ -407,8 +411,8 @@ public class SlidingPuzzleDebugManager {
             }
 
         } catch (Exception e) {
-            System.err.println("Erreur lors de la sauvegarde des paramètres: " + e.getMessage());
-            e.printStackTrace();
+            Gdx.app.error("SlidingPuzzleDebugManager", "Erreur lors de la sauvegarde des paramètres: " + e.getMessage());
+            // Stack trace logged automatically
         }
     }
 
@@ -469,21 +473,21 @@ public class SlidingPuzzleDebugManager {
         // Paramètres HSL
         boolean isBgHueSelected = selectedDebugParameter == DebugParameter.BG_HUE;
         font.setColor(isBgHueSelected ? 1.0f : 1.0f, isBgHueSelected ? 0.0f : 1.0f, isBgHueSelected ? 0.0f : 1.0f, 1.0f);
-        String bgHueText = "Background Hue: " + String.format("%.1f", debugBackgroundHue);
+        String bgHueText = "Background Hue: " + GwtCompatibleFormatter.formatFloat(debugBackgroundHue, 1);
         layout.setText(font, bgHueText);
         font.draw(batch, layout, x, y);
         y -= lineHeight;
 
         boolean isBgSaturationSelected = selectedDebugParameter == DebugParameter.BG_SATURATION;
         font.setColor(isBgSaturationSelected ? 1.0f : 1.0f, isBgSaturationSelected ? 0.0f : 1.0f, isBgSaturationSelected ? 0.0f : 1.0f, 1.0f);
-        String bgSaturationText = "Background Saturation: " + String.format("%.1f", debugBackgroundSaturation);
+        String bgSaturationText = "Background Saturation: " + GwtCompatibleFormatter.formatFloat(debugBackgroundSaturation, 1);
         layout.setText(font, bgSaturationText);
         font.draw(batch, layout, x, y);
         y -= lineHeight;
 
         boolean isBgLightnessSelected = selectedDebugParameter == DebugParameter.BG_LIGHTNESS;
         font.setColor(isBgLightnessSelected ? 1.0f : 1.0f, isBgLightnessSelected ? 0.0f : 1.0f, isBgLightnessSelected ? 0.0f : 1.0f, 1.0f);
-        String bgLightnessText = "Background Lightness: " + String.format("%.1f", debugBackgroundLightness);
+        String bgLightnessText = "Background Lightness: " + GwtCompatibleFormatter.formatFloat(debugBackgroundLightness, 1);
         layout.setText(font, bgLightnessText);
         font.draw(batch, layout, x, y);
         y -= lineHeight;
@@ -499,7 +503,7 @@ public class SlidingPuzzleDebugManager {
         // Vitesse d'animation
         boolean isAnimationSpeedSelected = selectedDebugParameter == DebugParameter.ANIMATION_SPEED;
         font.setColor(isAnimationSpeedSelected ? 1.0f : 1.0f, isAnimationSpeedSelected ? 0.0f : 1.0f, isAnimationSpeedSelected ? 0.0f : 1.0f, 1.0f);
-        String animationSpeedText = "Animation Speed: " + String.format("%.1f", debugAnimationSpeed);
+        String animationSpeedText = "Animation Speed: " + GwtCompatibleFormatter.formatFloat(debugAnimationSpeed, 1);
         layout.setText(font, animationSpeedText);
         font.draw(batch, layout, x, y);
         y -= lineHeight;

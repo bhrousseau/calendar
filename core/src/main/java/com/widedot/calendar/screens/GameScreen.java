@@ -131,11 +131,11 @@ public abstract class GameScreen implements Screen {
 
     @Override
     public void show() {
-        System.out.println("Méthode show de GameScreen appelée pour le jour " + dayId);
+        Gdx.app.log("GameScreen", "Méthode show de GameScreen appelée pour le jour " + dayId);
         
         // Initialisation lourde (une seule fois)
         if (!isInitialized) {
-            System.out.println("Initialisation de l'écran de jeu pour le jour " + dayId);
+            Gdx.app.log("GameScreen", "Initialisation de l'écran de jeu pour le jour " + dayId);
             
             // Récupérer le thème pour ce jour
             if (game instanceof AdventCalendarGame) {
@@ -143,10 +143,14 @@ public abstract class GameScreen implements Screen {
                 
                 try {
                     theme = loadTheme(dayId);
-                    System.out.println("Thème chargé: " + (theme != null ? theme.getTitle() : "null"));
-                } catch (Exception e) {
-                    System.err.println("Erreur lors du chargement du thème: " + e.getMessage());
-                    e.printStackTrace();
+                    Gdx.app.log("GameScreen", "Thème chargé: " + (theme != null ? theme.getTitle() : "null"));
+                } catch (Throwable e) {
+                    Gdx.app.error("GameScreen", "Erreur lors du chargement du thème: " + e.getClass().getName() + ": " + e.getMessage());
+                    StringBuilder stackTrace = new StringBuilder();
+                    for (StackTraceElement element : e.getStackTrace()) {
+                        stackTrace.append("  at ").append(element.toString()).append("\n");
+                    }
+                    Gdx.app.error("GameScreen", stackTrace.toString());
                 }
                 
                 // Définir un score initial de 0 si non défini
@@ -159,7 +163,7 @@ public abstract class GameScreen implements Screen {
             initializeGame();
             
             isInitialized = true;
-            System.out.println("Initialisation de l'écran de jeu terminée");
+            Gdx.app.log("GameScreen", "Initialisation de l'écran de jeu terminée");
         }
         
         // Activation légère de l'écran (à chaque show())
@@ -196,7 +200,7 @@ public abstract class GameScreen implements Screen {
 
     @Override
     public void resize(int width, int height) {
-        System.out.println("Redimensionnement de GameScreen: " + width + "x" + height);
+        Gdx.app.log("GameScreen", "Redimensionnement de GameScreen: " + width + "x" + height);
         
         // Mettre à jour les dimensions actuelles
         this.currentWidth = width;
@@ -206,13 +210,13 @@ public abstract class GameScreen implements Screen {
         this.viewport = ViewportManager.updateViewportWithReconfiguration(viewport, width, height);
         
         // Informations de debug
-        System.out.println("Viewport: " + viewport.getWorldWidth() + "x" + viewport.getWorldHeight());
-        System.out.println("Redimensionnement terminé");
+        Gdx.app.log("GameScreen", "Viewport: " + viewport.getWorldWidth() + "x" + viewport.getWorldHeight());
+        Gdx.app.log("GameScreen", "Redimensionnement terminé");
     }
 
     @Override
     public void hide() {
-        System.out.println("Méthode hide de GameScreen appelée pour le jour " + dayId);
+        Gdx.app.log("GameScreen", "Méthode hide de GameScreen appelée pour le jour " + dayId);
         
         // Désactivation de l'écran
         onScreenDeactivated();
@@ -220,17 +224,17 @@ public abstract class GameScreen implements Screen {
 
     @Override
     public void pause() {
-        System.out.println("Méthode pause de GameScreen appelée pour le jour " + dayId);
+        Gdx.app.log("GameScreen", "Méthode pause de GameScreen appelée pour le jour " + dayId);
     }
 
     @Override
     public void resume() {
-        System.out.println("Méthode resume de GameScreen appelée pour le jour " + dayId);
+        Gdx.app.log("GameScreen", "Méthode resume de GameScreen appelée pour le jour " + dayId);
     }
 
     @Override
     public void dispose() {
-        System.out.println("Méthode dispose de GameScreen appelée pour le jour " + dayId);
+        Gdx.app.log("GameScreen", "Méthode dispose de GameScreen appelée pour le jour " + dayId);
         batch.dispose();
     }
 

@@ -79,7 +79,7 @@ public class TransitionScreen implements Screen {
         // Configurer la caméra
         this.camera.setToOrtho(false, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         
-        System.out.println("TransitionScreen créé - début de la transition");
+        Gdx.app.log("TransitionScreen", "TransitionScreen créé - début de la transition");
     }
     
     @Override
@@ -119,7 +119,7 @@ public class TransitionScreen implements Screen {
             if (alpha >= 1.0f) {
                 state = TransitionState.BLACK_SCREEN;
                 timer = 0f;
-                System.out.println("Transition : passage à l'écran noir");
+                Gdx.app.log("TransitionScreen", "Transition : passage à l'écran noir");
             }
         } else if (state == TransitionState.BLACK_SCREEN) {
             // Phase d'écran noir et d'initialisation
@@ -129,7 +129,7 @@ public class TransitionScreen implements Screen {
                 // Appeler show() sur l'écran cible pour qu'il s'initialise
                 targetScreen.show();
                 targetInitialized = true;
-                System.out.println("Écran cible initialisé");
+                Gdx.app.log("TransitionScreen", "Écran cible initialisé");
                 
                 // Si l'écran source est toujours attaché, le détacher
                 if (sourceScreen != null && sourceScreen != targetScreen) {
@@ -149,7 +149,7 @@ public class TransitionScreen implements Screen {
                 state = TransitionState.FADE_IN;
                 timer = 0f;
                 alpha = 1.0f;
-                System.out.println("Transition : passage au fade in");
+                Gdx.app.log("TransitionScreen", "Transition : passage au fade in");
             }
         } else {
             // Phase de fade in, rendre l'écran cible avec un fondu depuis le noir
@@ -169,7 +169,7 @@ public class TransitionScreen implements Screen {
             
             // Si le fade in est terminé, passer à l'écran cible
             if (alpha <= 0f) {
-                System.out.println("Transition terminée, passage à l'écran cible");
+                Gdx.app.log("TransitionScreen", "Transition terminée, passage à l'écran cible");
                 
                 // Marquer la fin de la transition
                 isTransitionActive = false;
@@ -184,7 +184,7 @@ public class TransitionScreen implements Screen {
     @Override
     public void show() {
         // Appelé lorsque cet écran devient l'écran actif
-        System.out.println("Écran de transition affiché");
+        Gdx.app.log("TransitionScreen", "Écran de transition affiché");
     }
     
     @Override
@@ -203,7 +203,7 @@ public class TransitionScreen implements Screen {
     @Override
     public void hide() {
         // Appelé lorsque cet écran n'est plus l'écran actif
-        System.out.println("Écran de transition masqué");
+        Gdx.app.log("TransitionScreen", "Écran de transition masqué");
     }
     
     @Override
@@ -226,7 +226,7 @@ public class TransitionScreen implements Screen {
     public void dispose() {
         batch.dispose();
         blackTexture.dispose();
-        System.out.println("Ressources de l'écran de transition libérées");
+        Gdx.app.log("TransitionScreen", "Ressources de l'écran de transition libérées");
         
         // En cas d'appel à dispose sans passer par la fin normale de la transition
         isTransitionActive = false;

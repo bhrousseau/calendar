@@ -47,27 +47,40 @@ public class DynamicGameScreenFactory {
      * @return L'écran de jeu créé
      */
     public GameScreen createGameScreen(int dayId, String gameTemplate, Game game) {
+        Gdx.app.log("DynamicGameScreenFactory", "createGameScreen() - dayId: " + dayId + ", gameTemplate: " + gameTemplate);
+        
+        Gdx.app.log("DynamicGameScreenFactory", "createGameScreen() - Récupération de gameReference");
         String gameReference = DayMappingManager.getInstance().getGameReferenceForDay(dayId);
         if (gameReference == null) {
+            Gdx.app.error("DynamicGameScreenFactory", "createGameScreen() - Aucune configuration trouvée pour le jour " + dayId);
             throw new IllegalArgumentException("Aucune configuration trouvée pour le jour " + dayId);
         }
+        Gdx.app.log("DynamicGameScreenFactory", "createGameScreen() - gameReference: " + gameReference);
 
+        Gdx.app.log("DynamicGameScreenFactory", "createGameScreen() - Récupération de gameConfig");
         GameManager.GameConfig gameConfig = GameManager.getInstance().getGameByReference(gameReference);
         if (gameConfig == null) {
+            Gdx.app.error("DynamicGameScreenFactory", "createGameScreen() - Aucune configuration trouvée pour la référence " + gameReference);
             throw new IllegalArgumentException("Aucune configuration trouvée pour la référence " + gameReference);
         }
+        Gdx.app.log("DynamicGameScreenFactory", "createGameScreen() - gameConfig obtenu");
 
+        Gdx.app.log("DynamicGameScreenFactory", "createGameScreen() - Récupération du template");
         GameTemplateManager.GameTemplate template = GameTemplateManager.getInstance().getTemplateByType(gameTemplate);
         if (template == null) {
+            Gdx.app.error("DynamicGameScreenFactory", "createGameScreen() - Aucun template trouvé pour le type de jeu " + gameTemplate);
             throw new IllegalArgumentException("Aucun template trouvé pour le type de jeu " + gameTemplate);
         }
+        Gdx.app.log("DynamicGameScreenFactory", "createGameScreen() - template obtenu: " + template.getName());
 
+        Gdx.app.log("DynamicGameScreenFactory", "createGameScreen() - Appel à createGameScreen() privée");
         return createGameScreen(gameConfig, template, dayId, game);
     }
 
     private GameScreen createGameScreen(GameManager.GameConfig gameConfig,
                                         GameTemplateManager.GameTemplate template,
                                         int dayId, Game game) {
+        Gdx.app.log("DynamicGameScreenFactory", "createGameScreen(private) - Fusion des paramètres");
         // Fusionner les paramètres dans l'ordre de priorité:
         // 1. Paramètres par défaut du template
         // 2. Paramètres des presets appliqués
@@ -79,6 +92,7 @@ public class DynamicGameScreenFactory {
                 finalParameters.put(entry.key, entry.value);
             }
         }
+        Gdx.app.log("DynamicGameScreenFactory", "createGameScreen(private) - Paramètres par défaut appliqués");
 
         // Appliquer les presets
         Array<String> presets = gameConfig.getPresets();
@@ -94,6 +108,7 @@ public class DynamicGameScreenFactory {
                 }
             }
         }
+        Gdx.app.log("DynamicGameScreenFactory", "createGameScreen(private) - Presets appliqués");
 
         // Appliquer les paramètres spécifiques
         ObjectMap<String, Object> specificParams = gameConfig.getParameters();
@@ -102,21 +117,30 @@ public class DynamicGameScreenFactory {
                 finalParameters.put(entry.key, entry.value);
             }
         }
+        Gdx.app.log("DynamicGameScreenFactory", "createGameScreen(private) - Paramètres spécifiques appliqués");
 
         // Récupérer le thème associé
         String themeName = gameConfig.getTheme();
+        Gdx.app.log("DynamicGameScreenFactory", "createGameScreen(private) - Récupération du thème: " + themeName);
         Theme theme = ThemeManager.getInstance().getThemeByName(themeName);
         if (theme == null) {
+            Gdx.app.error("DynamicGameScreenFactory", "createGameScreen(private) - Thème non trouvé: " + themeName);
             throw new IllegalArgumentException("Thème non trouvé: " + themeName);
         }
+        Gdx.app.log("DynamicGameScreenFactory", "createGameScreen(private) - Thème récupéré");
 
         // Créer l'écran de jeu via le registre
         String gameName = template.getName();
+        Gdx.app.log("DynamicGameScreenFactory", "createGameScreen(private) - Récupération du loader pour: " + gameName);
         GameScreenLoader loader = GameScreenRegistry.getLoader(gameName);
         if (loader == null) {
+            Gdx.app.error("DynamicGameScreenFactory", "createGameScreen(private) - Aucun loader trouvé pour le jeu: " + gameName);
             throw new RuntimeException("Aucun loader trouvé pour le jeu: " + gameName);
         }
-        return loader.create(dayId, game, theme, finalParameters);
+        Gdx.app.log("DynamicGameScreenFactory", "createGameScreen(private) - Loader trouvé, appel à loader.create()");
+        GameScreen result = loader.create(dayId, game, theme, finalParameters);
+        Gdx.app.log("DynamicGameScreenFactory", "createGameScreen(private) - GameScreen créé: " + result.getClass().getSimpleName());
+        return result;
     }
 }
 

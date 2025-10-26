@@ -1,5 +1,7 @@
 package com.widedot.calendar.debug;
 
+import com.widedot.calendar.utils.GwtCompatibleFormatter;
+
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
@@ -30,6 +32,11 @@ public class CrystallizeDebugManager {
     private boolean debugFadeEdges = false;
     private boolean debugMode = false;
     
+    // Paramètres HSL du background (mêmes unités que SlidingPuzzle)
+    private float debugBackgroundHue = 0f;        // 0-360
+    private float debugBackgroundSaturation = 0f; // 0-100
+    private float debugBackgroundLightness = 0f;  // -100 à +100
+    
     // Système de debug avancé
     public enum DebugParameter {
         CRYSTAL_SIZE,
@@ -40,7 +47,10 @@ public class CrystallizeDebugManager {
         EDGE_COLOR_G,
         EDGE_COLOR_B,
         EDGE_COLOR_A,
-        FADE_EDGES
+        FADE_EDGES,
+        BG_HUE,
+        BG_SATURATION,
+        BG_LIGHTNESS
     }
     
     private DebugParameter selectedDebugParameter = DebugParameter.CRYSTAL_SIZE;
@@ -117,6 +127,17 @@ public class CrystallizeDebugManager {
         if (parameters.containsKey("initialCrystalSize")) {
             debugCrystalSize = ((Number) parameters.get("initialCrystalSize")).floatValue();
         }
+        
+        // Charger les paramètres HSL du background (mêmes unités que SlidingPuzzle)
+        if (parameters.containsKey("bgHue")) {
+            debugBackgroundHue = Math.max(0, Math.min(360, ((Number) parameters.get("bgHue")).floatValue()));
+        }
+        if (parameters.containsKey("bgSaturation")) {
+            debugBackgroundSaturation = Math.max(0, Math.min(100, ((Number) parameters.get("bgSaturation")).floatValue()));
+        }
+        if (parameters.containsKey("bgLightness")) {
+            debugBackgroundLightness = Math.max(-100, Math.min(100, ((Number) parameters.get("bgLightness")).floatValue()));
+        }
     }
     
     /**
@@ -143,12 +164,14 @@ public class CrystallizeDebugManager {
      * Gère les événements clavier
      */
             public boolean handleKeyDown(int keycode) {
-                if (keycode == Input.Keys.D) {
+                // Alt+D pour activer/désactiver le mode debug
+                if (keycode == Input.Keys.D && (Gdx.input.isKeyPressed(Input.Keys.ALT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.ALT_RIGHT))) {
                     debugMode = !debugMode;
                     return true;
                 }
                 
-                if (keycode == Input.Keys.S && debugMode) {
+                // Alt+S pour sauvegarder les paramètres (uniquement en mode debug)
+                if (keycode == Input.Keys.S && debugMode && (Gdx.input.isKeyPressed(Input.Keys.ALT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.ALT_RIGHT))) {
                     saveCurrentSettings();
                     return true;
                 }
@@ -158,7 +181,7 @@ public class CrystallizeDebugManager {
                         // Changer de paramètre sélectionné (cycle vers le haut)
                         switch (selectedDebugParameter) {
                             case CRYSTAL_SIZE:
-                                selectedDebugParameter = DebugParameter.FADE_EDGES;
+                                selectedDebugParameter = DebugParameter.BG_LIGHTNESS;
                                 break;
                             case EDGE_THICKNESS:
                                 selectedDebugParameter = DebugParameter.CRYSTAL_SIZE;
@@ -183,6 +206,15 @@ public class CrystallizeDebugManager {
                                 break;
                             case FADE_EDGES:
                                 selectedDebugParameter = DebugParameter.EDGE_COLOR_A;
+                                break;
+                            case BG_HUE:
+                                selectedDebugParameter = DebugParameter.FADE_EDGES;
+                                break;
+                            case BG_SATURATION:
+                                selectedDebugParameter = DebugParameter.BG_HUE;
+                                break;
+                            case BG_LIGHTNESS:
+                                selectedDebugParameter = DebugParameter.BG_SATURATION;
                                 break;
                         }
                         return true;
@@ -215,6 +247,15 @@ public class CrystallizeDebugManager {
                                 selectedDebugParameter = DebugParameter.FADE_EDGES;
                                 break;
                             case FADE_EDGES:
+                                selectedDebugParameter = DebugParameter.BG_HUE;
+                                break;
+                            case BG_HUE:
+                                selectedDebugParameter = DebugParameter.BG_SATURATION;
+                                break;
+                            case BG_SATURATION:
+                                selectedDebugParameter = DebugParameter.BG_LIGHTNESS;
+                                break;
+                            case BG_LIGHTNESS:
                                 selectedDebugParameter = DebugParameter.CRYSTAL_SIZE;
                                 break;
                         }
@@ -316,6 +357,15 @@ public class CrystallizeDebugManager {
                 // Toggle pour le booléen
                 debugFadeEdges = !debugFadeEdges;
                 break;
+            case BG_HUE:
+                debugBackgroundHue = Math.max(0.0f, Math.min(360.0f, debugBackgroundHue + direction * 1.0f));
+                break;
+            case BG_SATURATION:
+                debugBackgroundSaturation = Math.max(0.0f, Math.min(100.0f, debugBackgroundSaturation + direction * 1.0f));
+                break;
+            case BG_LIGHTNESS:
+                debugBackgroundLightness = Math.max(-100.0f, Math.min(100.0f, debugBackgroundLightness + direction * 1.0f));
+                break;
         }
         
         // Notifier le changement
@@ -361,7 +411,7 @@ public class CrystallizeDebugManager {
         // Taille des cellules
         boolean isCrystalSizeSelected = selectedDebugParameter == DebugParameter.CRYSTAL_SIZE;
         font.setColor(isCrystalSizeSelected ? 1.0f : 1.0f, isCrystalSizeSelected ? 0.0f : 1.0f, isCrystalSizeSelected ? 0.0f : 1.0f, 1.0f);
-        String crystalSizeText = "Crystal Size: " + String.format("%.0f", debugCrystalSize);
+        String crystalSizeText = "Crystal Size: " + GwtCompatibleFormatter.formatFloat(debugCrystalSize, 0);
         layout.setText(font, crystalSizeText);
         font.draw(batch, layout, x, y);
         y -= lineHeight;
@@ -369,7 +419,7 @@ public class CrystallizeDebugManager {
         // Épaisseur des bords (edge thickness)
         boolean isEdgeThicknessSelected = selectedDebugParameter == DebugParameter.EDGE_THICKNESS;
         font.setColor(isEdgeThicknessSelected ? 1.0f : 1.0f, isEdgeThicknessSelected ? 0.0f : 1.0f, isEdgeThicknessSelected ? 0.0f : 1.0f, 1.0f);
-        String edgeThicknessText = "Edge Thickness: " + String.format("%.3f", debugEdgeThickness);
+        String edgeThicknessText = "Edge Thickness: " + GwtCompatibleFormatter.formatFloat(debugEdgeThickness, 3);
         layout.setText(font, edgeThicknessText);
         font.draw(batch, layout, x, y);
         y -= lineHeight;
@@ -377,7 +427,7 @@ public class CrystallizeDebugManager {
         // Randomness
         boolean isRandomnessSelected = selectedDebugParameter == DebugParameter.RANDOMNESS;
         font.setColor(isRandomnessSelected ? 1.0f : 1.0f, isRandomnessSelected ? 0.0f : 1.0f, isRandomnessSelected ? 0.0f : 1.0f, 1.0f);
-        String randomnessText = "Randomness: " + String.format("%.4f", debugRandomness);
+        String randomnessText = "Randomness: " + GwtCompatibleFormatter.formatFloat(debugRandomness, 4);
         layout.setText(font, randomnessText);
         font.draw(batch, layout, x, y);
         y -= lineHeight;
@@ -385,7 +435,7 @@ public class CrystallizeDebugManager {
         // Stretch
         boolean isStretchSelected = selectedDebugParameter == DebugParameter.STRETCH;
         font.setColor(isStretchSelected ? 1.0f : 1.0f, isStretchSelected ? 0.0f : 1.0f, isStretchSelected ? 0.0f : 1.0f, 1.0f);
-        String stretchText = "Stretch: " + String.format("%.3f", debugStretch);
+        String stretchText = "Stretch: " + GwtCompatibleFormatter.formatFloat(debugStretch, 3);
         layout.setText(font, stretchText);
         font.draw(batch, layout, x, y);
         y -= lineHeight;
@@ -393,7 +443,7 @@ public class CrystallizeDebugManager {
         // Couleur de bord R
         boolean isEdgeColorRSelected = selectedDebugParameter == DebugParameter.EDGE_COLOR_R;
         font.setColor(isEdgeColorRSelected ? 1.0f : 1.0f, isEdgeColorRSelected ? 0.0f : 1.0f, isEdgeColorRSelected ? 0.0f : 1.0f, 1.0f);
-        String edgeColorRText = "Edge Color R: " + String.format("%.3f", debugEdgeColorR);
+        String edgeColorRText = "Edge Color R: " + GwtCompatibleFormatter.formatFloat(debugEdgeColorR, 3);
         layout.setText(font, edgeColorRText);
         font.draw(batch, layout, x, y);
         y -= lineHeight;
@@ -401,7 +451,7 @@ public class CrystallizeDebugManager {
         // Couleur de bord G
         boolean isEdgeColorGSelected = selectedDebugParameter == DebugParameter.EDGE_COLOR_G;
         font.setColor(isEdgeColorGSelected ? 1.0f : 1.0f, isEdgeColorGSelected ? 0.0f : 1.0f, isEdgeColorGSelected ? 0.0f : 1.0f, 1.0f);
-        String edgeColorGText = "Edge Color G: " + String.format("%.3f", debugEdgeColorG);
+        String edgeColorGText = "Edge Color G: " + GwtCompatibleFormatter.formatFloat(debugEdgeColorG, 3);
         layout.setText(font, edgeColorGText);
         font.draw(batch, layout, x, y);
         y -= lineHeight;
@@ -409,7 +459,7 @@ public class CrystallizeDebugManager {
         // Couleur de bord B
         boolean isEdgeColorBSelected = selectedDebugParameter == DebugParameter.EDGE_COLOR_B;
         font.setColor(isEdgeColorBSelected ? 1.0f : 1.0f, isEdgeColorBSelected ? 0.0f : 1.0f, isEdgeColorBSelected ? 0.0f : 1.0f, 1.0f);
-        String edgeColorBText = "Edge Color B: " + String.format("%.3f", debugEdgeColorB);
+        String edgeColorBText = "Edge Color B: " + GwtCompatibleFormatter.formatFloat(debugEdgeColorB, 3);
         layout.setText(font, edgeColorBText);
         font.draw(batch, layout, x, y);
         y -= lineHeight;
@@ -417,7 +467,7 @@ public class CrystallizeDebugManager {
         // Couleur de bord A
         boolean isEdgeColorASelected = selectedDebugParameter == DebugParameter.EDGE_COLOR_A;
         font.setColor(isEdgeColorASelected ? 1.0f : 1.0f, isEdgeColorASelected ? 0.0f : 1.0f, isEdgeColorASelected ? 0.0f : 1.0f, 1.0f);
-        String edgeColorAText = "Edge Color A: " + String.format("%.3f", debugEdgeColorA);
+        String edgeColorAText = "Edge Color A: " + GwtCompatibleFormatter.formatFloat(debugEdgeColorA, 3);
         layout.setText(font, edgeColorAText);
         font.draw(batch, layout, x, y);
         y -= lineHeight;
@@ -427,6 +477,28 @@ public class CrystallizeDebugManager {
         font.setColor(isFadeEdgesSelected ? 1.0f : 1.0f, isFadeEdgesSelected ? 0.0f : 1.0f, isFadeEdgesSelected ? 0.0f : 1.0f, 1.0f);
         String fadeEdgesText = "Fade Edges: " + (debugFadeEdges ? "ON" : "OFF");
         layout.setText(font, fadeEdgesText);
+        font.draw(batch, layout, x, y);
+        y -= lineHeight;
+        
+        // Paramètres HSL du background
+        boolean isBgHueSelected = selectedDebugParameter == DebugParameter.BG_HUE;
+        font.setColor(isBgHueSelected ? 1.0f : 1.0f, isBgHueSelected ? 0.0f : 1.0f, isBgHueSelected ? 0.0f : 1.0f, 1.0f);
+        String bgHueText = "Background Hue: " + GwtCompatibleFormatter.formatFloat(debugBackgroundHue, 1);
+        layout.setText(font, bgHueText);
+        font.draw(batch, layout, x, y);
+        y -= lineHeight;
+
+        boolean isBgSaturationSelected = selectedDebugParameter == DebugParameter.BG_SATURATION;
+        font.setColor(isBgSaturationSelected ? 1.0f : 1.0f, isBgSaturationSelected ? 0.0f : 1.0f, isBgSaturationSelected ? 0.0f : 1.0f, 1.0f);
+        String bgSaturationText = "Background Saturation: " + GwtCompatibleFormatter.formatFloat(debugBackgroundSaturation, 1);
+        layout.setText(font, bgSaturationText);
+        font.draw(batch, layout, x, y);
+        y -= lineHeight;
+
+        boolean isBgLightnessSelected = selectedDebugParameter == DebugParameter.BG_LIGHTNESS;
+        font.setColor(isBgLightnessSelected ? 1.0f : 1.0f, isBgLightnessSelected ? 0.0f : 1.0f, isBgLightnessSelected ? 0.0f : 1.0f, 1.0f);
+        String bgLightnessText = "Background Lightness: " + GwtCompatibleFormatter.formatFloat(debugBackgroundLightness, 1);
+        layout.setText(font, bgLightnessText);
         font.draw(batch, layout, x, y);
         y -= lineHeight;
         
@@ -498,17 +570,30 @@ public class CrystallizeDebugManager {
         return debugFadeEdges;
     }
     
+    // Getters pour les paramètres HSL du background
+    public float getDebugBackgroundHue() {
+        return debugBackgroundHue;
+    }
+    
+    public float getDebugBackgroundSaturation() {
+        return debugBackgroundSaturation;
+    }
+    
+    public float getDebugBackgroundLightness() {
+        return debugBackgroundLightness;
+    }
+    
     /**
      * Sauvegarde les paramètres actuels de debug dans le fichier games.json
      */
     private void saveCurrentSettings() {
         if (currentGameReference == null || currentGameReference.isEmpty()) {
-            System.err.println("Impossible de sauvegarder : référence du jeu non définie");
+            Gdx.app.error("CrystallizeDebugManager", "Impossible de sauvegarder : référence du jeu non définie");
             return;
         }
         
         try {
-            System.out.println("Sauvegarde des paramètres de debug pour le jeu: " + currentGameReference);
+            Gdx.app.log("CrystallizeDebugManager", "Sauvegarde des paramètres de debug pour le jeu: " + currentGameReference);
             
             // Lire le fichier games.json
             String jsonContent = Gdx.files.internal(gamesJsonPath).readString();
@@ -528,7 +613,7 @@ public class CrystallizeDebugManager {
             }
             
             if (targetGame == null) {
-                System.err.println("Jeu non trouvé dans games.json: " + currentGameReference);
+                Gdx.app.error("CrystallizeDebugManager", "Jeu non trouvé dans games.json: " + currentGameReference);
                 return;
             }
             
@@ -551,8 +636,18 @@ public class CrystallizeDebugManager {
             parameters.remove("fadeEdges");
             parameters.addChild("fadeEdges", new JsonValue(debugFadeEdges));
             parameters.remove("edgeColor");
-            parameters.addChild("edgeColor", new JsonValue(String.format("%.3f,%.3f,%.3f,%.3f", 
-                debugEdgeColorR, debugEdgeColorG, debugEdgeColorB, debugEdgeColorA)));
+            parameters.addChild("edgeColor", new JsonValue(GwtCompatibleFormatter.formatFloat(debugEdgeColorR, 3) + "," +
+                GwtCompatibleFormatter.formatFloat(debugEdgeColorG, 3) + "," +
+                GwtCompatibleFormatter.formatFloat(debugEdgeColorB, 3) + "," +
+                GwtCompatibleFormatter.formatFloat(debugEdgeColorA, 3)));
+            
+            // Sauvegarder les paramètres HSL du background
+            parameters.remove("bgHue");
+            parameters.addChild("bgHue", new JsonValue(debugBackgroundHue));
+            parameters.remove("bgSaturation");
+            parameters.addChild("bgSaturation", new JsonValue(debugBackgroundSaturation));
+            parameters.remove("bgLightness");
+            parameters.addChild("bgLightness", new JsonValue(debugBackgroundLightness));
             
             // Reconstruire le JSON
             String updatedJson = root.prettyPrint(JsonWriter.OutputType.json, 0);
@@ -561,21 +656,26 @@ public class CrystallizeDebugManager {
             String localPath = "games.json"; // Fichier local sans le dossier assets
             Gdx.files.local(localPath).writeString(updatedJson, false);
             
-            System.out.println("Paramètres sauvegardés avec succès dans: " + localPath);
-            System.out.println("  - InitialCrystalSize: " + (int)debugCrystalSize);
-            System.out.println("  - Randomness: " + debugRandomness);
-            System.out.println("  - EdgeThickness: " + debugEdgeThickness);
-            System.out.println("  - Stretch: " + debugStretch);
-            System.out.println("  - FadeEdges: " + debugFadeEdges);
-            System.out.println("  - EdgeColor: " + String.format("%.3f,%.3f,%.3f,%.3f", 
-                debugEdgeColorR, debugEdgeColorG, debugEdgeColorB, debugEdgeColorA));
+            Gdx.app.log("CrystallizeDebugManager", "Paramètres sauvegardés avec succès dans: " + localPath);
+            Gdx.app.log("CrystallizeDebugManager", "  - InitialCrystalSize: " + (int)debugCrystalSize);
+            Gdx.app.log("CrystallizeDebugManager", "  - Randomness: " + debugRandomness);
+            Gdx.app.log("CrystallizeDebugManager", "  - EdgeThickness: " + debugEdgeThickness);
+            Gdx.app.log("CrystallizeDebugManager", "  - Stretch: " + debugStretch);
+            Gdx.app.log("CrystallizeDebugManager", "  - FadeEdges: " + debugFadeEdges);
+            Gdx.app.log("CrystallizeDebugManager", "  - EdgeColor: " + GwtCompatibleFormatter.formatFloat(debugEdgeColorR, 3) + "," +
+                GwtCompatibleFormatter.formatFloat(debugEdgeColorG, 3) + "," +
+                GwtCompatibleFormatter.formatFloat(debugEdgeColorB, 3) + "," +
+                GwtCompatibleFormatter.formatFloat(debugEdgeColorA, 3));
+            Gdx.app.log("CrystallizeDebugManager", "  - Background HSL: H=" + GwtCompatibleFormatter.formatFloat(debugBackgroundHue, 1) + 
+                " S=" + GwtCompatibleFormatter.formatFloat(debugBackgroundSaturation, 1) + 
+                " L=" + GwtCompatibleFormatter.formatFloat(debugBackgroundLightness, 1));
             
             // Activer la confirmation visuelle
             showSaveConfirmation = true;
             saveConfirmationTimer = 0.0f;
             
         } catch (Exception e) {
-            System.err.println("Erreur lors de la sauvegarde des paramètres: " + e.getMessage());
+            Gdx.app.error("CrystallizeDebugManager", "Erreur lors de la sauvegarde des paramètres: " + e.getMessage());
             e.printStackTrace();
         }
     }

@@ -13,6 +13,11 @@ import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.utils.ObjectMap;
+import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.widedot.calendar.ui.BottomInputBar;
+import com.widedot.calendar.platform.PlatformRegistry;
 import com.widedot.calendar.AdventCalendarGame;
 import com.widedot.calendar.data.Theme;
 import com.widedot.calendar.config.Config;
@@ -41,7 +46,6 @@ public class CrystalizeGuessGameScreen extends GameScreen {
     private final BitmapFont font;
     private final BitmapFont bigFont;
     private final GlyphLayout layout;
-    private final Rectangle submitButton;
     private final Rectangle closeButton;
     private final Rectangle infoButton;
     private Color backgroundColor;
@@ -51,6 +55,13 @@ public class CrystalizeGuessGameScreen extends GameScreen {
     private Texture infoButtonTexture;
     private boolean showInfoPanel;
     
+    // Nouveau système d'input
+    private Stage inputStage;
+    private Skin inputSkin;
+    private BottomInputBar inputBar;
+    private Table rootTable;
+    private boolean inputBarVisible = true;
+    
     // Game data
     private int maxAttempts;
     private int currentAttempt;
@@ -59,9 +70,7 @@ public class CrystalizeGuessGameScreen extends GameScreen {
     private boolean gameFinished;
     private Theme theme;
     
-    // Input system
-    private StringBuilder userInput;
-    private boolean isInputActive;
+    // Input system (simplifié)
     private String correctAnswer;
     private int wrongAnswers;
     private boolean hasUsedHelp;
@@ -72,6 +81,7 @@ public class CrystalizeGuessGameScreen extends GameScreen {
     
     // Shader et rendu
     private CrystallizeShader crystallizeShader;
+    private FrameBuffer currentFrameBuffer; // FrameBuffer pour la texture shader
     
     // Système de debug
     private CrystallizeDebugManager debugManager;
@@ -98,6 +108,23 @@ public class CrystalizeGuessGameScreen extends GameScreen {
     private float currentEdgeColorA = 1.0f;
     
     
+    
+    // Background avec HSL (mêmes unités que SlidingPuzzle)
+    private Texture backgroundTexture;
+    private float backgroundHue = 0f;        // 0-360
+    private float backgroundSaturation = 0f; // 0-100
+    private float backgroundLightness = 0f;  // -100 à +100
+    private float currentBgWidth;
+    private float currentBgHeight;
+    private float currentBgX;
+    private float currentBgY;
+    private float currentScaleX;
+    private float currentScaleY;
+    
+    // Fade des boutons et du fond
+    private boolean isButtonsFading = false;
+    private float buttonsFadeTimer = 0f;
+    private static final float BUTTONS_FADE_DURATION = 2f;
     
     // Sons
     private Sound winSound;
@@ -128,7 +155,7 @@ public class CrystalizeGuessGameScreen extends GameScreen {
         
         // Vérifier si on est en mode test
         this.isTestMode = Config.getInstance().isTestModeEnabled();
-        System.out.println("Mode test CrystalizeGuess: " + isTestMode);
+        Gdx.app.log("CrystalizeGuessGameScreen", "Mode test CrystalizeGuess: " + isTestMode);
         
         // Appliquer les paramètres spécifiques s'ils existent
         if (parameters != null) {
@@ -161,12 +188,34 @@ public class CrystalizeGuessGameScreen extends GameScreen {
                 parseEdgeColorFromString(edgeColorStr);
             }
             
-            System.out.println("Paramètres du shader chargés:");
-            System.out.println("  - Randomness: " + currentRandomness);
-            System.out.println("  - EdgeThickness: " + currentEdgeThickness);
-            System.out.println("  - Stretch: " + currentStretch);
-            System.out.println("  - FadeEdges: " + currentFadeEdges);
-            System.out.println("  - EdgeColor: R=" + currentEdgeColorR + " G=" + currentEdgeColorG + " B=" + currentEdgeColorB + " A=" + currentEdgeColorA);
+            // Charger les paramètres HSL du background (mêmes unités que SlidingPuzzle)
+            if (parameters.containsKey("bgHue")) {
+                this.backgroundHue = Math.max(0, Math.min(360, ((Number) parameters.get("bgHue")).floatValue()));
+            }
+            if (parameters.containsKey("bgSaturation")) {
+                this.backgroundSaturation = Math.max(0, Math.min(100, ((Number) parameters.get("bgSaturation")).floatValue()));
+            }
+            if (parameters.containsKey("bgLightness")) {
+                this.backgroundLightness = Math.max(-100, Math.min(100, ((Number) parameters.get("bgLightness")).floatValue()));
+            }
+            
+            Gdx.app.log("CrystalizeGuessGameScreen", "Paramètres du shader chargés:");
+            Gdx.app.log("CrystalizeGuessGameScreen", "  - Randomness: " + currentRandomness);
+            Gdx.app.log("CrystalizeGuessGameScreen", "  - EdgeThickness: " + currentEdgeThickness);
+            Gdx.app.log("CrystalizeGuessGameScreen", "  - Stretch: " + currentStretch);
+            Gdx.app.log("CrystalizeGuessGameScreen", "  - FadeEdges: " + currentFadeEdges);
+            Gdx.app.log("CrystalizeGuessGameScreen", "  - EdgeColor: R=" + currentEdgeColorR + " G=" + currentEdgeColorG + " B=" + currentEdgeColorB + " A=" + currentEdgeColorA);
+            Gdx.app.log("CrystalizeGuessGameScreen", "  - Background HSL: H=" + backgroundHue + " S=" + backgroundSaturation + " L=" + backgroundLightness);
+        }
+        
+        // Charger la texture du background
+        Gdx.app.log("CrystalizeGuessGameScreen", "Chargement du background...");
+        try {
+            this.backgroundTexture = new Texture(Gdx.files.internal("images/games/cgg/background-0.png"));
+            Gdx.app.log("CrystalizeGuessGameScreen", "Background chargé.");
+        } catch (Exception e) {
+            Gdx.app.error("CrystalizeGuessGameScreen", "Erreur lors du chargement du background: " + e.getMessage());
+            this.backgroundTexture = null;
         }
         
         // Initialiser les éléments UI
@@ -176,7 +225,6 @@ public class CrystalizeGuessGameScreen extends GameScreen {
         this.bigFont.getData().setScale(2.0f);
         this.layout = new GlyphLayout();
         
-        this.submitButton = new Rectangle(0, 0, 200, 80);
         this.closeButton = new Rectangle(0, 0, 100, 100);
         this.infoButton = new Rectangle(0, 0, 100, 100);
         
@@ -191,14 +239,14 @@ public class CrystalizeGuessGameScreen extends GameScreen {
         try {
             this.closeButtonTexture = new Texture(Gdx.files.internal("images/ui/close.png"));
         } catch (Exception e) {
-            System.err.println("Erreur lors du chargement du bouton close: " + e.getMessage());
+            Gdx.app.error("CrystalizeGuessGameScreen", "Erreur lors du chargement du bouton close: " + e.getMessage());
             this.closeButtonTexture = null;
         }
         
         try {
             this.infoButtonTexture = new Texture(Gdx.files.internal("images/ui/help.png"));
         } catch (Exception e) {
-            System.err.println("Erreur lors du chargement du bouton info: " + e.getMessage());
+            Gdx.app.error("CrystalizeGuessGameScreen", "Erreur lors du chargement du bouton info: " + e.getMessage());
             this.infoButtonTexture = null;
         }
         
@@ -211,12 +259,13 @@ public class CrystalizeGuessGameScreen extends GameScreen {
         this.gameFinished = false;
         this.showInfoPanel = false;
         
-        // Initialiser le système d'input
-        this.userInput = new StringBuilder();
-        this.isInputActive = false;
+        // Initialiser le système d'input (simplifié)
         this.correctAnswer = theme.getTitle(); // Utiliser le titre du thème comme réponse correcte
         this.wrongAnswers = 0;
         this.hasUsedHelp = false;
+        
+        // Initialiser le nouveau système d'input
+        initializeInputSystem();
         
         // Initialiser la taille de cristal actuelle
         this.currentCrystalSize = initialCrystalSize;
@@ -232,12 +281,147 @@ public class CrystalizeGuessGameScreen extends GameScreen {
         
         // Le shader sera initialisé plus tard quand le viewport sera prêt
         
-        System.out.println("Constructeur CrystalizeGuessGameScreen terminé");
+        Gdx.app.log("CrystalizeGuessGameScreen", "Constructeur CrystalizeGuessGameScreen terminé");
+    }
+    
+    /**
+     * Initialise le nouveau système d'input avec BottomInputBar
+     */
+    private void initializeInputSystem() {
+        // Créer le stage pour l'input
+        inputStage = new Stage(viewport);
+        
+        // Créer le skin (utiliser le skin par défaut de LibGDX)
+        try {
+            inputSkin = new Skin(Gdx.files.internal("uiskin.json"));
+            Gdx.app.log("CrystalizeGuessGameScreen", "Skin uiskin.json chargé avec succès");
+        } catch (Exception e) {
+            Gdx.app.log("CrystalizeGuessGameScreen", "Skin uiskin.json non trouvé, création d'un skin basique");
+            // Fallback: créer un skin basique avec les styles par défaut
+            inputSkin = createBasicSkin();
+        }
+        
+        // Créer la table racine
+        rootTable = new Table();
+        rootTable.setFillParent(true);
+        inputStage.addActor(rootTable);
+        
+        // Créer la barre d'input
+        inputBar = new BottomInputBar(inputSkin);
+        inputBar.setListener(new BottomInputBar.Listener() {
+            @Override
+            public void onSubmit(String text) {
+                handleUserInput(text);
+            }
+            
+            @Override
+            public void onFocusChanged(boolean focused) {
+                handleInputFocusChange(focused);
+            }
+        });
+        
+        // Ajouter la barre d'input en bas
+        rootTable.add().expand().fill();
+        rootTable.row();
+        rootTable.add(inputBar).expandX().fillX().pad(0).height(120).colspan(1); // Pas de padding horizontal pour toute la largeur
+        
+        // Définir le texte de placeholder spécifique au jeu crystalize
+        inputBar.setPlaceholderText("Donner le nom de ce tableau ...");
+        
+        Gdx.app.log("CrystalizeGuessGameScreen", "Système d'input initialisé");
+    }
+    
+    /**
+     * Crée un skin basique avec les styles nécessaires
+     */
+    private Skin createBasicSkin() {
+        Skin basicSkin = new Skin();
+        
+        // Créer une police basique
+        BitmapFont basicFont = new BitmapFont();
+        
+        // Créer un style TextField basique
+        com.badlogic.gdx.scenes.scene2d.ui.TextField.TextFieldStyle textFieldStyle = 
+            new com.badlogic.gdx.scenes.scene2d.ui.TextField.TextFieldStyle();
+        textFieldStyle.font = basicFont;
+        textFieldStyle.fontColor = Color.WHITE;
+        // Pas de cursor personnalisé pour éviter les erreurs
+        
+        // Ajouter le style au skin
+        basicSkin.add("default", textFieldStyle);
+        
+        Gdx.app.log("CrystalizeGuessGameScreen", "Skin basique créé avec succès");
+        return basicSkin;
+    }
+    
+    /**
+     * Gère la soumission de l'input utilisateur
+     */
+    private void handleUserInput(String text) {
+        if (gameFinished || text.trim().isEmpty()) return;
+        
+        // Vérifier si la réponse est correcte
+        if (text.trim().equalsIgnoreCase(correctAnswer)) {
+            // Effacer le champ de saisie
+            inputBar.clear();
+            
+            // Masquer le champ de saisie immédiatement
+            inputBarVisible = false;
+            
+            // Réponse correcte - gagner le jeu
+            gameWon = true;
+            gameFinished = true;
+            
+            // Démarrer le fondu des boutons et du fond
+            isButtonsFading = true;
+            buttonsFadeTimer = 0f;
+            
+            if (winSound != null) {
+                winSound.play();
+            }
+            
+            // Enregistrer le score
+            int finalScore = calculateScore();
+            if (game instanceof AdventCalendarGame) {
+                AdventCalendarGame adventGame = (AdventCalendarGame) game;
+                adventGame.setScore(dayId, finalScore);
+                adventGame.setVisited(dayId, true);
+            }
+            
+            // Démarrer l'animation de révélation finale
+            startFinalRevealAnimation();
+        } else {
+            // Réponse incorrecte
+            wrongAnswers++;
+            
+            if (wrongSound != null) {
+                wrongSound.play();
+            }
+            
+            // Si 5 mauvaises réponses, améliorer l'image
+            if (wrongAnswers >= 5 && !hasUsedHelp) {
+                hasUsedHelp = true;
+                improveImage();
+            }
+        }
+    }
+    
+    /**
+     * Gère le changement de focus de l'input (pour le clavier virtuel mobile)
+     */
+    private void handleInputFocusChange(boolean focused) {
+        boolean isMobileWeb = PlatformRegistry.isMobileBrowser();
+        if (isMobileWeb) {
+            // Ajuster le padding bas pour surélever la barre au-dessus du clavier
+            float paddingBottom = focused ? 280f : 0f;
+            rootTable.padBottom(paddingBottom);
+            rootTable.invalidateHierarchy();
+        }
     }
     
     @Override
     protected Theme loadTheme(int day) {
-        System.out.println("Chargement de la texture pour le jour " + day);
+        Gdx.app.log("CrystalizeGuessGameScreen", "Chargement de la texture pour le jour " + day);
         
         String fullImagePath = theme.getFullImagePath();
         if (fullImagePath == null || fullImagePath.isEmpty()) {
@@ -252,8 +436,8 @@ public class CrystalizeGuessGameScreen extends GameScreen {
             initializeGameWithCrystalizedImage(fullImagePath);
             
         } catch (Exception e) {
-            System.err.println("Erreur lors du chargement de la texture: " + e.getMessage());
-            e.printStackTrace();
+            Gdx.app.error("CrystalizeGuessGameScreen", "Erreur lors du chargement de la texture: " + e.getMessage());
+            // Stack trace logged automatically
             throw new IllegalStateException("Erreur lors du chargement de la texture", e);
         }
         
@@ -283,16 +467,16 @@ public class CrystalizeGuessGameScreen extends GameScreen {
      * Initialise le shader de cristallisation
      */
     private void initializeCrystallizeShader() {
-        System.out.println("Initialisation du shader de cristallisation");
+        Gdx.app.log("CrystalizeGuessGameScreen", "Initialisation du shader de cristallisation");
         
         try {
             // Créer le shader
             crystallizeShader = new CrystallizeShader();
-            System.out.println("Shader de cristallisation initialisé avec succès");
+            Gdx.app.log("CrystalizeGuessGameScreen", "Shader de cristallisation initialisé avec succès");
             
         } catch (Exception e) {
-            System.err.println("Erreur lors de l'initialisation du shader: " + e.getMessage());
-            e.printStackTrace();
+            Gdx.app.error("CrystalizeGuessGameScreen", "Erreur lors de l'initialisation du shader: " + e.getMessage());
+            // Stack trace logged automatically
         }
     }
     
@@ -301,30 +485,30 @@ public class CrystalizeGuessGameScreen extends GameScreen {
      * Initialise le jeu avec l'image la plus cristallisée
      */
     private void initializeGameWithCrystalizedImage(String imagePath) {
-        System.out.println("=== INITIALISATION du jeu avec image cristallisée ===");
+        Gdx.app.log("CrystalizeGuessGameScreen", "=== INITIALISATION du jeu avec image cristallisée ===");
         
         try {
-            System.out.println("Chargement de l'image: " + imagePath);
+            Gdx.app.log("CrystalizeGuessGameScreen", "Chargement de l'image: " + imagePath);
             
             // Appliquer le shader le plus fort (tentative 0) seulement si le shader est initialisé
             if (crystallizeShader != null) {
-                System.out.println("Application du shader initial (cristallisation maximale)...");
+                Gdx.app.log("CrystalizeGuessGameScreen", "Application du shader initial (cristallisation maximale)...");
                 currentCrystalizedTexture = applyCrystallizeShader(originalImageTexture, initialCrystalSize);
-                System.out.println("Shader appliqué avec succès");
+                Gdx.app.log("CrystalizeGuessGameScreen", "Shader appliqué avec succès");
             } else {
-                System.out.println("Shader pas encore initialisé, utilisation de l'image originale");
+                Gdx.app.log("CrystalizeGuessGameScreen", "Shader pas encore initialisé, utilisation de l'image originale");
                 currentCrystalizedTexture = originalImageTexture;
             }
             
-            System.out.println("=== INITIALISATION TERMINÉE ===");
+            Gdx.app.log("CrystalizeGuessGameScreen", "=== INITIALISATION TERMINÉE ===");
             
         } catch (Exception e) {
-            System.err.println("=== ERREUR INITIALISATION ===");
-            System.err.println("Erreur lors de l'initialisation: " + e.getMessage());
-            e.printStackTrace();
+            Gdx.app.error("CrystalizeGuessGameScreen", "=== ERREUR INITIALISATION ===");
+            Gdx.app.error("CrystalizeGuessGameScreen", "Erreur lors de l'initialisation: " + e.getMessage());
+            // Stack trace logged automatically
             
             // En cas d'erreur, utiliser l'image originale
-            System.out.println("Utilisation de l'image originale comme fallback");
+            Gdx.app.log("CrystalizeGuessGameScreen", "Utilisation de l'image originale comme fallback");
             currentCrystalizedTexture = originalImageTexture;
         }
     }
@@ -335,29 +519,28 @@ public class CrystalizeGuessGameScreen extends GameScreen {
     private Texture applyCrystallizeShader(Texture sourceTexture, float crystalSize) {
         
         if (crystalSize <= 1 || crystallizeShader == null) {
-            System.out.println("CrystalSize <= 1 ou shader non initialisé, retour de l'image originale");
+            Gdx.app.log("CrystalizeGuessGameScreen", "CrystalSize <= 1 ou shader non initialisé, retour de l'image originale");
             return sourceTexture;
         }
         
         try {
             return renderWithShader(sourceTexture, crystalSize);
         } catch (Exception e) {
-            System.err.println("ERREUR dans applyCrystallizeShader: " + e.getMessage());
-            e.printStackTrace();
+            Gdx.app.error("CrystalizeGuessGameScreen", "ERREUR dans applyCrystallizeShader: " + e.getMessage());
+            // Stack trace logged automatically
             return sourceTexture;
         }
     }
     
     /**
      * Effectue le rendu avec le shader de cristallisation
+     * Retourne une copie de la texture avec le shader appliqué
      */
     private Texture renderWithShader(Texture sourceTexture, float crystalSize) {
-        int width = sourceTexture.getWidth();
-        int height = sourceTexture.getHeight();
-        
-        // Utiliser la résolution originale de l'image
-        int renderWidth = width;
-        int renderHeight = height;
+        // Utiliser les dimensions RÉELLES de la texture source (pas les dimensions d'affichage)
+        // pour que animatedTexture ait les mêmes dimensions que originalImageTexture
+        int renderWidth = sourceTexture.getWidth();
+        int renderHeight = sourceTexture.getHeight();
 
         FrameBuffer tempFrameBuffer = new FrameBuffer(com.badlogic.gdx.graphics.Pixmap.Format.RGBA8888, renderWidth, renderHeight, false);
 
@@ -397,7 +580,7 @@ public class CrystalizeGuessGameScreen extends GameScreen {
             }
             crystallizeShader.setResolution(renderWidth, renderHeight);
 
-            // Dessin dans le FBO
+            // Dessin dans le FBO avec les dimensions calculées
             batch.draw(sourceTexture, 0, 0, renderWidth, renderHeight);
 
             batch.end();
@@ -407,13 +590,28 @@ public class CrystalizeGuessGameScreen extends GameScreen {
             batch.setProjectionMatrix(prevProj);
             batch.setTransformMatrix(prevTrans);
             tempFrameBuffer.end();
+            
+            // S'assurer que la projection du viewport est correctement restaurée
+            // après l'utilisation du shader pour éviter l'étirement du viewport
+            if (viewport != null) {
+                viewport.apply();
+                batch.setProjectionMatrix(viewport.getCamera().combined);
+            }
         }
 
-        // Important : le color buffer est retourné "tel quel".
-        // Utiliser Nearest pour une netteté maximale :
-        Texture out = tempFrameBuffer.getColorBufferTexture();
-        out.setFilter(com.badlogic.gdx.graphics.Texture.TextureFilter.Nearest, com.badlogic.gdx.graphics.Texture.TextureFilter.Nearest);
-        return out;
+        // Dispose l'ancien framebuffer si existant
+        if (currentFrameBuffer != null && currentFrameBuffer != tempFrameBuffer) {
+            currentFrameBuffer.dispose();
+        }
+        
+        // Stocker le nouveau framebuffer
+        currentFrameBuffer = tempFrameBuffer;
+        
+        // Retourner la texture du framebuffer (elle reste valide tant que le framebuffer existe)
+        Texture resultTexture = tempFrameBuffer.getColorBufferTexture();
+        resultTexture.setFilter(com.badlogic.gdx.graphics.Texture.TextureFilter.Nearest, com.badlogic.gdx.graphics.Texture.TextureFilter.Nearest);
+        
+        return resultTexture;
     }
     
     
@@ -430,7 +628,7 @@ public class CrystalizeGuessGameScreen extends GameScreen {
                 return new Color(r, g, b, 1);
             }
         } catch (NumberFormatException e) {
-            System.err.println("Format de couleur invalide: " + colorStr);
+            Gdx.app.error("CrystalizeGuessGameScreen", "Format de couleur invalide: " + colorStr);
         }
         return new Color(0, 0, 0, 1);
     }
@@ -448,7 +646,7 @@ public class CrystalizeGuessGameScreen extends GameScreen {
                 currentEdgeColorA = Float.parseFloat(parts[3]);
             }
         } catch (NumberFormatException e) {
-            System.err.println("Format de couleur invalide: " + colorStr + ", utilisation des valeurs par défaut");
+            Gdx.app.error("CrystalizeGuessGameScreen", "Format de couleur invalide: " + colorStr + ", utilisation des valeurs par défaut");
             currentEdgeColorR = 0.0f;
             currentEdgeColorG = 0.0f;
             currentEdgeColorB = 0.0f;
@@ -462,7 +660,7 @@ public class CrystalizeGuessGameScreen extends GameScreen {
             wrongSound = Gdx.audio.newSound(Gdx.files.internal(WRONG_SOUND_PATH));
             failedSound = Gdx.audio.newSound(Gdx.files.internal(FAILED_SOUND_PATH));
         } catch (Exception e) {
-            System.err.println("Erreur lors du chargement des sons: " + e.getMessage());
+            Gdx.app.error("CrystalizeGuessGameScreen", "Erreur lors du chargement des sons: " + e.getMessage());
         }
     }
     
@@ -482,32 +680,21 @@ public class CrystalizeGuessGameScreen extends GameScreen {
             
             @Override
             public boolean keyDown(int keycode) {
-                if (keycode == Input.Keys.R && isTestMode && !gameFinished) {
+                // Alt+R : Résoudre automatiquement le jeu (mode test uniquement)
+                if (keycode == Input.Keys.R && isTestMode && !gameFinished && 
+                    (Gdx.input.isKeyPressed(Input.Keys.ALT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.ALT_RIGHT))) {
                     solveGame();
                     return true;
                 }
                 
-                if (keycode == Input.Keys.N && isTestMode && !gameFinished) {
-                    revealMore();
+                // Alt+N : Déclencher la phase de victoire (mode test uniquement)
+                if (keycode == Input.Keys.N && isTestMode && !gameFinished && 
+                    (Gdx.input.isKeyPressed(Input.Keys.ALT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.ALT_RIGHT))) {
+                    triggerVictoryPhase();
                     return true;
                 }
                 
-                // Gestion de l'input utilisateur
-                if (isInputActive && !gameFinished) {
-                    if (keycode == Input.Keys.ENTER) {
-                        submitAnswer();
-                        return true;
-                    } else if (keycode == Input.Keys.BACKSPACE) {
-                        if (userInput.length() > 0) {
-                            userInput.deleteCharAt(userInput.length() - 1);
-                        }
-                        return true;
-                    } else if (keycode == Input.Keys.ESCAPE) {
-                        isInputActive = false;
-                        userInput.setLength(0);
-                        return true;
-                    }
-                }
+                // Plus de gestion d'input clavier - géré par BottomInputBar
                 
                 // Déléguer la gestion du debug au debug manager
                 if (debugManager.handleKeyDown(keycode)) {
@@ -528,11 +715,7 @@ public class CrystalizeGuessGameScreen extends GameScreen {
             
             @Override
             public boolean keyTyped(char character) {
-                // Gestion de la saisie de texte
-                if (isInputActive && !gameFinished && character >= 32 && character <= 126) {
-                    userInput.append(character);
-                    return true;
-                }
+                // Plus de gestion de saisie de texte - géré par BottomInputBar
                 return false;
             }
         };
@@ -541,7 +724,11 @@ public class CrystalizeGuessGameScreen extends GameScreen {
     @Override
     protected void onScreenActivated() {
         super.onScreenActivated();
-        Gdx.input.setInputProcessor(inputProcessor);
+        // Utiliser un InputMultiplexer pour gérer à la fois l'input processor et le stage
+        com.badlogic.gdx.InputMultiplexer multiplexer = new com.badlogic.gdx.InputMultiplexer();
+        multiplexer.addProcessor(inputStage);
+        multiplexer.addProcessor(inputProcessor);
+        Gdx.input.setInputProcessor(multiplexer);
     }
     
     @Override
@@ -552,15 +739,16 @@ public class CrystalizeGuessGameScreen extends GameScreen {
     
     @Override
     protected void initializeGame() {
-        System.out.println("Initialisation du jeu CrystalizeGuess pour le jour " + dayId);
+        Gdx.app.log("CrystalizeGuessGameScreen", "Initialisation du jeu CrystalizeGuess pour le jour " + dayId);
         updateButtonPositions();
+        calculateBackgroundDimensions();
         
         // Initialiser le shader maintenant que le viewport est prêt
         initializeCrystallizeShader();
         
         // Appliquer le shader initial après l'initialisation
         if (originalImageTexture != null) {
-            System.out.println("Application du shader initial après initialisation...");
+            Gdx.app.log("CrystalizeGuessGameScreen", "Application du shader initial après initialisation...");
             currentCrystalizedTexture = applyCrystallizeShader(originalImageTexture, initialCrystalSize);
         }
     }
@@ -594,73 +782,58 @@ public class CrystalizeGuessGameScreen extends GameScreen {
             return;
         }
         
-        if (submitButton.contains(x, y) && !gameFinished) {
-            // Activer l'input au lieu de faire une tentative
-            isInputActive = !isInputActive;
-            if (!isInputActive) {
-                userInput.setLength(0);
-            }
-            return;
-        }
+        // Plus de bouton submit - l'input se fait via la barre d'input
     }
     
-    private void submitAnswer() {
-        if (gameFinished || isAnimating) return;
+    /**
+     * Calcule les dimensions et l'échelle du background avec crop pour garder l'aspect ratio
+     */
+    private void calculateBackgroundDimensions() {
+        if (backgroundTexture == null) return;
         
-        String answer = userInput.toString().trim();
-        if (answer.isEmpty()) return;
+        float screenWidth = DisplayConfig.WORLD_WIDTH;  // Toujours 2048
+        float screenHeight = viewport.getWorldHeight(); // Variable selon aspect ratio
+        float screenRatio = screenWidth / screenHeight;
         
-        // Vérifier si la réponse est correcte
-        if (answer.equalsIgnoreCase(correctAnswer)) {
-            // Réponse correcte - gagner le jeu
-            gameWon = true;
-            gameFinished = true;
-            
-            if (winSound != null) {
-                winSound.play();
-            }
-            
-            // Enregistrer le score
-            int finalScore = calculateScore();
-            if (game instanceof AdventCalendarGame) {
-                AdventCalendarGame adventGame = (AdventCalendarGame) game;
-                adventGame.setScore(dayId, finalScore);
-                adventGame.setVisited(dayId, true);
-            }
-            
-            // Démarrer l'animation de révélation finale
-            startFinalRevealAnimation();
+        float bgRatio = (float)backgroundTexture.getWidth() / backgroundTexture.getHeight();
+        
+        // Adapter par crop (couvrir tout l'écran, crop le surplus)
+        if (screenRatio > bgRatio) {
+            // Écran plus large que l'image : fitter en largeur, crop en hauteur
+            currentBgWidth = screenWidth;
+            currentBgHeight = currentBgWidth / bgRatio;
+            currentBgX = 0;
+            currentBgY = (screenHeight - currentBgHeight) / 2;
         } else {
-            // Réponse incorrecte
-            wrongAnswers++;
-            
-            if (wrongSound != null) {
-                wrongSound.play();
-            }
-            
-            // Vider l'input
-            userInput.setLength(0);
-            
-            // Si 5 mauvaises réponses, améliorer l'image
-            if (wrongAnswers >= 5 && !hasUsedHelp) {
-                hasUsedHelp = true;
-                improveImage();
-            }
+            // Écran plus haut que l'image : fitter en hauteur, crop en largeur
+            currentBgHeight = screenHeight;
+            currentBgWidth = currentBgHeight * bgRatio;
+            currentBgX = (screenWidth - currentBgWidth) / 2;
+            currentBgY = 0;
         }
+        
+        currentScaleX = currentBgWidth / backgroundTexture.getWidth();
+        currentScaleY = currentBgHeight / backgroundTexture.getHeight();
     }
+    
+    // Méthode submitAnswer supprimée - remplacée par handleUserInput
     
     private void improveImage() {
         // Améliorer l'image en réduisant le crystal size à 75
-        System.out.println("Amélioration de l'image après 5 mauvaises réponses");
+        Gdx.app.log("CrystalizeGuessGameScreen", "Amélioration de l'image après 5 mauvaises réponses");
         startCrystalizeAnimation(75);
     }
     
     private void startFinalRevealAnimation() {
-        System.out.println("Animation de révélation finale");
+        Gdx.app.log("CrystalizeGuessGameScreen", "=== DÉBUT Animation de révélation finale ===");
+        Gdx.app.log("CrystalizeGuessGameScreen", "Animation de " + ((int)currentCrystalSize) + " à 1");
+        
         isAnimating = true;
         animationTime = 0.0f;
         startCrystalSize = (int) currentCrystalSize;
         endCrystalSize = 1; // Révéler complètement l'image
+        
+        Gdx.app.log("CrystalizeGuessGameScreen", "isAnimating=" + isAnimating + ", startCrystalSize=" + startCrystalSize + ", endCrystalSize=" + endCrystalSize);
     }
     
     /**
@@ -674,12 +847,12 @@ public class CrystalizeGuessGameScreen extends GameScreen {
      * Démarre l'animation de cristallisation avec une taille cible spécifique
      */
     private void startCrystalizeAnimation(int targetCrystalSize) {
-        System.out.println("=== DÉBUT ANIMATION cristallisation vers " + targetCrystalSize + " ===");
+        Gdx.app.log("CrystalizeGuessGameScreen", "=== DÉBUT ANIMATION cristallisation vers " + targetCrystalSize + " ===");
         
         startCrystalSize = (int) currentCrystalSize;
         endCrystalSize = targetCrystalSize;
         
-        System.out.println("Animation de " + startCrystalSize + " à " + endCrystalSize);
+        Gdx.app.log("CrystalizeGuessGameScreen", "Animation de " + startCrystalSize + " à " + endCrystalSize);
         
         // Démarrer l'animation
         isAnimating = true;
@@ -694,7 +867,7 @@ public class CrystalizeGuessGameScreen extends GameScreen {
     }
     
     private void solveGame() {
-        System.out.println("Résolution automatique du jeu CrystalizeGuess (mode test)");
+        Gdx.app.log("CrystalizeGuessGameScreen", "Résolution automatique du jeu CrystalizeGuess (mode test)");
         
         if (game instanceof AdventCalendarGame) {
             AdventCalendarGame adventGame = (AdventCalendarGame) game;
@@ -709,14 +882,31 @@ public class CrystalizeGuessGameScreen extends GameScreen {
         returnToMainMenu();
     }
     
-    private void revealMore() {
-        System.out.println("Révéler plus (mode test - touche N)");
+    /**
+     * Déclenche la phase de victoire (mode test - touche N)
+     */
+    private void triggerVictoryPhase() {
+        Gdx.app.log("CrystalizeGuessGameScreen", "Déclenchement de la phase de victoire (mode test - touche N)");
         
-        // En mode test, améliorer l'image directement
-        if (!hasUsedHelp) {
-            hasUsedHelp = true;
-            improveImage();
+        // Simuler une victoire comme si la bonne réponse venait d'être trouvée
+        gameWon = true;
+        gameFinished = true;
+        
+        if (winSound != null) {
+            winSound.play();
         }
+        
+        // Enregistrer le score
+        int finalScore = calculateScore();
+        if (game instanceof AdventCalendarGame) {
+            AdventCalendarGame adventGame = (AdventCalendarGame) game;
+            adventGame.setScore(dayId, finalScore);
+            adventGame.setVisited(dayId, true);
+            Gdx.app.log("CrystalizeGuessGameScreen", "Score enregistré: " + finalScore + " pour le jour " + dayId);
+        }
+        
+        // Démarrer l'animation de révélation finale
+        startFinalRevealAnimation();
     }
     
     private void updateButtonPositions() {
@@ -741,13 +931,16 @@ public class CrystalizeGuessGameScreen extends GameScreen {
         infoButton.setSize(baseButtonSize, baseButtonSize);
         infoButton.setPosition(infoButtonX, infoButtonY);
         
-        // Bouton submit en bas au centre
-        submitButton.setSize(200, 80);
-        submitButton.setPosition((viewportWidth - submitButton.width) / 2, 50);
+        // Plus de bouton submit - remplacé par la barre d'input
     }
     
     @Override
     protected void updateGame(float delta) {
+        // Mettre à jour le stage d'input
+        if (inputStage != null) {
+            inputStage.act(delta);
+        }
+        
         // Gérer l'animation de cristallisation
         if (isAnimating) {
             animationTime += delta;
@@ -758,6 +951,14 @@ public class CrystalizeGuessGameScreen extends GameScreen {
             if (animationTime >= animationDuration) {
                 // Fin de l'animation
                 finishCrystalizeAnimation();
+            }
+        }
+        
+        // Mettre à jour le fondu des boutons et du fond
+        if (isButtonsFading) {
+            buttonsFadeTimer += delta;
+            if (buttonsFadeTimer >= BUTTONS_FADE_DURATION) {
+                buttonsFadeTimer = BUTTONS_FADE_DURATION; // Limiter à la durée maximale
             }
         }
         
@@ -777,8 +978,8 @@ public class CrystalizeGuessGameScreen extends GameScreen {
         try {
             animatedTexture = applyCrystallizeShader(originalImageTexture, currentCrystalSize);
         } catch (Exception e) {
-            System.err.println("Erreur lors de la génération de la texture animée: " + e.getMessage());
-            e.printStackTrace();
+            Gdx.app.error("CrystalizeGuessGameScreen", "Erreur lors de la génération de la texture animée: " + e.getMessage());
+            // Stack trace logged automatically
         }
     }
     
@@ -800,7 +1001,7 @@ public class CrystalizeGuessGameScreen extends GameScreen {
      * Termine l'animation de cristallisation
      */
     private void finishCrystalizeAnimation() {
-        System.out.println("=== FIN ANIMATION cristallisation ===");
+        Gdx.app.log("CrystalizeGuessGameScreen", "=== FIN ANIMATION cristallisation ===");
         
         // Mettre à jour la taille de cristal actuelle
         currentCrystalSize = endCrystalSize;
@@ -811,7 +1012,7 @@ public class CrystalizeGuessGameScreen extends GameScreen {
         
         // Si c'est l'animation de révélation finale, afficher l'image complète
         if (gameWon && endCrystalSize <= 1) {
-            System.out.println("Révélation finale terminée");
+            Gdx.app.log("CrystalizeGuessGameScreen", "Révélation finale terminée");
         }
     }
     
@@ -836,9 +1037,9 @@ public class CrystalizeGuessGameScreen extends GameScreen {
      * Libère l'ancienne texture si nécessaire
      */
     private void disposeOldTexture() {
-        if (currentCrystalizedTexture != null && currentCrystalizedTexture != originalImageTexture) {
-            currentCrystalizedTexture.dispose();
-        }
+        // Ne pas disposer currentCrystalizedTexture car elle peut provenir d'un FrameBuffer
+        // Le FrameBuffer sera disposé automatiquement lors de la création d'un nouveau
+        // ou dans dispose()
     }
     
     /**
@@ -859,9 +1060,38 @@ public class CrystalizeGuessGameScreen extends GameScreen {
     
     @Override
     protected void renderGame() {
-        // Dessiner le fond
+        // Calculer l'alpha du background (même timing que les boutons)
+        float bgAlpha = isButtonsFading ? (1f - buttonsFadeTimer / BUTTONS_FADE_DURATION) : 1f;
+        bgAlpha = Math.max(0f, bgAlpha);
+        
+        // Toujours dessiner le fond de couleur en premier
         batch.setColor(backgroundColor);
         batch.draw(whiteTexture, 0, 0, DisplayConfig.WORLD_WIDTH, viewport.getWorldHeight());
+        
+        // Dessiner le background par-dessus avec fade pendant le fade des boutons
+        if (backgroundTexture != null && (isButtonsFading || !gameWon)) {
+            batch.setColor(1, 1, 1, bgAlpha);
+            
+            // Utiliser les paramètres HSL du debug manager si en mode debug, sinon les paramètres normaux
+            float bgHue, bgSaturation, bgLightness;
+            if (debugManager != null && debugManager.isDebugMode()) {
+                bgHue = debugManager.getDebugBackgroundHue();
+                bgSaturation = debugManager.getDebugBackgroundSaturation();
+                bgLightness = debugManager.getDebugBackgroundLightness();
+            } else {
+                bgHue = backgroundHue;
+                bgSaturation = backgroundSaturation;
+                bgLightness = backgroundLightness;
+            }
+            
+            // Appliquer le shader HSL pour la colorisation avec dimensions calculées (crop)
+            com.widedot.calendar.shaders.HSLShader.begin(batch, bgHue, bgSaturation, bgLightness);
+            batch.draw(backgroundTexture, currentBgX, currentBgY, currentBgWidth, currentBgHeight);
+            com.widedot.calendar.shaders.HSLShader.end(batch);
+            
+            // Reset color
+            batch.setColor(1, 1, 1, 1);
+        }
         
         // Dessiner l'image (cristallisée ou originale selon l'état)
         drawImage();
@@ -877,6 +1107,11 @@ public class CrystalizeGuessGameScreen extends GameScreen {
         // Dessiner le panneau d'info si visible
         if (showInfoPanel) {
             drawInfoPanel();
+        }
+        
+        // Dessiner le stage d'input par-dessus tout (seulement si visible)
+        if (inputStage != null && inputBarVisible) {
+            inputStage.draw();
         }
     }
     
@@ -929,12 +1164,12 @@ public class CrystalizeGuessGameScreen extends GameScreen {
         Texture textureToDraw = getCurrentTexture();
         
         if (textureToDraw == null) {
-            System.out.println("ERREUR: textureToDraw est null !");
+            Gdx.app.log("CrystalizeGuessGameScreen", "ERREUR: textureToDraw est null !");
             return;
         }
         
-        // TOUJOURS utiliser les dimensions de la texture qui est réellement affichée
-        // pour éviter les incohérences entre image originale et texture cristallisée
+        // Toutes les textures ont les mêmes dimensions réelles, donc on peut utiliser
+        // les dimensions de la texture affichée pour calculer l'affichage
         DisplayInfo displayInfo = calculateDisplayInfo(textureToDraw);
         
         batch.setColor(1, 1, 1, 1);
@@ -945,113 +1180,50 @@ public class CrystalizeGuessGameScreen extends GameScreen {
      * Détermine quelle texture afficher selon l'état du jeu
      */
     private Texture getCurrentTexture() {
-        if (gameFinished) {
-            return originalImageTexture;
-        } else if (isAnimating && animatedTexture != null) {
+        // Toujours afficher l'animation en priorité si elle est active
+        if (isAnimating && animatedTexture != null) {
             return animatedTexture;
+        } else if (gameFinished && !isAnimating) {
+            // Afficher l'image originale seulement si le jeu est terminé ET qu'il n'y a plus d'animation
+            return originalImageTexture;
         } else {
             return currentCrystalizedTexture;
         }
     }
     
     private void drawGameInterface() {
-        // Dessiner les boutons
-        drawCloseButton();
-        drawInfoButton();
+        // Calculer l'alpha pour les boutons (fade out si victoire)
+        float buttonsAlpha = isButtonsFading ? (1f - buttonsFadeTimer / BUTTONS_FADE_DURATION) : 1f;
+        buttonsAlpha = Math.max(0f, buttonsAlpha);
         
-        if (!gameFinished) {
-            drawSubmitButton();
-            drawUserInput();
-            drawInstructions();
-        } else if (gameWon) {
-            drawVictoryMessage();
+        // Dessiner les boutons avec fade out
+        if (!isButtonsFading || buttonsAlpha > 0f) {
+            drawCloseButton(buttonsAlpha);
+            drawInfoButton(buttonsAlpha);
         }
+        
+        // Plus de bouton submit ni d'affichage d'input - remplacé par la barre d'input
     }
     
-    private void drawCloseButton() {
+    private void drawCloseButton(float alpha) {
         if (closeButtonTexture != null) {
-            batch.setColor(1, 1, 1, 1);
+            batch.setColor(1, 1, 1, alpha);
             batch.draw(closeButtonTexture, closeButton.x, closeButton.y, 
                       closeButton.width, closeButton.height);
+            batch.setColor(1, 1, 1, 1); // Reset
         }
     }
     
-    private void drawInfoButton() {
+    private void drawInfoButton(float alpha) {
         if (infoButtonTexture != null) {
-            batch.setColor(1, 1, 1, 1);
+            batch.setColor(1, 1, 1, alpha);
             batch.draw(infoButtonTexture, infoButton.x, infoButton.y, 
                       infoButton.width, infoButton.height);
+            batch.setColor(1, 1, 1, 1); // Reset
         }
     }
     
-    private void drawSubmitButton() {
-        // Fond du bouton
-        batch.setColor(0.2f, 0.6f, 0.9f, 1);
-        batch.draw(whiteTexture, submitButton.x, submitButton.y, 
-                  submitButton.width, submitButton.height);
-        
-        // Bordure
-        batch.setColor(1, 1, 1, 1);
-        float borderWidth = 2;
-        batch.draw(whiteTexture, submitButton.x, submitButton.y + submitButton.height - borderWidth, 
-                  submitButton.width, borderWidth);
-        batch.draw(whiteTexture, submitButton.x, submitButton.y, submitButton.width, borderWidth);
-        batch.draw(whiteTexture, submitButton.x, submitButton.y, borderWidth, submitButton.height);
-        batch.draw(whiteTexture, submitButton.x + submitButton.width - borderWidth, submitButton.y, 
-                  borderWidth, submitButton.height);
-        
-        // Texte
-        font.setColor(1, 1, 1, 1);
-        String text = isInputActive ? "Valider (Entrée)" : "Taper le nom";
-        layout.setText(font, text);
-        font.draw(batch, layout, 
-                 submitButton.x + (submitButton.width - layout.width) / 2,
-                 submitButton.y + (submitButton.height + layout.height) / 2);
-    }
-    
-    private void drawUserInput() {
-        if (isInputActive) {
-            font.setColor(1, 1, 1, 1);
-            String inputText = "Votre réponse: " + userInput.toString() + "_";
-            layout.setText(font, inputText);
-            font.draw(batch, layout, 
-                     (DisplayConfig.WORLD_WIDTH - layout.width) / 2,
-                     submitButton.y + submitButton.height + 30);
-        }
-    }
-    
-    private void drawInstructions() {
-        font.setColor(0.8f, 0.8f, 0.8f, 1);
-        String instruction;
-        if (hasUsedHelp) {
-            instruction = "Plus d'aide disponible. Trouvez le nom du tableau ou de l'auteur.";
-        } else if (wrongAnswers >= 3) {
-            instruction = "Après 5 mauvaises réponses, l'image s'améliorera.";
-        } else {
-            instruction = "Devinez le nom du tableau ou de l'auteur. Cliquez sur le bouton pour taper.";
-        }
-        
-        layout.setText(font, instruction);
-        font.draw(batch, layout, 
-                 (DisplayConfig.WORLD_WIDTH - layout.width) / 2,
-                 submitButton.y - 30);
-    }
-    
-    private void drawVictoryMessage() {
-        bigFont.setColor(0.2f, 0.9f, 0.2f, 1);
-        String text = "Image révélée !";
-        layout.setText(bigFont, text);
-        bigFont.draw(batch, layout, 
-                    (DisplayConfig.WORLD_WIDTH - layout.width) / 2,
-                    viewport.getWorldHeight() - 100);
-        
-        font.setColor(1, 1, 1, 1);
-        String clickText = "Cliquez pour continuer";
-        layout.setText(font, clickText);
-        font.draw(batch, layout, 
-                 (DisplayConfig.WORLD_WIDTH - layout.width) / 2,
-                 50);
-    }
+    // Méthodes drawSubmitButton et drawUserInput supprimées - remplacées par BottomInputBar
     
     private void drawInfoPanel() {
         float screenWidth = DisplayConfig.WORLD_WIDTH;
@@ -1116,6 +1288,12 @@ public class CrystalizeGuessGameScreen extends GameScreen {
     public void resize(int width, int height) {
         super.resize(width, height);
         updateButtonPositions();
+        calculateBackgroundDimensions();
+        
+        // Mettre à jour le stage d'input
+        if (inputStage != null) {
+            inputStage.getViewport().update(width, height, true);
+        }
     }
     
     @Override
@@ -1125,20 +1303,27 @@ public class CrystalizeGuessGameScreen extends GameScreen {
         bigFont.dispose();
         whiteTexture.dispose();
         if (originalImageTexture != null) originalImageTexture.dispose();
-        if (currentCrystalizedTexture != null && currentCrystalizedTexture != originalImageTexture) {
-            currentCrystalizedTexture.dispose();
-        }
-        if (animatedTexture != null) {
-            animatedTexture.dispose();
-        }
+        // currentCrystalizedTexture et animatedTexture proviennent du FrameBuffer, ne pas les disposer séparément
         if (crystallizeShader != null) {
             crystallizeShader.dispose();
         }
+        if (currentFrameBuffer != null) {
+            currentFrameBuffer.dispose();
+        }
         if (closeButtonTexture != null) closeButtonTexture.dispose();
         if (infoButtonTexture != null) infoButtonTexture.dispose();
+        if (backgroundTexture != null) backgroundTexture.dispose();
         if (winSound != null) winSound.dispose();
         if (wrongSound != null) wrongSound.dispose();
         if (failedSound != null) failedSound.dispose();
+        
+        // Disposer le stage d'input
+        if (inputStage != null) {
+            inputStage.dispose();
+        }
+        if (inputSkin != null) {
+            inputSkin.dispose();
+        }
     }
 }
 

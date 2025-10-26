@@ -3,6 +3,7 @@ package com.widedot.calendar.display;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.utils.viewport.Viewport;
+import com.widedot.calendar.utils.GwtCompatibleFormatter;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
 
@@ -29,9 +30,9 @@ public class ViewportManager {
     public static Viewport createViewport(OrthographicCamera camera, boolean isFullscreen) {
         float screenRatio = (float)Gdx.graphics.getWidth() / Gdx.graphics.getHeight();
         
-        System.out.println("ViewportManager: Creating viewport - Mode: " + (isFullscreen ? "Fullscreen" : "Windowed") + 
+        Gdx.app.log("ViewportManager", "ViewportManager: Creating viewport - Mode: " + (isFullscreen ? "Fullscreen" : "Windowed") + 
                          ", Screen: " + Gdx.graphics.getWidth() + "x" + Gdx.graphics.getHeight() + 
-                         ", Ratio: " + String.format("%.3f", screenRatio));
+                         ", Ratio: " + GwtCompatibleFormatter.formatFloat(screenRatio, 3));
         
         Viewport viewport;
         if (isFullscreen) {
@@ -40,7 +41,7 @@ public class ViewportManager {
             viewport = createWindowedViewport(camera, screenRatio);
         }
         
-        System.out.println("ViewportManager: Created " + viewport.getClass().getSimpleName() + 
+        Gdx.app.log("ViewportManager", "ViewportManager: Created " + viewport.getClass().getSimpleName() + 
                          " - World: " + DisplayConfig.WORLD_WIDTH + "x" + viewport.getWorldHeight());
         
         return viewport;
@@ -55,11 +56,11 @@ public class ViewportManager {
     private static Viewport createFullscreenViewport(OrthographicCamera camera, float screenRatio) {
         if (screenRatio <= DisplayConfig.RATIO_16_10) {
             // Écrans 4:3 jusqu'à 16:10 : forcer 16:10 avec bandes noires
-            System.out.println("ViewportManager: Fullscreen <= 16:10 - FitViewport avec bandes noires");
+            Gdx.app.log("ViewportManager", "ViewportManager: Fullscreen <= 16:10 - FitViewport avec bandes noires");
             return new FitViewport(DisplayConfig.WORLD_WIDTH, DisplayConfig.REFERENCE_HEIGHT, camera);
         } else if (screenRatio <= DisplayConfig.RATIO_21_9) {
             // 16:9 à 21:9 : utiliser ExtendViewport pour cropper en haut/bas (pas de bandes noires)
-            System.out.println("ViewportManager: Fullscreen 16:10 < ratio <= 21:9 - ExtendViewport crop haut/bas");
+            Gdx.app.log("ViewportManager", "ViewportManager: Fullscreen 16:10 < ratio <= 21:9 - ExtendViewport crop haut/bas");
             return new ExtendViewport(
                 DisplayConfig.WORLD_WIDTH,          // minWidth (fixe)
                 DisplayConfig.HEIGHT_21_9,          // minHeight (878 pour 21:9)
@@ -69,7 +70,7 @@ public class ViewportManager {
             );
         } else {
             // Au-delà de 21:9 : limiter à 21:9 avec bandes noires verticales
-            System.out.println("ViewportManager: Fullscreen > 21:9 - FitViewport avec bandes noires verticales");
+            Gdx.app.log("ViewportManager", "ViewportManager: Fullscreen > 21:9 - FitViewport avec bandes noires verticales");
             return new FitViewport(DisplayConfig.WORLD_WIDTH, DisplayConfig.HEIGHT_21_9, camera);
         }
     }
@@ -81,9 +82,26 @@ public class ViewportManager {
      * @return Le viewport configuré
      */
     private static Viewport createWindowedViewport(OrthographicCamera camera, float screenRatio) {
-        // En mode fenêtré, la fenêtre est forcée en 16:10, donc utiliser FitViewport 16:10 sans bandes noires
-        System.out.println("ViewportManager: Windowed - FitViewport 16:10 parfait");
-        return new FitViewport(DisplayConfig.WORLD_WIDTH, DisplayConfig.REFERENCE_HEIGHT, camera);
+        // En mode fenêtré, utiliser la même logique que le plein écran pour s'adapter au ratio
+        if (screenRatio <= DisplayConfig.RATIO_16_10) {
+            // Écrans 4:3 jusqu'à 16:10 : forcer 16:10 avec bandes noires
+            Gdx.app.log("ViewportManager", "ViewportManager: Windowed <= 16:10 - FitViewport avec bandes noires");
+            return new FitViewport(DisplayConfig.WORLD_WIDTH, DisplayConfig.REFERENCE_HEIGHT, camera);
+        } else if (screenRatio <= DisplayConfig.RATIO_21_9) {
+            // 16:9 à 21:9 : utiliser ExtendViewport pour cropper en haut/bas (pas de bandes noires)
+            Gdx.app.log("ViewportManager", "ViewportManager: Windowed 16:10 < ratio <= 21:9 - ExtendViewport crop haut/bas");
+            return new ExtendViewport(
+                DisplayConfig.WORLD_WIDTH,          // minWidth (fixe)
+                DisplayConfig.HEIGHT_21_9,          // minHeight (878 pour 21:9)
+                DisplayConfig.WORLD_WIDTH,          // maxWidth (fixe)
+                DisplayConfig.REFERENCE_HEIGHT,     // maxHeight (1280 pour 16:10)
+                camera
+            );
+        } else {
+            // Au-delà de 21:9 : limiter à 21:9 avec bandes noires verticales
+            Gdx.app.log("ViewportManager", "ViewportManager: Windowed > 21:9 - FitViewport avec bandes noires verticales");
+            return new FitViewport(DisplayConfig.WORLD_WIDTH, DisplayConfig.HEIGHT_21_9, camera);
+        }
     }
     
     /**
@@ -108,7 +126,7 @@ public class ViewportManager {
         boolean needsReconfiguration = shouldReconfigureViewport(currentViewport, isCurrentlyFullscreen);
         
         if (needsReconfiguration) {
-            System.out.println("ViewportManager: Reconfiguration détectée - mode " + 
+            Gdx.app.log("ViewportManager", "ViewportManager: Reconfiguration détectée - mode " + 
                              (isCurrentlyFullscreen ? "fullscreen" : "fenêtré"));
             
             // Créer un nouveau viewport adapté au mode actuel
@@ -150,19 +168,16 @@ public class ViewportManager {
      * @return true si une reconfiguration est nécessaire
      */
     private static boolean shouldReconfigureViewport(Viewport viewport, boolean isFullscreen) {
-        // Détection basée sur le type de viewport et le mode
-        if (isFullscreen) {
-            // En fullscreen, on devrait avoir ExtendViewport ou FitViewport selon le ratio
-            float screenRatio = (float) Gdx.graphics.getWidth() / Gdx.graphics.getHeight();
-            boolean shouldBeExtend = (screenRatio > DisplayConfig.RATIO_16_10 && screenRatio <= DisplayConfig.RATIO_21_9);
-            
-            if (shouldBeExtend) {
-                return !(viewport instanceof com.badlogic.gdx.utils.viewport.ExtendViewport);
-            } else {
-                return !(viewport instanceof com.badlogic.gdx.utils.viewport.FitViewport);
-            }
+        // Calculer le ratio actuel de l'écran
+        float screenRatio = (float) Gdx.graphics.getWidth() / Gdx.graphics.getHeight();
+        boolean shouldBeExtend = (screenRatio > DisplayConfig.RATIO_16_10 && screenRatio <= DisplayConfig.RATIO_21_9);
+        
+        // La logique est la même pour fullscreen et fenêtré (depuis la correction du mode fenêtré)
+        if (shouldBeExtend) {
+            // Pour ratios 16:9 à 21:9, on doit avoir ExtendViewport
+            return !(viewport instanceof com.badlogic.gdx.utils.viewport.ExtendViewport);
         } else {
-            // En fenêtré, on devrait toujours avoir FitViewport 16:10
+            // Pour ratios ≤ 16:10 ou > 21:9, on doit avoir FitViewport
             return !(viewport instanceof com.badlogic.gdx.utils.viewport.FitViewport);
         }
     }

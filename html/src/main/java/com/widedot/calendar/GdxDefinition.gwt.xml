@@ -5,6 +5,13 @@
     <inherits name='com.widedot.calendar.Main' />
 
     <entry-point class='com.widedot.calendar.gwt.GwtLauncher' />
+    
+    <!-- ACTIVATION DES LOGS DANS LA CONSOLE CHROME -->
+    <inherits name="com.google.gwt.logging.Logging"/>
+    <set-property name="gwt.logging.logLevel" value="ALL"/>
+    <set-property name="gwt.logging.enabled" value="TRUE"/>
+    <set-property name="gwt.logging.consoleHandler" value="ENABLED"/>
+    
     <!-- You usually won't need to make changes to the rest of this. -->
     <set-configuration-property name="gdx.assetpath" value="assets" />
     <set-configuration-property name="xsiframe.failIfScriptTag" value="FALSE"/>

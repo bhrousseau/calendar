@@ -19,7 +19,6 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.audio.Sound;
 import com.widedot.calendar.config.Config;
 import com.badlogic.gdx.utils.ObjectMap;
-import com.widedot.calendar.effects.HSLColorFilter;
 import com.widedot.calendar.debug.SlidingPuzzleDebugManager;
 import com.widedot.calendar.config.DayMappingManager;
 
@@ -294,7 +293,7 @@ public class SlidingPuzzleGameScreen extends GameScreen {
         
         // Vérifier si on est en mode test via Config
         this.isTestMode = Config.getInstance().isTestModeEnabled();
-        System.out.println("Mode test: " + isTestMode);
+        Gdx.app.log("SlidingPuzzleGameScreen", "Mode test: " + isTestMode);
         
         // Appliquer les paramètres spécifiques s'ils existent
         if (parameters != null) {
@@ -314,7 +313,7 @@ public class SlidingPuzzleGameScreen extends GameScreen {
                         float b = Integer.parseInt(parts[2]) / 255f;
                         this.backgroundColor = new Color(r, g, b, 1);
                     } catch (NumberFormatException e) {
-                        System.err.println("Format de couleur invalide: " + bgColor);
+                        Gdx.app.error("SlidingPuzzleGameScreen", "Format de couleur invalide: " + bgColor);
                     }
                 }
             }
@@ -330,19 +329,30 @@ public class SlidingPuzzleGameScreen extends GameScreen {
             }
             
             // Paramètres du filtre de couleur du background
+            Gdx.app.log("SlidingPuzzleGameScreen", "Chargement des paramètres HSL...");
+            
             if (parameters.containsKey("bgHue")) {
                 float hue = ((Number)parameters.get("bgHue")).floatValue();
                 this.backgroundHue = Math.max(0, Math.min(360, hue));
+                Gdx.app.log("SlidingPuzzleGameScreen", "bgHue trouvé dans paramètres: " + backgroundHue);
+            } else {
+                Gdx.app.log("SlidingPuzzleGameScreen", "bgHue NON TROUVÉ dans paramètres - utilisation de la valeur par défaut: " + backgroundHue);
             }
             
             if (parameters.containsKey("bgSaturation")) {
                 float saturation = ((Number)parameters.get("bgSaturation")).floatValue();
                 this.backgroundSaturation = Math.max(0, Math.min(100, saturation));
+                Gdx.app.log("SlidingPuzzleGameScreen", "bgSaturation trouvé dans paramètres: " + backgroundSaturation);
+            } else {
+                Gdx.app.log("SlidingPuzzleGameScreen", "bgSaturation NON TROUVÉ dans paramètres - utilisation de la valeur par défaut: " + backgroundSaturation);
             }
             
             if (parameters.containsKey("bgLightness")) {
                 float lightness = ((Number)parameters.get("bgLightness")).floatValue();
                 this.backgroundLightness = Math.max(-100, Math.min(100, lightness));
+                Gdx.app.log("SlidingPuzzleGameScreen", "bgLightness trouvé dans paramètres: " + backgroundLightness);
+            } else {
+                Gdx.app.log("SlidingPuzzleGameScreen", "bgLightness NON TROUVÉ dans paramètres - utilisation de la valeur par défaut: " + backgroundLightness);
             }
         }
         
@@ -358,63 +368,72 @@ public class SlidingPuzzleGameScreen extends GameScreen {
         this.infoPanelColor = new Color(0.3f, 0.3f, 0.3f, 0.8f);
         this.showInfoPanel = false;
         
-        System.out.println("Création du puzzle coulissant pour le jour " + dayId);
-        System.out.println("Paramètres: gridSize=" + gridSize + ", shuffle=" + shuffleMoves);
+        Gdx.app.log("SlidingPuzzleGameScreen", "Création du puzzle coulissant pour le jour " + dayId);
+        Gdx.app.log("SlidingPuzzleGameScreen", "Paramètres: gridSize=" + gridSize + ", shuffle=" + shuffleMoves);
 
+        Gdx.app.log("SlidingPuzzleGameScreen", "Création de la texture blanche...");
         // Créer une texture blanche
         Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
         pixmap.setColor(1, 1, 1, 1);
         pixmap.fill();
         this.whiteTexture = new Texture(pixmap);
         pixmap.dispose();
+        Gdx.app.log("SlidingPuzzleGameScreen", "Texture blanche créée");
         
         // Charger la texture du bouton info
+        Gdx.app.log("SlidingPuzzleGameScreen", "Chargement bouton info...");
         try {
             this.infoButtonTexture = new Texture(Gdx.files.internal("images/ui/help.png"));
-        } catch (Exception e) {
-            System.err.println("Erreur lors du chargement du bouton info: " + e.getMessage());
+            Gdx.app.log("SlidingPuzzleGameScreen", "Bouton info chargé");
+        } catch (Throwable e) {
+            Gdx.app.error("SlidingPuzzleGameScreen", "Erreur lors du chargement du bouton info: " + e.getClass().getName() + ": " + e.getMessage());
             this.infoButtonTexture = null;
         }
         
         // Charger la texture du bouton close
+        Gdx.app.log("SlidingPuzzleGameScreen", "Chargement bouton close...");
         try {
             this.closeButtonTexture = new Texture(Gdx.files.internal("images/ui/close.png"));
-        } catch (Exception e) {
-            System.err.println("Erreur lors du chargement du bouton close: " + e.getMessage());
+            Gdx.app.log("SlidingPuzzleGameScreen", "Bouton close chargé");
+        } catch (Throwable e) {
+            Gdx.app.error("SlidingPuzzleGameScreen", "Erreur lors du chargement du bouton close: " + e.getClass().getName() + ": " + e.getMessage());
             this.closeButtonTexture = null;
         }
         
-        // Charger la texture du background avec filtre de couleur
+        // Charger la texture du background (le filtre HSL sera appliqué via shader GPU)
+        Gdx.app.log("SlidingPuzzleGameScreen", "Chargement du background...");
         try {
-            // Charger l'image en tant que Pixmap pour pouvoir la modifier
-            Pixmap backgroundPixmap = new Pixmap(Gdx.files.internal("images/games/spz/background-0.png"));
+            Gdx.app.log("SlidingPuzzleGameScreen", "Chargement de l'image background-0.png...");
+            // Charger directement la texture sans modification
+            this.backgroundTexture = new Texture(Gdx.files.internal("images/games/spz/background-0.png"));
+            Gdx.app.log("SlidingPuzzleGameScreen", "Texture background créée - " + 
+                             backgroundTexture.getWidth() + "x" + backgroundTexture.getHeight());
             
-            // Appliquer le filtre de couleur HSL
-            HSLColorFilter.applyHSLFilter(backgroundPixmap, backgroundHue, backgroundSaturation, backgroundLightness);
-            
-            // Créer la texture à partir du Pixmap modifié
-            this.backgroundTexture = new Texture(backgroundPixmap);
-            
-            // Libérer le Pixmap car il n'est plus nécessaire
-            backgroundPixmap.dispose();
-            
-            System.out.println("Background chargé avec filtre HSL - Teinte: " + backgroundHue + 
+            Gdx.app.log("SlidingPuzzleGameScreen", "Background chargé - Shader HSL sera appliqué au rendu - Teinte: " + backgroundHue + 
                              ", Saturation: " + backgroundSaturation + 
                              ", Luminosité: " + backgroundLightness);
-        } catch (Exception e) {
-            System.err.println("Erreur lors du chargement du background: " + e.getMessage());
+        } catch (Throwable e) {
+            Gdx.app.error("SlidingPuzzleGameScreen", "Erreur lors du chargement du background: " + e.getClass().getName() + ": " + e.getMessage());
+            StringBuilder stackTrace = new StringBuilder();
+            for (StackTraceElement element : e.getStackTrace()) {
+                stackTrace.append("  at ").append(element.toString()).append("\n");
+            }
+            Gdx.app.error("SlidingPuzzleGameScreen", stackTrace.toString());
             this.backgroundTexture = null;
         }
 
         // Charger le son de résolution
+        Gdx.app.log("SlidingPuzzleGameScreen", "Chargement des sons...");
         try {
             this.solveSound = Gdx.audio.newSound(Gdx.files.internal(SOLVE_SOUND_PATH));
             this.slidingSound = Gdx.audio.newSound(Gdx.files.internal(SLIDING_SOUND_PATH));
-        } catch (Exception e) {
-            System.err.println("Erreur lors du chargement des sons: " + e.getMessage());
+            Gdx.app.log("SlidingPuzzleGameScreen", "Sons chargés");
+        } catch (Throwable e) {
+            Gdx.app.error("SlidingPuzzleGameScreen", "Erreur lors du chargement des sons: " + e.getClass().getName() + ": " + e.getMessage());
         }
         
         // Initialiser les tableaux (uniquement dans le constructeur)
+        Gdx.app.log("SlidingPuzzleGameScreen", "Initialisation des tableaux...");
         this.puzzleState = new int[gridSize * gridSize];
         this.gridZones = new Rectangle[gridSize * gridSize];
         
@@ -424,19 +443,25 @@ public class SlidingPuzzleGameScreen extends GameScreen {
         }
         
         this.emptyTileIndex = gridSize * gridSize - 1;
+        Gdx.app.log("SlidingPuzzleGameScreen", "Tableaux initialisés");
         
         // Initialiser complètement le jeu (méthode factorisée)
+        Gdx.app.log("SlidingPuzzleGameScreen", "Appel à initializeGameCompletely()...");
         initializeGameCompletely();
+        Gdx.app.log("SlidingPuzzleGameScreen", "initializeGameCompletely() terminé");
         
         // Créer l'input processor
+        Gdx.app.log("SlidingPuzzleGameScreen", "Création de l'input processor...");
         createInputProcessor();
+        Gdx.app.log("SlidingPuzzleGameScreen", "Input processor créé");
+        Gdx.app.log("SlidingPuzzleGameScreen", "Constructeur SlidingPuzzleGameScreen terminé avec succès");
     }
     
     /**
      * Initialise complètement le jeu (méthode factorisée)
      */
     private void initializeGameCompletely() {
-        System.out.println("Initialisation complète du puzzle coulissant pour le jour " + dayId);
+        Gdx.app.log("SlidingPuzzleGameScreen", "Initialisation complète du puzzle coulissant pour le jour " + dayId);
         
         // Recharger le background avec les nouveaux paramètres de couleur
         reloadBackgroundTexture();
@@ -467,13 +492,13 @@ public class SlidingPuzzleGameScreen extends GameScreen {
         initializeGame();
         
         // Forcer le recalcul des dimensions après initializeGame
-        System.out.println("Dimensions recalculées - tileSize: " + tileSize + ", tileSpacing: " + tileSpacing);
+        Gdx.app.log("SlidingPuzzleGameScreen", "Dimensions recalculées - tileSize: " + tileSize + ", tileSpacing: " + tileSpacing);
         
         // Vérifier les dimensions des gridZones
         if (gridZones != null && gridZones.length > 0) {
-            System.out.println("gridZones[0] - x: " + gridZones[0].x + ", y: " + gridZones[0].y + 
+            Gdx.app.log("SlidingPuzzleGameScreen", "gridZones[0] - x: " + gridZones[0].x + ", y: " + gridZones[0].y + 
                              ", width: " + gridZones[0].width + ", height: " + gridZones[0].height);
-            System.out.println("gridZones[1] - x: " + gridZones[1].x + ", y: " + gridZones[1].y + 
+            Gdx.app.log("SlidingPuzzleGameScreen", "gridZones[1] - x: " + gridZones[1].x + ", y: " + gridZones[1].y + 
                              ", width: " + gridZones[1].width + ", height: " + gridZones[1].height);
         }
     }
@@ -494,12 +519,12 @@ public class SlidingPuzzleGameScreen extends GameScreen {
         }
         
         try {
-            System.out.println("Chargement de la texture depuis: " + fullImagePath);
+            Gdx.app.log("SlidingPuzzleGameScreen", "Chargement de la texture depuis: " + fullImagePath);
             puzzleTexture = new Texture(Gdx.files.internal(fullImagePath));
             fullImageTexture = new Texture(Gdx.files.internal(fullImagePath));
         } catch (Exception e) {
-            System.err.println("Erreur lors du chargement de la texture: " + e.getMessage());
-            e.printStackTrace();
+            Gdx.app.error("SlidingPuzzleGameScreen", "Erreur lors du chargement de la texture: " + e.getMessage());
+            // Stack trace logged automatically by Gdx.app.error
             throw new IllegalStateException("Erreur lors du chargement de la texture: " + e.getMessage(), e);
         }
     }
@@ -514,23 +539,14 @@ public class SlidingPuzzleGameScreen extends GameScreen {
                 backgroundTexture.dispose();
             }
             
-            // Charger l'image en tant que Pixmap pour pouvoir la modifier
-            Pixmap backgroundPixmap = new Pixmap(Gdx.files.internal("images/games/spz/background-0.png"));
+            // Charger directement la texture (le filtre HSL sera appliqué via shader GPU)
+            this.backgroundTexture = new Texture(Gdx.files.internal("images/games/spz/background-0.png"));
             
-            // Appliquer le filtre de couleur HSL
-            HSLColorFilter.applyHSLFilter(backgroundPixmap, backgroundHue, backgroundSaturation, backgroundLightness);
-            
-            // Créer la texture à partir du Pixmap modifié
-            this.backgroundTexture = new Texture(backgroundPixmap);
-            
-            // Libérer le Pixmap car il n'est plus nécessaire
-            backgroundPixmap.dispose();
-            
-            System.out.println("Background rechargé avec filtre HSL - Teinte: " + backgroundHue + 
+            Gdx.app.log("SlidingPuzzleGameScreen", "Background rechargé - Shader HSL sera appliqué au rendu - Teinte: " + backgroundHue + 
                              ", Saturation: " + backgroundSaturation + 
                              ", Luminosité: " + backgroundLightness);
         } catch (Exception e) {
-            System.err.println("Erreur lors du rechargement du background: " + e.getMessage());
+            Gdx.app.error("SlidingPuzzleGameScreen", "Erreur lors du rechargement du background: " + e.getMessage());
             this.backgroundTexture = null;
         }
     }
@@ -552,7 +568,7 @@ public class SlidingPuzzleGameScreen extends GameScreen {
             @Override
             public void onDebugSettingsSaved() {
                 // Ne plus recharger sur la sauvegarde, juste afficher la confirmation
-                System.out.println("Paramètres sauvegardés dans games.json");
+                Gdx.app.log("SlidingPuzzleGameScreen", "Paramètres sauvegardés dans games.json");
             }
         });
         
@@ -615,7 +631,7 @@ public class SlidingPuzzleGameScreen extends GameScreen {
             if (targetGame != null) {
                 com.badlogic.gdx.utils.JsonValue parameters = targetGame.get("parameters");
                 if (parameters != null) {
-                    System.out.println("Rechargement des paramètres depuis games.json...");
+                    Gdx.app.log("SlidingPuzzleGameScreen", "Rechargement des paramètres depuis games.json...");
                     
                     // Recharger TOUS les paramètres depuis le JSON (comme dans le constructeur)
                     if (parameters.has("size")) {
@@ -624,47 +640,47 @@ public class SlidingPuzzleGameScreen extends GameScreen {
                     if (parameters.has("bgColor")) {
                         String bgColor = parameters.getString("bgColor");
                         parseBackgroundColor(bgColor);
-                        System.out.println("Nouvelle couleur de fond: " + bgColor);
+                        Gdx.app.log("SlidingPuzzleGameScreen", "Nouvelle couleur de fond: " + bgColor);
                     }
                     if (parameters.has("shuffle")) {
                         shuffleMoves = parameters.getInt("shuffle");
-                        System.out.println("Nouveau nombre de mélanges: " + shuffleMoves);
+                        Gdx.app.log("SlidingPuzzleGameScreen", "Nouveau nombre de mélanges: " + shuffleMoves);
                     }
                     if (parameters.has("animationSpeed")) {
                         animationSpeed = parameters.getFloat("animationSpeed");
-                        System.out.println("Nouvelle vitesse d'animation: " + animationSpeed);
+                        Gdx.app.log("SlidingPuzzleGameScreen", "Nouvelle vitesse d'animation: " + animationSpeed);
                     }
                     
                     // Paramètres du filtre de couleur du background (manquants dans le reload)
                     if (parameters.has("bgHue")) {
                         float hue = parameters.getFloat("bgHue");
                         backgroundHue = Math.max(0, Math.min(360, hue));
-                        System.out.println("Nouvelle teinte de fond: " + backgroundHue);
+                        Gdx.app.log("SlidingPuzzleGameScreen", "Nouvelle teinte de fond: " + backgroundHue);
                     }
                     if (parameters.has("bgSaturation")) {
                         float saturation = parameters.getFloat("bgSaturation");
                         backgroundSaturation = Math.max(0, Math.min(100, saturation));
-                        System.out.println("Nouvelle saturation de fond: " + backgroundSaturation);
+                        Gdx.app.log("SlidingPuzzleGameScreen", "Nouvelle saturation de fond: " + backgroundSaturation);
                     }
                     if (parameters.has("bgLightness")) {
                         float lightness = parameters.getFloat("bgLightness");
                         backgroundLightness = Math.max(-100, Math.min(100, lightness));
-                        System.out.println("Nouvelle luminosité de fond: " + backgroundLightness);
+                        Gdx.app.log("SlidingPuzzleGameScreen", "Nouvelle luminosité de fond: " + backgroundLightness);
                     }
                     
                     // Réinitialiser l'état du jeu
                     isPuzzleSolved = false;
                     
                     // Utiliser la méthode factorisée pour l'initialisation complète
-                    System.out.println("Relancement de l'initialisation complète du jeu...");
+                    Gdx.app.log("SlidingPuzzleGameScreen", "Relancement de l'initialisation complète du jeu...");
                     initializeGameCompletely();
                     
-                    System.out.println("Jeu rechargé avec les nouveaux paramètres");
+                    Gdx.app.log("SlidingPuzzleGameScreen", "Jeu rechargé avec les nouveaux paramètres");
                 }
             }
         } catch (Exception e) {
-            System.err.println("Erreur lors du rechargement depuis games.json: " + e.getMessage());
-            e.printStackTrace();
+            Gdx.app.error("SlidingPuzzleGameScreen", "Erreur lors du rechargement depuis games.json: " + e.getMessage());
+            // Stack trace logged automatically by Gdx.app.error
         }
     }
     
@@ -681,7 +697,7 @@ public class SlidingPuzzleGameScreen extends GameScreen {
                 backgroundColor = new Color(r, g, b, 1.0f);
             }
         } catch (NumberFormatException e) {
-            System.err.println("Format de couleur invalide: " + colorStr + ", utilisation de la couleur par défaut");
+            Gdx.app.error("SlidingPuzzleGameScreen", "Format de couleur invalide: " + colorStr + ", utilisation de la couleur par défaut");
             backgroundColor = new Color(0, 0, 0, 1); // Noir par défaut
         }
     }
@@ -689,7 +705,7 @@ public class SlidingPuzzleGameScreen extends GameScreen {
 
     @Override
     protected Theme loadTheme(int day) {
-        System.out.println("Chargement de la ressource graphique pour le jour " + day);
+        Gdx.app.log("SlidingPuzzleGameScreen", "Chargement de la ressource graphique pour le jour " + day);
         
         // Charger la texture du puzzle
         String fullImagePath = this.theme.getFullImagePath();
@@ -698,7 +714,7 @@ public class SlidingPuzzleGameScreen extends GameScreen {
         }
         
         try {
-            System.out.println("Chargement de la texture depuis: " + fullImagePath);
+            Gdx.app.log("SlidingPuzzleGameScreen", "Chargement de la texture depuis: " + fullImagePath);
             puzzleTexture = new Texture(Gdx.files.internal(fullImagePath));
             fullImageTexture = new Texture(Gdx.files.internal(fullImagePath));
             
@@ -706,8 +722,8 @@ public class SlidingPuzzleGameScreen extends GameScreen {
             // nous pouvons créer les tuiles
             createPuzzleTiles();
         } catch (Exception e) {
-            System.err.println("Erreur lors du chargement de la texture: " + e.getMessage());
-            e.printStackTrace();
+            Gdx.app.error("SlidingPuzzleGameScreen", "Erreur lors du chargement de la texture: " + e.getMessage());
+            // Stack trace logged automatically by Gdx.app.error
             throw new IllegalStateException("Erreur lors du chargement de la texture: " + e.getMessage(), e);
         }
         
@@ -750,11 +766,11 @@ public class SlidingPuzzleGameScreen extends GameScreen {
 
     @Override
     protected void initializeGame() {
-        System.out.println("Initialisation du puzzle coulissant pour le jour " + dayId);
+        Gdx.app.log("SlidingPuzzleGameScreen", "Initialisation du puzzle coulissant pour le jour " + dayId);
 
         // Vérifier que la texture est chargée
         if (whiteTexture == null) {
-            System.err.println("ERREUR: Texture du puzzle non chargée");
+            Gdx.app.error("SlidingPuzzleGameScreen", "ERREUR: Texture du puzzle non chargée");
             return;
         }
 
@@ -770,7 +786,7 @@ public class SlidingPuzzleGameScreen extends GameScreen {
         
         // S'assurer que tileSize reste positif
         if (maxTileSize <= 0) {
-            System.err.println("ATTENTION: Grille trop grande pour l'espace disponible. Utilisation d'une taille minimale.");
+            Gdx.app.error("SlidingPuzzleGameScreen", "ATTENTION: Grille trop grande pour l'espace disponible. Utilisation d'une taille minimale.");
             maxTileSize = Math.min(availableWidth, availableHeight) / gridSize;
         }
         
@@ -843,7 +859,7 @@ public class SlidingPuzzleGameScreen extends GameScreen {
                 }
 
                 if (solved) {
-                    System.out.println("Puzzle résolu !");
+                    Gdx.app.log("SlidingPuzzleGameScreen", "Puzzle résolu !");
                     isPuzzleSolved = true;
                     animationState.start();
                     
@@ -879,20 +895,34 @@ public class SlidingPuzzleGameScreen extends GameScreen {
     }
 
     /**
-     * Calcule les dimensions et l'échelle du background une seule fois (comme MastermindGameScreen)
+     * Calcule les dimensions et l'échelle du background avec crop pour garder l'aspect ratio
      */
     private void calculateBackgroundDimensions() {
-        // La largeur monde est fixe à 2048
+        if (backgroundTexture == null) return;
+        
         float screenWidth = DisplayConfig.WORLD_WIDTH;  // Toujours 2048
         float screenHeight = viewport.getWorldHeight(); // Variable selon aspect ratio
+        float screenRatio = screenWidth / screenHeight;
         
-        // Pour SlidingPuzzle, on utilise tout l'écran disponible
-        currentBgWidth = screenWidth;
-        currentBgHeight = screenHeight;
-        currentBgX = 0;
-        currentBgY = 0;
-        currentScaleX = 1.0f;
-        currentScaleY = 1.0f;
+        float bgRatio = (float)backgroundTexture.getWidth() / backgroundTexture.getHeight();
+        
+        // Adapter par crop (couvrir tout l'écran, crop le surplus)
+        if (screenRatio > bgRatio) {
+            // Écran plus large que l'image : fitter en largeur, crop en hauteur
+            currentBgWidth = screenWidth;
+            currentBgHeight = currentBgWidth / bgRatio;
+            currentBgX = 0;
+            currentBgY = (screenHeight - currentBgHeight) / 2;
+        } else {
+            // Écran plus haut que l'image : fitter en hauteur, crop en largeur
+            currentBgHeight = screenHeight;
+            currentBgWidth = currentBgHeight * bgRatio;
+            currentBgX = (screenWidth - currentBgWidth) / 2;
+            currentBgY = 0;
+        }
+        
+        currentScaleX = currentBgWidth / backgroundTexture.getWidth();
+        currentScaleY = currentBgHeight / backgroundTexture.getHeight();
     }
     
     /**
@@ -928,15 +958,26 @@ public class SlidingPuzzleGameScreen extends GameScreen {
 
     @Override
     protected void renderGame() {
-        // Dessiner le background ou le fond uni selon l'état du jeu
-        if (backgroundTexture != null && !animationState.isActive() && !animationState.isComplete()) {
-            // Dessiner le background pendant le jeu normal
-            batch.setColor(Color.WHITE);
-            batch.draw(backgroundTexture, 0, 0, DisplayConfig.WORLD_WIDTH, viewport.getWorldHeight());
-        } else {
-            // Dessiner un fond uni pendant les animations ou si le background n'est pas disponible
-            batch.setColor(backgroundColor);
-            batch.draw(whiteTexture, 0, 0, DisplayConfig.WORLD_WIDTH, viewport.getWorldHeight());
+        // Calculer l'alpha du background (même timing que les boutons)
+        float bgAlpha = isButtonsFading ? (1f - buttonsFadeTimer / BUTTONS_FADE_DURATION) : 1f;
+        bgAlpha = Math.max(0f, bgAlpha);
+        
+        // Toujours dessiner le fond de couleur en premier
+        batch.setColor(backgroundColor);
+        batch.draw(whiteTexture, 0, 0, DisplayConfig.WORLD_WIDTH, viewport.getWorldHeight());
+        
+        // Dessiner le background par-dessus avec fade pendant le fade des boutons
+        // Note : on ne teste PAS isComplete() car l'animation de victoire dure plus longtemps que le fade des boutons
+        if (backgroundTexture != null && (isButtonsFading || !isPuzzleSolved)) {
+            batch.setColor(1, 1, 1, bgAlpha);
+            
+            // Appliquer le shader HSL pour la colorisation avec dimensions calculées (crop)
+            com.widedot.calendar.shaders.HSLShader.begin(batch, backgroundHue, backgroundSaturation, backgroundLightness);
+            batch.draw(backgroundTexture, currentBgX, currentBgY, currentBgWidth, currentBgHeight);
+            com.widedot.calendar.shaders.HSLShader.end(batch);
+            
+            // Reset color
+            batch.setColor(1, 1, 1, 1);
         }
 
         // Réinitialiser la couleur avant de dessiner les tuiles
@@ -1051,7 +1092,7 @@ public class SlidingPuzzleGameScreen extends GameScreen {
     private void renderMergingTiles(float fadeProgress, float mergeProgress) {
         // Vérifications de sécurité
         if (emptyTileIndex < 0 || emptyTileIndex >= puzzleTiles.length || emptyTileIndex >= gridZones.length) {
-            System.err.println("emptyTileIndex hors limites dans renderMergingTiles: " + emptyTileIndex + " (puzzleTiles.length=" + puzzleTiles.length + ", gridZones.length=" + gridZones.length + ")");
+            Gdx.app.error("SlidingPuzzleGameScreen", "emptyTileIndex hors limites dans renderMergingTiles: " + emptyTileIndex + " (puzzleTiles.length=" + puzzleTiles.length + ", gridZones.length=" + gridZones.length + ")");
             return;
         }
         
@@ -1085,7 +1126,7 @@ public class SlidingPuzzleGameScreen extends GameScreen {
     private void renderMergingTile(int index, float mergeProgress) {
         // Vérifications de sécurité
         if (index < 0 || index >= puzzleState.length || index >= gridZones.length) {
-            System.err.println("Index hors limites dans renderMergingTile: " + index + " (puzzleState.length=" + puzzleState.length + ", gridZones.length=" + gridZones.length + ")");
+            Gdx.app.error("SlidingPuzzleGameScreen", "Index hors limites dans renderMergingTile: " + index + " (puzzleState.length=" + puzzleState.length + ", gridZones.length=" + gridZones.length + ")");
             return;
         }
         
@@ -1142,13 +1183,13 @@ public class SlidingPuzzleGameScreen extends GameScreen {
             if (i != emptyTileIndex && (!tileAnimation.isActive() || i != tileAnimation.getTileIndex())) {
                 // Vérifications de sécurité
                 if (i >= puzzleState.length || i >= puzzleTiles.length) {
-                    System.err.println("Index hors limites dans renderNormalPuzzle: " + i + " (puzzleState.length=" + puzzleState.length + ", puzzleTiles.length=" + puzzleTiles.length + ")");
+                    Gdx.app.error("SlidingPuzzleGameScreen", "Index hors limites dans renderNormalPuzzle: " + i + " (puzzleState.length=" + puzzleState.length + ", puzzleTiles.length=" + puzzleTiles.length + ")");
                     continue;
                 }
                 
                 int tileNumber = puzzleState[i];
                 if (tileNumber < 0 || tileNumber >= puzzleTiles.length) {
-                    System.err.println("tileNumber hors limites: " + tileNumber + " (puzzleTiles.length=" + puzzleTiles.length + ")");
+                    Gdx.app.error("SlidingPuzzleGameScreen", "tileNumber hors limites: " + tileNumber + " (puzzleTiles.length=" + puzzleTiles.length + ")");
                     continue;
                 }
                 
@@ -1178,7 +1219,7 @@ public class SlidingPuzzleGameScreen extends GameScreen {
      * Crée l'input processor pour gérer les clics et raccourcis clavier
      */
     private void createInputProcessor() {
-        System.out.println("Début de création de l'InputAdapter pour SlidingPuzzle...");
+        Gdx.app.log("SlidingPuzzleGameScreen", "Début de création de l'InputAdapter pour SlidingPuzzle...");
         inputProcessor = new InputAdapter() {
             @Override
             public boolean touchDown(int screenX, int screenY, int pointer, int button) {
@@ -1195,20 +1236,22 @@ public class SlidingPuzzleGameScreen extends GameScreen {
             
             @Override
             public boolean keyDown(int keycode) {
-                System.out.println("Touche pressée: " + keycode + " (D=" + Input.Keys.D + ")");
+                Gdx.app.log("SlidingPuzzleGameScreen", "Touche pressée: " + keycode + " (D=" + Input.Keys.D + ")");
                 // Gestion du debug
                 if (debugManager != null && debugManager.handleKeyDown(keycode)) {
                     return true;
                 }
                 
-                // Gestion de la touche R pour résoudre (en mode test uniquement)
-                if (keycode == Input.Keys.R && isTestMode && !isPuzzleSolved) {
+                // Alt+R : Résoudre automatiquement le jeu (mode test uniquement)
+                if (keycode == Input.Keys.R && isTestMode && !isPuzzleSolved && 
+                    (Gdx.input.isKeyPressed(Input.Keys.ALT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.ALT_RIGHT))) {
                     solveGameWithKeyboard();
                     return true;
                 }
                 
-                // Gestion de la touche N pour déclencher la phase finale (en mode test uniquement)
-                if (keycode == Input.Keys.N && isTestMode && !isPuzzleSolved) {
+                // Alt+N : Déclencher la phase de victoire (mode test uniquement)
+                if (keycode == Input.Keys.N && isTestMode && !isPuzzleSolved && 
+                    (Gdx.input.isKeyPressed(Input.Keys.ALT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.ALT_RIGHT))) {
                     triggerVictoryPhase();
                     return true;
                 }
@@ -1225,14 +1268,14 @@ public class SlidingPuzzleGameScreen extends GameScreen {
                 return false;
             }
         };
-        System.out.println("InputAdapter créé avec succès pour SlidingPuzzle");
+        Gdx.app.log("SlidingPuzzleGameScreen", "InputAdapter créé avec succès pour SlidingPuzzle");
     }
     
     @Override
     protected void onScreenActivated() {
         super.onScreenActivated();
         
-        System.out.println("onScreenActivated appelé");
+        Gdx.app.log("SlidingPuzzleGameScreen", "onScreenActivated appelé");
         // Initialiser le système de debug après que l'écran soit complètement initialisé
         initializeDebugManager();
         
@@ -1258,19 +1301,19 @@ public class SlidingPuzzleGameScreen extends GameScreen {
      */
     private void handleClick(float worldX, float worldY) {
         if (true) {
-            System.out.println("Clic détecté dans SlidingPuzzleGameScreen");
-            System.out.println("Position du clic: (" + worldX + ", " + worldY + ")");
+            Gdx.app.log("SlidingPuzzleGameScreen", "Clic détecté dans SlidingPuzzleGameScreen");
+            Gdx.app.log("SlidingPuzzleGameScreen", "Position du clic: (" + worldX + ", " + worldY + ")");
 
             // Si le puzzle est résolu, retourner au menu sur n'importe quel clic
             if (isPuzzleSolved) {
-                System.out.println("Retour au menu après victoire");
+                Gdx.app.log("SlidingPuzzleGameScreen", "Retour au menu après victoire");
                 returnToMainMenu();
                 return;
             }
 
             // Si le panneau d'info est visible, n'importe quel clic le ferme
             if (showInfoPanel) {
-                System.out.println("Fermeture du panneau d'info");
+                Gdx.app.log("SlidingPuzzleGameScreen", "Fermeture du panneau d'info");
                 showInfoPanel = false;
                 return;
             }
@@ -1278,10 +1321,10 @@ public class SlidingPuzzleGameScreen extends GameScreen {
             // Désactiver les clics sur les boutons s'ils sont en train de disparaître
             if (!isButtonsFading) {
                 if (closeButton.contains(worldX, worldY)) {
-                    System.out.println("Bouton Close cliqué");
+                    Gdx.app.log("SlidingPuzzleGameScreen", "Bouton Close cliqué");
                     returnToMainMenu();
                 } else if (infoButton.contains(worldX, worldY)) {
-                    System.out.println("Bouton Info cliqué");
+                    Gdx.app.log("SlidingPuzzleGameScreen", "Bouton Info cliqué");
                     showInfoPanel = true;
                 } else {
                     handleTileClick(worldX, worldY);
@@ -1302,24 +1345,24 @@ public class SlidingPuzzleGameScreen extends GameScreen {
             if (gridZones[positionIndex].contains(worldX, worldY)) {
                 // Ignorer le clic si c'est sur la case vide
                 if (positionIndex == emptyTileIndex) {
-                    System.out.println("Clic sur la case vide (position " + positionIndex + ") - Ignoré");
+                    Gdx.app.log("SlidingPuzzleGameScreen", "Clic sur la case vide (position " + positionIndex + ") - Ignoré");
                     break;
                 }
 
                 int tileNumber = puzzleState[positionIndex];
-                System.out.println("Tuile numéro " + tileNumber + " cliquée (position " + positionIndex + ")");
-                System.out.println("Case vide actuelle: position " + emptyTileIndex);
+                Gdx.app.log("SlidingPuzzleGameScreen", "Tuile numéro " + tileNumber + " cliquée (position " + positionIndex + ")");
+                Gdx.app.log("SlidingPuzzleGameScreen", "Case vide actuelle: position " + emptyTileIndex);
 
                 if (isAdjacent(positionIndex, emptyTileIndex)) {
-                    System.out.println("Déplacement de la tuile " + tileNumber + " (position " + positionIndex + ") vers la case vide (position " + emptyTileIndex + ")");
+                    Gdx.app.log("SlidingPuzzleGameScreen", "Déplacement de la tuile " + tileNumber + " (position " + positionIndex + ") vers la case vide (position " + emptyTileIndex + ")");
 
                     // Jouer le son de déplacement
                     if (slidingSound != null) {
-                        System.out.println("Son de déplacement joué");
+                        Gdx.app.log("SlidingPuzzleGameScreen", "Son de déplacement joué");
                         slidingSound.play();
                     }
                     else {
-                        System.out.println("ERREUR: slidingSound est null");
+                        Gdx.app.log("SlidingPuzzleGameScreen", "ERREUR: slidingSound est null");
                     }
 
                     // Initialiser l'animation
@@ -1327,7 +1370,7 @@ public class SlidingPuzzleGameScreen extends GameScreen {
                     Vector3 end = new Vector3(gridZones[emptyTileIndex].x, gridZones[emptyTileIndex].y, 0);
                     tileAnimation.start(positionIndex, start, end);
                 } else {
-                    System.out.println("Déplacement impossible - Tuile " + tileNumber + " (position " + positionIndex + ") non adjacente à la case vide (position " + emptyTileIndex + ")");
+                    Gdx.app.log("SlidingPuzzleGameScreen", "Déplacement impossible - Tuile " + tileNumber + " (position " + positionIndex + ") non adjacente à la case vide (position " + emptyTileIndex + ")");
                 }
                 break;
             }
@@ -1338,7 +1381,7 @@ public class SlidingPuzzleGameScreen extends GameScreen {
      * Résout le puzzle automatiquement via raccourci clavier R (mode test uniquement)
      */
     private void solveGameWithKeyboard() {
-        System.out.println("Résolution automatique du puzzle coulissant via touche R (mode test)");
+        Gdx.app.log("SlidingPuzzleGameScreen", "Résolution automatique du puzzle coulissant via touche R (mode test)");
         
         if (game instanceof AdventCalendarGame) {
             AdventCalendarGame adventGame = (AdventCalendarGame) game;
@@ -1359,7 +1402,7 @@ public class SlidingPuzzleGameScreen extends GameScreen {
      * Déclenche la phase de victoire via raccourci clavier N (mode test uniquement)
      */
     private void triggerVictoryPhase() {
-        System.out.println("Déclenchement de la phase de victoire du puzzle coulissant via touche N (mode test)");
+        Gdx.app.log("SlidingPuzzleGameScreen", "Déclenchement de la phase de victoire du puzzle coulissant via touche N (mode test)");
         
         // Simuler une victoire comme si le puzzle venait d'être résolu
         isPuzzleSolved = true;
@@ -1589,7 +1632,7 @@ public class SlidingPuzzleGameScreen extends GameScreen {
                         tileSize
                     );
                 } else {
-                    System.err.println("Index hors limites dans resize: " + positionIndex + " (gridZones.length=" + gridZones.length + ", gridSize=" + gridSize + ")");
+                    Gdx.app.error("SlidingPuzzleGameScreen", "Index hors limites dans resize: " + positionIndex + " (gridZones.length=" + gridZones.length + ", gridSize=" + gridSize + ")");
                 }
             }
         }
@@ -1597,9 +1640,9 @@ public class SlidingPuzzleGameScreen extends GameScreen {
         // Mettre à jour les positions des boutons (comme MastermindGameScreen)
         updateButtonPositions();
 
-        System.out.println("Redimensionnement: " + width + "x" + height);
-        System.out.println("Viewport: " + viewport.getWorldWidth() + "x" + viewport.getWorldHeight());
-        System.out.println("Taille des tuiles: " + tileSize);
-        System.out.println("Position de la caméra: (" + viewport.getCamera().position.x + ", " + viewport.getCamera().position.y + ")");
+        Gdx.app.log("SlidingPuzzleGameScreen", "Redimensionnement: " + width + "x" + height);
+        Gdx.app.log("SlidingPuzzleGameScreen", "Viewport: " + viewport.getWorldWidth() + "x" + viewport.getWorldHeight());
+        Gdx.app.log("SlidingPuzzleGameScreen", "Taille des tuiles: " + tileSize);
+        Gdx.app.log("SlidingPuzzleGameScreen", "Position de la caméra: (" + viewport.getCamera().position.x + ", " + viewport.getCamera().position.y + ")");
     }
 }

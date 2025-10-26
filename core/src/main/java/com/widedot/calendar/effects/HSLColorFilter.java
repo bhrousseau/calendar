@@ -1,6 +1,7 @@
 package com.widedot.calendar.effects;
 
 import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.Gdx;
 
 /**
  * Filtre de colorisation HSL pour les images
@@ -15,6 +16,14 @@ public class HSLColorFilter {
      * @param lightness Luminosité (-100 à +100)
      */
     public static void applyHSLFilter(Pixmap pixmap, float hue, float saturation, float lightness) {
+        // DÉSACTIVER LE FILTRE HSL EN MODE HTML/GWT
+        // Raison: La manipulation pixel par pixel est trop lente en HTML
+        // et peut causer des crashs sur de grandes images (2048x1280 = 2.6M pixels)
+        if (com.badlogic.gdx.Application.ApplicationType.WebGL.equals(Gdx.app.getType())) {
+            Gdx.app.log("HSLColorFilter", "Filtre HSL désactivé en mode HTML (non compatible GWT)");
+            return;
+        }
+        
         int width = pixmap.getWidth();
         int height = pixmap.getHeight();
         

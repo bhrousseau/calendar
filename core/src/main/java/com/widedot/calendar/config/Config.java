@@ -53,7 +53,7 @@ public class Config {
             loadConfig();
         } else {
             config = null;
-            System.out.println("Fichier de configuration non trouvé. Utilisation des valeurs par défaut.");
+            Gdx.app.log("Config", "Fichier de configuration non trouvé. Utilisation des valeurs par défaut.");
         }
     }
     

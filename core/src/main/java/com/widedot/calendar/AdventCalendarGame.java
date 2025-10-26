@@ -99,7 +99,7 @@ public class AdventCalendarGame extends Game {
      */
     public void saveGameState() {
         Preferences prefs = Gdx.app.getPreferences(PREFERENCES_NAME);
-        System.out.println("Sauvegarde de l'état du jeu dans le répertoire: " + Gdx.files.getLocalStoragePath());
+        Gdx.app.log("AdventCalendarGame", "Sauvegarde de l'état du jeu dans le répertoire: " + Gdx.files.getLocalStoragePath());
         // Sauvegarder l'état de déverrouillage
         for (int i = 1; i <= 24; i++) {
             prefs.putBoolean(KEY_UNLOCKED_PREFIX + i, unlockedPaintings.get(i));
@@ -117,7 +117,7 @@ public class AdventCalendarGame extends Game {
         
         // Enregistrer les changements
         prefs.flush();
-        System.out.println("État du jeu sauvegardé");
+        Gdx.app.log("AdventCalendarGame", "État du jeu sauvegardé");
     }
     
     /**
@@ -126,7 +126,7 @@ public class AdventCalendarGame extends Game {
     public void loadGameState() {
         // Si on est en mode test et que use_save est false, ne pas charger la sauvegarde
         if (config.isTestModeEnabled() && !config.isTestUseSave()) {
-            System.out.println("Mode test avec use_save=false : pas de chargement de la sauvegarde");
+            Gdx.app.log("AdventCalendarGame", "Mode test avec use_save=false : pas de chargement de la sauvegarde");
             return;
         }
 
@@ -142,7 +142,7 @@ public class AdventCalendarGame extends Game {
         }
         
         if (!hasPrefs) {
-            System.out.println("Aucune sauvegarde trouvée, utilisation des valeurs par défaut");
+            Gdx.app.log("AdventCalendarGame", "Aucune sauvegarde trouvée, utilisation des valeurs par défaut");
             return;
         }
         
@@ -167,7 +167,7 @@ public class AdventCalendarGame extends Game {
             }
         }
         
-        System.out.println("État du jeu chargé");
+        Gdx.app.log("AdventCalendarGame", "État du jeu chargé");
     }
     
     /**
@@ -178,42 +178,42 @@ public class AdventCalendarGame extends Game {
     public boolean canUnlock(int day) {
         // Vérifier si le tableau existe
         if (!themeManager.hasThemeForDay(day)) {
-            System.out.println("Aucun tableau associé au jour " + day);
+            Gdx.app.log("AdventCalendarGame", "Aucun tableau associé au jour " + day);
             return false;
         }
         
         // Vérifier si le jour est déjà déverrouillé
         if (unlockedPaintings.get(day)) {
-            System.out.println("Le jour " + day + " est déjà déverrouillé");
+            Gdx.app.log("AdventCalendarGame", "Le jour " + day + " est déjà déverrouillé");
             return true;
         }
         
         // Vérifier si le jour est valide (entre 1 et 24)
         if (day < 1 || day > 24) {
-            System.out.println("Le jour " + day + " n'est pas valide (doit être entre 1 et 24)");
+            Gdx.app.log("AdventCalendarGame", "Le jour " + day + " n'est pas valide (doit être entre 1 et 24)");
             return false;
         }
         
         // Vérifier si le jour est déjà passé ou en cours
         if (!isDayValid(day)) {
-            System.out.println("Le jour " + day + " n'est pas encore valide (date)");
+            Gdx.app.log("AdventCalendarGame", "Le jour " + day + " n'est pas encore valide (date)");
             return false;
         }
         
         // Cas particulier pour le jour 1 (pas de jour précédent)
         if (day == 1) {
-            System.out.println("Le jour 1 peut toujours être déverrouillé");
+            Gdx.app.log("AdventCalendarGame", "Le jour 1 peut toujours être déverrouillé");
             return true;
         }
         
         // Vérifier si le jour précédent a été déverrouillé et résolu
         int previousDay = day - 1;
         if (!unlockedPaintings.get(previousDay) || scores.get(previousDay) == 0) {
-            System.out.println("Le jour précédent " + previousDay + " n'a pas été déverrouillé ou résolu");
+            Gdx.app.log("AdventCalendarGame", "Le jour précédent " + previousDay + " n'a pas été déverrouillé ou résolu");
             return false;
         }
         
-        System.out.println("Le jour " + day + " peut être déverrouillé");
+        Gdx.app.log("AdventCalendarGame", "Le jour " + day + " peut être déverrouillé");
         return true;
     }
     
@@ -235,8 +235,8 @@ public class AdventCalendarGame extends Game {
             referenceTime = testTime;
         }
 
-        System.out.println("calendarMode: " + calendarMode);
-        System.out.println("referenceTime: " + referenceTime);
+        Gdx.app.log("AdventCalendarGame", "calendarMode: " + calendarMode);
+        Gdx.app.log("AdventCalendarGame", "referenceTime: " + referenceTime);
         
         switch (calendarMode) {
             case "month":
@@ -270,18 +270,18 @@ public class AdventCalendarGame extends Game {
         long targetTimeMonthYear = targetTime / (1000 * 60 * 60 * 24 * 30);
         long targetTimeMonthDay = targetTime / (1000 * 60 * 60 * 24) - targetTimeMonthYear * 30;
         
-        System.out.println("Mois configuré: " + (targetTimeMonthDay + 1) + ", max jours: " + targetTimeMonthDay);
-        System.out.println("Jour demandé: " + day + ", jour référence: " + targetTimeMonthDay);
+        Gdx.app.log("AdventCalendarGame", "Mois configuré: " + (targetTimeMonthDay + 1) + ", max jours: " + targetTimeMonthDay);
+        Gdx.app.log("AdventCalendarGame", "Jour demandé: " + day + ", jour référence: " + targetTimeMonthDay);
         
         // Si le jour demandé dépasse le nombre de jours dans le mois, c'est invalide
         if (day > targetTimeMonthDay) {
-            System.out.println("Jour " + day + " dépasse le max de " + targetTimeMonthDay + " jours dans le mois");
+            Gdx.app.log("AdventCalendarGame", "Jour " + day + " dépasse le max de " + targetTimeMonthDay + " jours dans le mois");
             return false;
         }
         
         // Le jour est valide si le jour courant est >= au jour demandé
         boolean isValid = targetTimeMonthDay >= day;
-        System.out.println("Jour " + day + " est " + (isValid ? "valide" : "invalide") + " (jour courant: " + targetTimeMonthDay + ")");
+        Gdx.app.log("AdventCalendarGame", "Jour " + day + " est " + (isValid ? "valide" : "invalide") + " (jour courant: " + targetTimeMonthDay + ")");
         return isValid;
     }
     
@@ -362,7 +362,7 @@ public class AdventCalendarGame extends Game {
         if (visited) {
             int nextDay = day + 1;
             if (nextDay <= 24 && !isUnlocked(nextDay)) {
-                System.out.println("Jeu du jour " + day + " terminé, déverrouillage automatique du jour " + nextDay);
+                Gdx.app.log("AdventCalendarGame", "Jeu du jour " + day + " terminé, déverrouillage automatique du jour " + nextDay);
                 unlock(nextDay);
             }
         }
@@ -406,43 +406,64 @@ public class AdventCalendarGame extends Game {
      * @param day L'ID du jour
      */
     public void launchGame(int day) {
-        System.out.println("Tentative de lancement du mini-jeu pour le jour " + day);
+        Gdx.app.log("AdventCalendarGame", "launchGame() - Tentative de lancement du mini-jeu pour le jour " + day);
         
         // Vérifier d'abord que le jour est valide et déverrouillé
         if (!isDayValid(day)) {
-            System.err.println("Le jour " + day + " n'est pas valide");
+            Gdx.app.error("AdventCalendarGame", "launchGame() - Le jour " + day + " n'est pas valide");
             return;
         }
         
         if (!isUnlocked(day)) {
-            System.err.println("Le jour " + day + " n'est pas déverrouillé");
+            Gdx.app.error("AdventCalendarGame", "launchGame() - Le jour " + day + " n'est pas déverrouillé");
             return;
         }
         
+        Gdx.app.log("AdventCalendarGame", "launchGame() - Récupération du thème pour le jour " + day);
         // Récupérer le thème pour ce jour
         Theme theme = getThemeForDay(day);
         if (theme == null) {
-            System.err.println("Aucun thème trouvé pour le jour " + day);
+            Gdx.app.error("AdventCalendarGame", "launchGame() - Aucun thème trouvé pour le jour " + day);
             return;
         }
+        Gdx.app.log("AdventCalendarGame", "launchGame() - Thème trouvé: " + theme.getTitle());
         
         // Récupérer le type de jeu associé au jour
+        Gdx.app.log("AdventCalendarGame", "launchGame() - Récupération du template de jeu pour le jour " + day);
         String gameTemplate = themeManager.getGameTemplateForDay(day);
         if (gameTemplate == null || gameTemplate.isEmpty()) {
-            System.err.println("Aucun type de jeu défini pour le jour " + day);
+            Gdx.app.error("AdventCalendarGame", "launchGame() - Aucun type de jeu défini pour le jour " + day);
             return;
         }
+        Gdx.app.log("AdventCalendarGame", "launchGame() - Template de jeu: " + gameTemplate);
         
         try {
             // Créer l'écran de jeu correspondant
+            Gdx.app.log("AdventCalendarGame", "launchGame() - Appel à gameScreenFactory.createGameScreen()");
             Screen gameScreen = gameScreenFactory.createGameScreen(day, gameTemplate, this);
+            Gdx.app.log("AdventCalendarGame", "launchGame() - Écran de jeu créé avec succès: " + gameScreen.getClass().getSimpleName());
             
             // Utiliser l'écran de transition pour passer au jeu
-            System.out.println("Lancement du jeu " + gameTemplate + " pour le jour " + day + " avec transition");
-            setScreen(new com.widedot.calendar.screens.TransitionScreen(this, gameScreen));
-        } catch (Exception e) {
-            System.err.println("Erreur lors du lancement du jeu pour le jour " + day + ": " + e.getMessage());
-            e.printStackTrace();
+            Gdx.app.log("AdventCalendarGame", "launchGame() - Création de TransitionScreen");
+            com.widedot.calendar.screens.TransitionScreen transitionScreen = new com.widedot.calendar.screens.TransitionScreen(this, gameScreen);
+            Gdx.app.log("AdventCalendarGame", "launchGame() - TransitionScreen créé, appel à setScreen()");
+            setScreen(transitionScreen);
+            Gdx.app.log("AdventCalendarGame", "launchGame() - setScreen() terminé avec succès");
+        } catch (Throwable e) {
+            Gdx.app.error("AdventCalendarGame", "launchGame() - EXCEPTION CATCHÉE: " + e.getClass().getName() + ": " + e.getMessage());
+            // Log de la stack trace complète
+            StringBuilder stackTrace = new StringBuilder();
+            stackTrace.append("Stack trace:\n");
+            for (StackTraceElement element : e.getStackTrace()) {
+                stackTrace.append("  at ").append(element.toString()).append("\n");
+            }
+            if (e.getCause() != null) {
+                stackTrace.append("Caused by: ").append(e.getCause().getClass().getName()).append(": ").append(e.getCause().getMessage()).append("\n");
+                for (StackTraceElement element : e.getCause().getStackTrace()) {
+                    stackTrace.append("  at ").append(element.toString()).append("\n");
+                }
+            }
+            Gdx.app.error("AdventCalendarGame", stackTrace.toString());
         }
     }
     

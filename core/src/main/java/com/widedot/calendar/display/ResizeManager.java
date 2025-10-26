@@ -1,5 +1,6 @@
 package com.widedot.calendar.display;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
@@ -23,7 +24,7 @@ public class ResizeManager {
      * @param resizables Objets à redimensionner
      */
     public static void handleGameScreenResize(Viewport viewport, int width, int height, Resizable... resizables) {
-        System.out.println("Redimensionnement: " + width + "x" + height);
+        Gdx.app.log("ResizeManager", "Redimensionnement: " + width + "x" + height);
         
         // Mettre à jour le viewport
         ViewportManager.updateViewport(viewport, width, height);
@@ -34,8 +35,8 @@ public class ResizeManager {
         }
         
         // Informations de debug
-        System.out.println("Viewport: " + DisplayConfig.WORLD_WIDTH + "x" + viewport.getWorldHeight());
-        System.out.println("Redimensionnement terminé");
+        Gdx.app.log("ResizeManager", "Viewport: " + DisplayConfig.WORLD_WIDTH + "x" + viewport.getWorldHeight());
+        Gdx.app.log("ResizeManager", "Redimensionnement terminé");
     }
     
     /**

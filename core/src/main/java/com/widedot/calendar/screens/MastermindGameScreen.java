@@ -140,19 +140,35 @@ public class MastermindGameScreen extends GameScreen {
             }
             
             String variantFolder = (variant + 1 < 10 ? "0" : "") + (variant + 1);
-            FileHandle[] frameFiles = Gdx.files.internal("images/games/mmd/anim/opening/" + variantFolder).list();
             
-            // Trier les fichiers par nom pour assurer l'ordre correct
-            Array<FileHandle> sortedFiles = new Array<>(frameFiles);
-            sortedFiles.sort((f1, f2) -> f1.name().compareTo(f2.name()));
-            
-            for (FileHandle frame : sortedFiles) {
-                if (frame.extension().equalsIgnoreCase("png")) {
-                    Texture frameTexture = new Texture(frame);
+            // Solution GWT-compatible : charger les frames par index numérique
+            // Les frames sont nommées 001.png, 002.png, etc.
+            // On essaie de charger jusqu'à ce qu'un fichier n'existe plus
+            int frameIndex = 1;
+            while (true) {
+                // Formater le numéro avec padding à 3 chiffres (001, 002, etc.)
+                String frameNumber = (frameIndex < 10 ? "00" : (frameIndex < 100 ? "0" : "")) + frameIndex;
+                String framePath = "images/games/mmd/anim/opening/" + variantFolder + "/" + frameNumber + ".png";
+                
+                FileHandle frameFile = Gdx.files.internal(framePath);
+                if (!frameFile.exists()) {
+                    // Plus de frames à charger
+                    break;
+                }
+                
+                try {
+                    Texture frameTexture = new Texture(frameFile);
                     frameTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
                     sharedFrames.add(frameTexture);
+                    frameIndex++;
+                } catch (Exception e) {
+                    // Erreur de chargement, on arrête
+                    Gdx.app.error("MastermindGameScreen", "Erreur lors du chargement de la frame " + framePath + ": " + e.getMessage());
+                    break;
                 }
             }
+            
+            Gdx.app.log("MastermindGameScreen", "Chargé " + sharedFrames.size + " frames d'animation pour la variante " + variantFolder);
         }
         
         static void disposeSharedFrames() {
@@ -473,7 +489,7 @@ public class MastermindGameScreen extends GameScreen {
                 this.numberOfSymbols = ((Number) parameters.get("numberOfSymbols")).intValue();
                 // S'assurer que le nombre de symboles est entre 4 et 6
                 this.numberOfSymbols = Math.max(4, Math.min(6, this.numberOfSymbols));
-                System.out.println("Nombre de symboles défini à : " + this.numberOfSymbols);
+                Gdx.app.log("MastermindGameScreen", "Nombre de symboles défini à : " + this.numberOfSymbols);
             }
             if (parameters.containsKey("bgColor")) {
                 String bgColor = (String) parameters.get("bgColor");
@@ -486,7 +502,7 @@ public class MastermindGameScreen extends GameScreen {
         
         // Vérifier si on est en mode test via Config
         this.isTestMode = Config.getInstance().isTestModeEnabled();
-        System.out.println("Mode test Mastermind: " + isTestMode);
+        Gdx.app.log("MastermindGameScreen", "Mode test Mastermind: " + isTestMode);
         
         // Initialiser les éléments UI
         this.font = new BitmapFont();
@@ -515,7 +531,7 @@ public class MastermindGameScreen extends GameScreen {
         try {
             this.infoButtonTexture = new Texture(Gdx.files.internal("images/ui/help.png"));
         } catch (Exception e) {
-            System.err.println("Erreur lors du chargement du bouton info: " + e.getMessage());
+            Gdx.app.error("MastermindGameScreen", "Erreur lors du chargement du bouton info: " + e.getMessage());
             this.infoButtonTexture = null;
         }
         
@@ -523,7 +539,7 @@ public class MastermindGameScreen extends GameScreen {
         try {
             this.closeButtonTexture = new Texture(Gdx.files.internal("images/ui/close.png"));
         } catch (Exception e) {
-            System.err.println("Erreur lors du chargement du bouton close: " + e.getMessage());
+            Gdx.app.error("MastermindGameScreen", "Erreur lors du chargement du bouton close: " + e.getMessage());
             this.closeButtonTexture = null;
         }
 
@@ -532,7 +548,7 @@ public class MastermindGameScreen extends GameScreen {
             this.backgroundTexture = new Texture(Gdx.files.internal("images/games/mmd/background/background.png"));
             this.backgroundTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
         } catch (Exception e) {
-            System.err.println("Erreur lors du chargement du fond d'écran: " + e.getMessage());
+            Gdx.app.error("MastermindGameScreen", "Erreur lors du chargement du fond d'écran: " + e.getMessage());
             this.backgroundTexture = null;
         }
         
@@ -592,36 +608,36 @@ public class MastermindGameScreen extends GameScreen {
         this.imageSquares = null;
         
         // Initialiser les noms des symboles
-        System.out.println("Initialisation des symboles...");
+        Gdx.app.log("MastermindGameScreen", "Initialisation des symboles...");
         initializeSymbols();
-        System.out.println("Symboles initialisés");
+        Gdx.app.log("MastermindGameScreen", "Symboles initialisés");
         
         // Charger les images de symboles selon les paramètres
-        System.out.println("Chargement des textures de symboles...");
+        Gdx.app.log("MastermindGameScreen", "Chargement des textures de symboles...");
         if (symbolImagesParam != null && !symbolImagesParam.trim().isEmpty()) {
-            System.out.println("Chargement des symboles depuis les paramètres...");
+            Gdx.app.log("MastermindGameScreen", "Chargement des symboles depuis les paramètres...");
             loadSymbolImages(symbolImagesParam);
         } else {
-            System.out.println("Aucun paramètre symbolImages, chargement par défaut...");
+            Gdx.app.log("MastermindGameScreen", "Aucun paramètre symbolImages, chargement par défaut...");
             loadDefaultSymbolImages();
         }
         
         // Charger les sons
-        System.out.println("Chargement des sons...");
+        Gdx.app.log("MastermindGameScreen", "Chargement des sons...");
         loadSounds();
-        System.out.println("Sons chargés");
+        Gdx.app.log("MastermindGameScreen", "Sons chargés");
         
         // Créer l'input processor pour les clics
-        System.out.println("Création de l'input processor...");
+        Gdx.app.log("MastermindGameScreen", "Création de l'input processor...");
         createInputProcessor();
-        System.out.println("Input processor créé");
+        Gdx.app.log("MastermindGameScreen", "Input processor créé");
         
         // Charger la texture de la case
         try {
             this.boxTexture = new Texture(Gdx.files.internal("images/games/mmd/box/box-close.png"));
             this.boxTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
         } catch (Exception e) {
-            System.err.println("Erreur lors du chargement de la texture box-close: " + e.getMessage());
+            Gdx.app.error("MastermindGameScreen", "Erreur lors du chargement de la texture box-close: " + e.getMessage());
             this.boxTexture = null;
         }
         
@@ -637,7 +653,7 @@ public class MastermindGameScreen extends GameScreen {
         // Initialiser le Stage pour les transitions
         initializeTransitionStage();
         
-        System.out.println("Constructeur MastermindGameScreen terminé avec succès");
+        Gdx.app.log("MastermindGameScreen", "Constructeur MastermindGameScreen terminé avec succès");
     }
     
     @Override
@@ -661,7 +677,7 @@ public class MastermindGameScreen extends GameScreen {
                 return new Color(r, g, b, 1);
             }
         } catch (NumberFormatException e) {
-            System.err.println("Format de couleur invalide: " + colorStr);
+            Gdx.app.error("MastermindGameScreen", "Format de couleur invalide: " + colorStr);
         }
         return new Color(1, 1, 1, 1);
     }
@@ -682,23 +698,23 @@ public class MastermindGameScreen extends GameScreen {
     
     private void loadDefaultSymbolImages() {
         try {
-            System.out.println("Chargement des symboles par défaut pour " + numberOfSymbols + " symboles");
+            Gdx.app.log("MastermindGameScreen", "Chargement des symboles par défaut pour " + numberOfSymbols + " symboles");
             // Utiliser des symboles génériques - on va créer des textures de couleur unie
             createDefaultSymbolTextures();
-            System.out.println("Chargement des symboles par défaut terminé");
+            Gdx.app.log("MastermindGameScreen", "Chargement des symboles par défaut terminé");
         } catch (Exception e) {
-            System.err.println("ERREUR CRITIQUE dans loadDefaultSymbolImages: " + e.getMessage());
-            e.printStackTrace();
+            Gdx.app.error("MastermindGameScreen", "ERREUR CRITIQUE dans loadDefaultSymbolImages: " + e.getMessage());
+            // Stack trace logged automatically
         }
     }
     
     private void loadSymbolImages(String symbolImages) {
         try {
-            System.out.println("Début du chargement des symboles: " + symbolImages);
+            Gdx.app.log("MastermindGameScreen", "Début du chargement des symboles: " + symbolImages);
             
             // Vérifier que symbolNames est initialisé
             if (symbolNames == null) {
-                System.err.println("ERREUR: symbolNames n'est pas initialisé, initialisation en cours...");
+                Gdx.app.error("MastermindGameScreen", "ERREUR: symbolNames n'est pas initialisé, initialisation en cours...");
                 symbolNames = new String[numberOfSymbols];
                 for (int i = 0; i < numberOfSymbols; i++) {
                     symbolNames[i] = "Symbole " + (i + 1);
@@ -708,7 +724,7 @@ public class MastermindGameScreen extends GameScreen {
             String[] imageNames = symbolImages.split(",");
             symbolTextures = new Texture[numberOfSymbols];
             
-            System.out.println("Nombre de symboles à charger: " + numberOfSymbols + ", Images disponibles: " + imageNames.length);
+            Gdx.app.log("MastermindGameScreen", "Nombre de symboles à charger: " + numberOfSymbols + ", Images disponibles: " + imageNames.length);
             
             for (int i = 0; i < numberOfSymbols; i++) {
                 try {
@@ -716,44 +732,44 @@ public class MastermindGameScreen extends GameScreen {
                         String imageName = imageNames[i].trim();
                         if (!imageName.isEmpty()) {
                             String imagePath = "images/games/mmd/symbol/" + imageName;
-                            System.out.println("Chargement symbole " + i + ": " + imagePath);
+                            Gdx.app.log("MastermindGameScreen", "Chargement symbole " + i + ": " + imagePath);
                             
                             // Vérifier que le fichier existe
                             if (Gdx.files.internal(imagePath).exists()) {
-                                System.out.println("Fichier trouvé, chargement en cours...");
+                                Gdx.app.log("MastermindGameScreen", "Fichier trouvé, chargement en cours...");
                                 symbolTextures[i] = new Texture(Gdx.files.internal(imagePath));
-                                System.out.println("✓ Texture chargée pour symbole " + i + ": " + imagePath);
+                                Gdx.app.log("MastermindGameScreen", "✓ Texture chargée pour symbole " + i + ": " + imagePath);
                             } else {
-                                System.err.println("✗ Fichier non trouvé: " + imagePath);
+                                Gdx.app.error("MastermindGameScreen", "✗ Fichier non trouvé: " + imagePath);
                                 createErrorTexture(i);
                             }
                         } else {
-                            System.out.println("Nom d'image vide pour symbole " + i + ", création texture par défaut");
+                            Gdx.app.log("MastermindGameScreen", "Nom d'image vide pour symbole " + i + ", création texture par défaut");
                             createErrorTexture(i);
                         }
                     } else {
-                        System.out.println("Pas assez d'images (" + imageNames.length + " disponibles, " + numberOfSymbols + " requis), création texture par défaut pour symbole " + i);
+                        Gdx.app.log("MastermindGameScreen", "Pas assez d'images (" + imageNames.length + " disponibles, " + numberOfSymbols + " requis), création texture par défaut pour symbole " + i);
                         createErrorTexture(i);
                     }
                 } catch (Exception e) {
-                    System.err.println("ERREUR lors du chargement du symbole " + i + ": " + e.getMessage());
-                    e.printStackTrace();
+                    Gdx.app.error("MastermindGameScreen", "ERREUR lors du chargement du symbole " + i + ": " + e.getMessage());
+                    // Stack trace logged automatically
                     createErrorTexture(i);
                 }
             }
             
-            System.out.println("Chargement des textures terminé, mise à jour des noms...");
+            Gdx.app.log("MastermindGameScreen", "Chargement des textures terminé, mise à jour des noms...");
             
             // Mettre à jour les noms des symboles basés sur les fichiers d'images
             for (int i = 0; i < numberOfSymbols; i++) {
                 try {
-                    System.out.println("Mise à jour du nom pour symbole " + i);
+                    Gdx.app.log("MastermindGameScreen", "Mise à jour du nom pour symbole " + i);
                     if (i < imageNames.length) {
                         String imageName = imageNames[i].trim();
-                        System.out.println("Nom d'image pour symbole " + i + ": '" + imageName + "'");
+                        Gdx.app.log("MastermindGameScreen", "Nom d'image pour symbole " + i + ": '" + imageName + "'");
                         if (!imageName.isEmpty() && imageName.contains("_")) {
                             String[] parts = imageName.split("_");
-                            System.out.println("Parties du nom: " + java.util.Arrays.toString(parts));
+                            Gdx.app.log("MastermindGameScreen", "Parties du nom: " + java.util.Arrays.toString(parts));
                             if (parts.length >= 2) {
                                 String color = parts[0];
                                 String shape = parts[1].replace(".png", "");
@@ -769,26 +785,26 @@ public class MastermindGameScreen extends GameScreen {
                     } else {
                         symbolNames[i] = "Symbole " + (i + 1);
                     }
-                    System.out.println("✓ Nom du symbole " + i + ": " + symbolNames[i]);
+                    Gdx.app.log("MastermindGameScreen", "✓ Nom du symbole " + i + ": " + symbolNames[i]);
                 } catch (Exception e) {
-                    System.err.println("✗ Erreur lors de la mise à jour du nom du symbole " + i + ": " + e.getMessage());
-                    e.printStackTrace();
+                    Gdx.app.error("MastermindGameScreen", "✗ Erreur lors de la mise à jour du nom du symbole " + i + ": " + e.getMessage());
+                    // Stack trace logged automatically
                     symbolNames[i] = "Symbole " + (i + 1);
                 }
             }
             
-            System.out.println("Chargement des symboles terminé avec succès");
+            Gdx.app.log("MastermindGameScreen", "Chargement des symboles terminé avec succès");
             
         } catch (Exception e) {
-            System.err.println("ERREUR CRITIQUE dans loadSymbolImages: " + e.getMessage());
-            e.printStackTrace();
+            Gdx.app.error("MastermindGameScreen", "ERREUR CRITIQUE dans loadSymbolImages: " + e.getMessage());
+            // Stack trace logged automatically
             // Créer des textures d'erreur seulement pour les symboles qui n'ont pas pu être chargés
             if (symbolTextures == null) {
                 symbolTextures = new Texture[numberOfSymbols];
             }
             for (int i = 0; i < numberOfSymbols; i++) {
                 if (symbolTextures[i] == null) {
-                    System.out.println("Création de texture d'erreur pour symbole manquant " + i);
+                    Gdx.app.log("MastermindGameScreen", "Création de texture d'erreur pour symbole manquant " + i);
                     createErrorTexture(i);
                 }
                 if (symbolNames[i] == null) {
@@ -836,11 +852,11 @@ public class MastermindGameScreen extends GameScreen {
                 // Mettre à jour le nom du symbole
                 symbolNames[i] = "Symbole " + (i + 1) + " (" + color.toString().substring(0, 6) + ")";
                 
-                System.out.println("✓ Texture par défaut créée pour symbole " + i + ": " + symbolNames[i]);
+                Gdx.app.log("MastermindGameScreen", "✓ Texture par défaut créée pour symbole " + i + ": " + symbolNames[i]);
                 
             } catch (Exception e) {
-                System.err.println("✗ Erreur lors de la création de la texture par défaut pour symbole " + i + ": " + e.getMessage());
-                e.printStackTrace();
+                Gdx.app.error("MastermindGameScreen", "✗ Erreur lors de la création de la texture par défaut pour symbole " + i + ": " + e.getMessage());
+                // Stack trace logged automatically
                 createErrorTexture(i);
             }
         }
@@ -848,17 +864,17 @@ public class MastermindGameScreen extends GameScreen {
     
     private void createErrorTexture(int symbolIndex) {
         try {
-            System.out.println("ATTENTION: Création d'une texture d'erreur pour symbole " + symbolIndex);
+            Gdx.app.log("MastermindGameScreen", "ATTENTION: Création d'une texture d'erreur pour symbole " + symbolIndex);
             // Créer une texture rouge d'erreur
             Pixmap errorPixmap = new Pixmap(64, 64, Pixmap.Format.RGBA8888);
             errorPixmap.setColor(Color.RED);
             errorPixmap.fill();
             symbolTextures[symbolIndex] = new Texture(errorPixmap);
             errorPixmap.dispose();
-            System.out.println("✓ Texture d'erreur créée pour symbole " + symbolIndex);
+            Gdx.app.log("MastermindGameScreen", "✓ Texture d'erreur créée pour symbole " + symbolIndex);
         } catch (Exception e) {
-            System.err.println("✗ Impossible de créer la texture d'erreur pour symbole " + symbolIndex + ": " + e.getMessage());
-            e.printStackTrace();
+            Gdx.app.error("MastermindGameScreen", "✗ Impossible de créer la texture d'erreur pour symbole " + symbolIndex + ": " + e.getMessage());
+            // Stack trace logged automatically
             symbolTextures[symbolIndex] = null;
         }
     }
@@ -869,12 +885,12 @@ public class MastermindGameScreen extends GameScreen {
             wrongSound = Gdx.audio.newSound(Gdx.files.internal(WRONG_SOUND_PATH));
             failedSound = Gdx.audio.newSound(Gdx.files.internal(FAILED_SOUND_PATH));
         } catch (Exception e) {
-            System.err.println("Erreur lors du chargement des sons: " + e.getMessage());
+            Gdx.app.error("MastermindGameScreen", "Erreur lors du chargement des sons: " + e.getMessage());
         }
     }
     
     private void createInputProcessor() {
-        System.out.println("Début de création de l'InputAdapter...");
+        Gdx.app.log("MastermindGameScreen", "Début de création de l'InputAdapter...");
         inputProcessor = new InputAdapter() {
             @Override
             public boolean touchDown(int screenX, int screenY, int pointer, int button) {
@@ -886,14 +902,16 @@ public class MastermindGameScreen extends GameScreen {
                         
             @Override
             public boolean keyDown(int keycode) {
-                // Gestion de la touche R pour résoudre (en mode test uniquement)
-                if (keycode == Input.Keys.R && isTestMode && !gameFinished) {
+                // Alt+R : Résoudre automatiquement le jeu (mode test uniquement)
+                if (keycode == Input.Keys.R && isTestMode && !gameFinished && 
+                    (Gdx.input.isKeyPressed(Input.Keys.ALT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.ALT_RIGHT))) {
                     solveGame();
                     return true;
                 }
                 
-                // Gestion de la touche N pour déclencher la phase finale (en mode test uniquement)
-                if (keycode == Input.Keys.N && isTestMode && !gameFinished && !gameWon) {
+                // Alt+N : Déclencher la phase de victoire (mode test uniquement)
+                if (keycode == Input.Keys.N && isTestMode && !gameFinished && !gameWon && 
+                    (Gdx.input.isKeyPressed(Input.Keys.ALT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.ALT_RIGHT))) {
                     triggerFinalPhase();
                     return true;
                 }
@@ -903,7 +921,7 @@ public class MastermindGameScreen extends GameScreen {
             }
             
         };
-        System.out.println("InputAdapter créé avec succès");
+        Gdx.app.log("MastermindGameScreen", "InputAdapter créé avec succès");
     }
     
     @Override
@@ -1039,12 +1057,12 @@ public class MastermindGameScreen extends GameScreen {
         
         // Debug - afficher le code secret en mode test
         if (isTestMode) {
-            System.out.print("Code secret (tokens): ");
+            StringBuilder secretCodeStr = new StringBuilder("Code secret (tokens): ");
             for (int token : secretCode) {
-                System.out.print(token + " ");
+                secretCodeStr.append(token).append(" ");
             }
-            System.out.println();
-            System.out.println("Nombre total de symboles disponibles: " + numberOfSymbols);
+            Gdx.app.log("MastermindGameScreen", secretCodeStr.toString());
+            Gdx.app.log("MastermindGameScreen", "Nombre total de symboles disponibles: " + numberOfSymbols);
         }
     }
     
@@ -1058,7 +1076,7 @@ public class MastermindGameScreen extends GameScreen {
                     // Découper l'image en carrés une fois qu'elle est chargée
                     createImageSquares();
                 } catch (Exception e) {
-                    System.err.println("Erreur lors du chargement de la texture du thème: " + e.getMessage());
+                    Gdx.app.error("MastermindGameScreen", "Erreur lors du chargement de la texture du thème: " + e.getMessage());
                 }
             }
         }
@@ -1437,7 +1455,7 @@ public class MastermindGameScreen extends GameScreen {
     
     
     private void solveGame() {
-        System.out.println("Résolution automatique du jeu Mastermind (mode test)");
+        Gdx.app.log("MastermindGameScreen", "Résolution automatique du jeu Mastermind (mode test)");
         
         if (game instanceof AdventCalendarGame) {
             AdventCalendarGame adventGame = (AdventCalendarGame) game;
@@ -1455,7 +1473,7 @@ public class MastermindGameScreen extends GameScreen {
     }
     
     private void triggerFinalPhase() {
-        System.out.println("Déclenchement de la phase finale du Mastermind (mode test - touche N)");
+        Gdx.app.log("MastermindGameScreen", "Déclenchement de la phase finale du Mastermind (mode test - touche N)");
         
         // Simuler une victoire comme si la combinaison venait d'être trouvée
         gameWon = true;
@@ -1483,7 +1501,7 @@ public class MastermindGameScreen extends GameScreen {
     }
     
     private void clearAllTokens() {
-        System.out.println("Suppression de tous les tokens après fade out");
+        Gdx.app.log("MastermindGameScreen", "Suppression de tous les tokens après fade out");
         
         // Supprimer tous les tokens de la grille (tentatives précédentes)
         this.attempts.clear();
@@ -1505,7 +1523,7 @@ public class MastermindGameScreen extends GameScreen {
     }
     
     private void closeAllBoxes() {
-        System.out.println("Fermeture de toutes les cases du plateau");
+        Gdx.app.log("MastermindGameScreen", "Fermeture de toutes les cases du plateau");
         
         // Démarrer l'animation de fermeture pour toutes les cases
         if (gridPositions != null) {
@@ -1522,7 +1540,7 @@ public class MastermindGameScreen extends GameScreen {
     }
     
     private void restartGame() {
-        System.out.println("Redémarrage du jeu Mastermind avec un nouveau code");
+        Gdx.app.log("MastermindGameScreen", "Redémarrage du jeu Mastermind avec un nouveau code");
         
         // Réinitialiser toutes les variables de jeu
         this.secretCode = new Array<>();
@@ -1588,7 +1606,7 @@ public class MastermindGameScreen extends GameScreen {
             startColumnAnimation(0);
         }
         
-        System.out.println("Nouveau code généré: " + secretCode);
+        Gdx.app.log("MastermindGameScreen", "Nouveau code généré: " + secretCode);
     }
     
     @Override
@@ -1863,8 +1881,17 @@ public class MastermindGameScreen extends GameScreen {
         // Capturer le framebuffer si demandé (AVANT les overlays)
         if (captureNextFramePending) {
             try {
-                // Capturer le framebuffer actuel
-                Pixmap pm = ScreenUtils.getFrameBufferPixmap(0, 0, Gdx.graphics.getBackBufferWidth(), Gdx.graphics.getBackBufferHeight());
+                // Capturer le framebuffer avec les dimensions exactes du viewport
+                int viewportWidth = (int) viewport.getScreenWidth();
+                int viewportHeight = (int) viewport.getScreenHeight();
+                
+                // Calculer l'offset pour centrer la capture dans la zone visible du viewport
+                int screenWidth = Gdx.graphics.getBackBufferWidth();
+                int screenHeight = Gdx.graphics.getBackBufferHeight();
+                int offsetX = (screenWidth - viewportWidth) / 2;
+                int offsetY = (screenHeight - viewportHeight) / 2;
+                
+                Pixmap pm = ScreenUtils.getFrameBufferPixmap(offsetX, offsetY, viewportWidth, viewportHeight);
                 
                 // Libérer l'ancienne texture
                 if (gameStateTexture != null) {
@@ -1881,12 +1908,12 @@ public class MastermindGameScreen extends GameScreen {
                 // Démarrer la transition basée sur les Actions
                 startActionBasedTransition();
                 
-                System.out.println("État du plateau de jeu capturé avec succès - Texture: " + 
+                Gdx.app.log("MastermindGameScreen", "État du plateau de jeu capturé avec succès - Texture: " + 
                                  gameStateTexture.getWidth() + "x" + gameStateTexture.getHeight());
                 
             } catch (Exception e) {
-                System.err.println("Erreur lors de la capture de l'état du plateau: " + e.getMessage());
-                e.printStackTrace();
+                Gdx.app.error("MastermindGameScreen", "Erreur lors de la capture de l'état du plateau: " + e.getMessage());
+                // Stack trace logged automatically
                 // En cas d'erreur, utiliser l'animation classique
                 captureNextFramePending = false;
                 isTransitioningToPicture = true;
@@ -2390,8 +2417,8 @@ public class MastermindGameScreen extends GameScreen {
             gridPositions.sort((c1, c2) -> Integer.compare(c1.col, c2.col));
             
         } catch (Exception e) {
-            System.err.println("Erreur lors du chargement des positions: " + e.getMessage());
-            e.printStackTrace();
+            Gdx.app.error("MastermindGameScreen", "Erreur lors du chargement des positions: " + e.getMessage());
+            // Stack trace logged automatically
         }
     }
 
@@ -2440,7 +2467,7 @@ public class MastermindGameScreen extends GameScreen {
      */
     private void startActionBasedTransition() {
         if (gameStateTexture == null) {
-            System.err.println("Impossible de démarrer la transition : texture d'état non capturée");
+            Gdx.app.error("MastermindGameScreen", "Impossible de démarrer la transition : texture d'état non capturée");
             return;
         }
         
@@ -2469,7 +2496,7 @@ public class MastermindGameScreen extends GameScreen {
             Actions.moveBy(-halfWidth, 0, SLIDING_DOOR_OPEN_DURATION), // Glisser vers la gauche
             Actions.run(() -> {
                 // Callback à la fin de l'animation des panneaux
-                System.out.println("Animation des panneaux terminée");
+                Gdx.app.log("MastermindGameScreen", "Animation des panneaux terminée");
             })
         ));
         
@@ -2483,14 +2510,14 @@ public class MastermindGameScreen extends GameScreen {
                 gameFinished = true;
                 showWinImage = true;
                 isUsingActionBasedTransition = false;
-                System.out.println("Transition vers image finale terminée");
+                Gdx.app.log("MastermindGameScreen", "Transition vers image finale terminée");
             })
         ));
         
         // Masquer les éléments du jeu immédiatement
         disableGameElements();
         
-        System.out.println("Transition avec Actions démarrée");
+        Gdx.app.log("MastermindGameScreen", "Transition avec Actions démarrée");
     }
 
     private void loadTokenTextures() {
@@ -2515,7 +2542,7 @@ public class MastermindGameScreen extends GameScreen {
                     tokenPositionTextures.add(positionTexture);
                 }
             } catch (Exception e) {
-                System.err.println("Erreur lors du chargement du token " + i + ": " + e.getMessage());
+                Gdx.app.error("MastermindGameScreen", "Erreur lors du chargement du token " + i + ": " + e.getMessage());
             }
         }
         
@@ -2531,9 +2558,9 @@ public class MastermindGameScreen extends GameScreen {
             // Charger dot-white.png (token correct et bien placé)
             dotWhiteTexture = new Texture(Gdx.files.internal("images/games/mmd/indicator/dot-white.png"));
             dotWhiteTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
-            System.out.println("✓ Texture dot-white chargée");
+            Gdx.app.log("MastermindGameScreen", "✓ Texture dot-white chargée");
         } catch (Exception e) {
-            System.err.println("Erreur lors du chargement de dot-white.png: " + e.getMessage());
+            Gdx.app.error("MastermindGameScreen", "Erreur lors du chargement de dot-white.png: " + e.getMessage());
             dotWhiteTexture = null;
         }
         
@@ -2541,9 +2568,9 @@ public class MastermindGameScreen extends GameScreen {
             // Charger dot-black.png (token correct mais mal placé)
             dotBlackTexture = new Texture(Gdx.files.internal("images/games/mmd/indicator/dot-black.png"));
             dotBlackTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
-            System.out.println("✓ Texture dot-black chargée");
+            Gdx.app.log("MastermindGameScreen", "✓ Texture dot-black chargée");
         } catch (Exception e) {
-            System.err.println("Erreur lors du chargement de dot-black.png: " + e.getMessage());
+            Gdx.app.error("MastermindGameScreen", "Erreur lors du chargement de dot-black.png: " + e.getMessage());
             dotBlackTexture = null;
         }
         
@@ -2551,9 +2578,9 @@ public class MastermindGameScreen extends GameScreen {
             // Charger dot-empty.png (token incorrect)
             dotEmptyTexture = new Texture(Gdx.files.internal("images/games/mmd/indicator/dot-empty.png"));
             dotEmptyTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
-            System.out.println("✓ Texture dot-empty chargée");
+            Gdx.app.log("MastermindGameScreen", "✓ Texture dot-empty chargée");
         } catch (Exception e) {
-            System.err.println("Erreur lors du chargement de dot-empty.png: " + e.getMessage());
+            Gdx.app.error("MastermindGameScreen", "Erreur lors du chargement de dot-empty.png: " + e.getMessage());
             dotEmptyTexture = null;
         }
     }
@@ -2718,8 +2745,8 @@ public class MastermindGameScreen extends GameScreen {
             int texH = gameStateTexture.getHeight();
             int halfW = texW / 2;
             
-            System.out.println("DEBUG: Texture - w:" + texW + " h:" + texH + " half:" + halfW);
-            System.out.println("DEBUG: Panneaux - leftX:" + leftPanelX + " rightX:" + rightPanelX + " width:" + leftPanelWidth + " height:" + screenHeight);
+            Gdx.app.log("MastermindGameScreen", "DEBUG: Texture - w:" + texW + " h:" + texH + " half:" + halfW);
+            Gdx.app.log("MastermindGameScreen", "DEBUG: Panneaux - leftX:" + leftPanelX + " rightX:" + rightPanelX + " width:" + leftPanelWidth + " height:" + screenHeight);
             
             // Panneau gauche - partie gauche de la texture
             batch.draw(
@@ -2741,7 +2768,7 @@ public class MastermindGameScreen extends GameScreen {
                 false, true                   // flipX, flipY
             );
             
-            System.out.println("Dessin des panneaux - Texture: " + texW + "x" + texH + 
+            Gdx.app.log("MastermindGameScreen", "Dessin des panneaux - Texture: " + texW + "x" + texH + 
                              ", Panneaux: " + leftPanelWidth + "x" + leftPanelHeight);
         }
     }
