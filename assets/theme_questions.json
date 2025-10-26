@@ -119,6 +119,66 @@
       "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur...",
       "answer": "Gustav Klimt",
       "alternatives": ["Klimt", "L'Arbre de vie", "Tree of Life", "G. Klimt", "Der Lebensbaum", "Klimt Gustav"]
+    },
+    "ancient_of_days": {
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur...",
+      "answer": "William Blake",
+      "alternatives": ["Blake", "L'Ancien des Jours", "Ancient of Days", "W. Blake", "Blake William"]
+    },
+    "composition_vii": {
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur...",
+      "answer": "Wassily Kandinsky",
+      "alternatives": ["Kandinsky", "Composition VII", "Composition 7", "Vassily Kandinsky", "W. Kandinsky", "Vasily Kandinsky", "Kandinsky Wassily"]
+    },
+    "grey_tree": {
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur...",
+      "answer": "Piet Mondrian",
+      "alternatives": ["Mondrian", "L'Arbre gris", "Grey Tree", "Arbre argenté", "P. Mondrian", "Piet Cornelis Mondrian", "Mondrian Piet"]
+    },
+    "new_york_city_i": {
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur...",
+      "answer": "Piet Mondrian",
+      "alternatives": ["Mondrian", "New York City 1", "P. Mondrian", "Piet Cornelis Mondrian", "Mondrian Piet", "New York City I"]
+    },
+    "marie_therese": {
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur...",
+      "answer": "Pablo Picasso",
+      "alternatives": ["Picasso", "Marie-Thérèse", "Portrait de Marie-Thérèse", "P. Picasso", "Pablo Ruiz Picasso", "Picasso Pablo"]
+    },
+    "naissance_de_venus": {
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur...",
+      "answer": "Sandro Botticelli",
+      "alternatives": ["Botticelli", "La Naissance de Vénus", "Birth of Venus", "S. Botticelli", "Alessandro di Mariano Filipepi", "Botticelli Sandro"]
+    },
+    "tournesols": {
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur...",
+      "answer": "Vincent van Gogh",
+      "alternatives": ["Van Gogh", "Les Tournesols", "Sunflowers", "V. van Gogh", "Vincent Willem van Gogh", "van Gogh Vincent"]
+    },
+    "yole": {
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur...",
+      "answer": "Pierre-Auguste Renoir",
+      "alternatives": ["Renoir", "La Yole", "The Skiff", "P. A. Renoir", "P. Renoir", "Renoir Pierre-Auguste"]
+    },
+    "excursionniste": {
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur...",
+      "answer": "Pierre-Auguste Renoir",
+      "alternatives": ["Renoir", "L'Excursionniste", "The Excursionist", "P. A. Renoir", "P. Renoir", "Renoir Pierre-Auguste"]
+    },
+    "tour_de_babel": {
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur...",
+      "answer": "Pieter Brueghel l'Ancien",
+      "alternatives": ["Brueghel", "La Tour de Babel", "Tower of Babel", "P. Brueghel", "Bruegel", "Brueghel Pieter"]
+    },
+    "femmes_tahiti": {
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur...",
+      "answer": "Paul Gauguin",
+      "alternatives": ["Gauguin", "Femmes de Tahiti", "Tahitian Women", "P. Gauguin", "Eugène Henri Paul Gauguin", "Gauguin Paul"]
+    },
+    "le_desespere": {
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur...",
+      "answer": "Gustave Courbet",
+      "alternatives": ["Courbet", "Le Désespéré", "The Desperate Man", "G. Courbet", "Jean Désiré Gustave Courbet", "Courbet Gustave"]
     }
   }
 } 

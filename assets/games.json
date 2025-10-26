@@ -20,16 +20,16 @@
 		}
 	},
 	{
-		"reference": "SPZ_composition_vii",
+		"reference": "SPZ_marie_therese",
 		"gameTemplate": "SPZ",
-		"theme": "composition_vii",
+		"theme": "marie_therese",
 		"parameters": {
-			"size": 3,
+			"size": 4,
 			"bgColor": "0,0,0",
-			"bgHue": 0.0,
-			"bgSaturation": 0.0,
-			"bgLightness": 0.0,
-			"shuffle": 10,
+			"bgHue": 125.0,
+			"bgSaturation": 25.0,
+			"bgLightness": 35.0,
+			"shuffle": 100,
 			"animationSpeed": 10.0
 		}
 	},
@@ -51,6 +51,11 @@
 		"reference": "SPZ_grey_tree",
 		"gameTemplate": "SPZ",
 		"theme": "grey_tree"
+	},
+	{
+		"reference": "SPZ_on_white_ii",
+		"gameTemplate": "SPZ",
+		"theme": "on_white_ii"
 	},
 	{
 		"reference": "SPZ_composition_1916",
@@ -118,9 +123,9 @@
 		}
 	},
 	{
-		"reference": "CGG_mona_lisa",
+		"reference": "CGG_tournesols",
 		"gameTemplate": "CGG",
-		"theme": "mona_lisa",
+		"theme": "tournesols",
 		"parameters": {
 			"maxAttempts": 4,
 			"initialCrystalSize": 500,
@@ -169,25 +174,25 @@
 		}
 	},
 	{
-		"reference": "QNA_blue_fiddler",
+		"reference": "QNA_femmes_tahiti",
 		"gameTemplate": "QNA",
-		"theme": "blue_fiddler",
+		"theme": "femmes_tahiti",
 		"parameters": {
 			"questionsFile": "quizz_culturepop.json"
 		}
 	},
 	{
-		"reference": "QNA_three_musicians",
+		"reference": "QNA_le_desespere",
 		"gameTemplate": "QNA",
-		"theme": "three_musicians",
+		"theme": "le_desespere",
 		"parameters": {
 			"questionsFile": "quizz_cultureg.json"
 		}
 	},
 	{
-		"reference": "QNA_guernica",
+		"reference": "QNA_mona_lisa",
 		"gameTemplate": "QNA",
-		"theme": "guernica",
+		"theme": "mona_lisa",
 		"parameters": {
 			"questionsFile": "quizz_mytho.json"
 		}
@@ -217,9 +222,9 @@
 		}
 	},
 	{
-		"reference": "MDD_i_and_village",
+		"reference": "MDD_yole",
 		"gameTemplate": "MMD",
-		"theme": "i_and_village",
+		"theme": "yole",
 		"presets": [
 			"easy"
 		]
@@ -241,25 +246,25 @@
 		]
 	},
 	{
-		"reference": "MDD_the_false_mirror",
+		"reference": "MDD_naissance_de_venus",
 		"gameTemplate": "MMD",
-		"theme": "the_false_mirror",
+		"theme": "naissance_de_venus",
 		"presets": [
 			"medium"
 		]
 	},
 	{
-		"reference": "MDD_on_white_ii",
+		"reference": "MDD_excursionniste",
 		"gameTemplate": "MMD",
-		"theme": "on_white_ii",
+		"theme": "excursionniste",
 		"presets": [
 			"medium"
 		]
 	},
 	{
-		"reference": "MDD_city",
+		"reference": "MDD_tour_de_babel",
 		"gameTemplate": "MMD",
-		"theme": "city",
+		"theme": "tour_de_babel",
 		"presets": [
 			"hard"
 		]

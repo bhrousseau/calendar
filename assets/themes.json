@@ -579,6 +579,167 @@
           "matchPercentage": 1.0000
         }
       }
+    },
+    {
+      "name": "marie_therese",
+      "title": "Marie Therese",
+      "artist": "Pablo Picasso",
+      "year": 1937,
+      "description": "Marie Therese est une peinture de Pablo Picasso, réalisée en 1923. Elle représente Marie-Thérèse Walter.",
+      "images": {
+        "full": "images/paintings/full/marie_therese.jpg",
+        "icon": "images/paintings/icon/marie_therese.png"
+      },
+      "crop": {
+        "square": {
+          "x": 0,
+          "y": 80,
+          "width": 637,
+          "height": 637,
+          "matchPercentage": 1.0000
+        }
+      }
+    },
+    {
+      "name": "naissance_de_venus",
+      "title": "Naissance de Venus",
+      "artist": "Sandro Botticelli",
+      "year": 1485,
+      "description": "Naissance de Venus est une peinture de Sandro Botticelli, réalisée en 1485. Elle représente la naissance de Venus.",
+      "images": {
+        "full": "images/paintings/full/naissance_de_venus.jpg",
+        "icon": "images/paintings/icon/naissance_de_venus.png"
+      },
+      "crop": {
+        "square": {
+          "x": 0,
+          "y": 238,
+          "width": 804,
+          "height": 804,
+          "matchPercentage": 1.0000
+        }
+      }
+    }
+    ,
+    {
+      "name": "tournesols",
+      "title": "Les tournesols",
+      "artist": "Vincent van Gogh",
+      "year": 1485,
+      "description": "Les tournesols est une peinture de Vincent van Gogh, réalisée en 1889.",
+      "images": {
+        "full": "images/paintings/full/tournesols.jpg",
+        "icon": "images/paintings/icon/tournesols.png"
+      },
+      "crop": {
+        "square": {
+          "x": 0,
+          "y": 538,
+          "width": 3349,
+          "height": 3349,
+          "matchPercentage": 1.0000
+        }
+      }
+    },
+    {
+      "name": "yole",
+      "title": "La Yole",
+      "artist": "Pierre-Auguste Renoir",
+      "year": 1875,
+      "description": "La Yole est une peinture de Pierre-Auguste Renoir, réalisée en 1875. Elle représente une yole dans un paysage.",
+      "images": {
+        "full": "images/paintings/full/yole.jpg",
+        "icon": "images/paintings/icon/yole.png"
+      },
+      "crop": {
+        "square": {
+          "x": 0,
+          "y": 525,
+          "width": 3285,
+          "height": 3285,
+          "matchPercentage": 1.0000
+        }
+      }
+    },
+    {
+      "name": "excursionniste",
+      "title": "Excursionniste",
+      "artist": "Pierre-Auguste Renoir",
+      "year": 1888,
+      "description": "Excursionniste est une peinture de Pierre-Auguste Renoir, réalisée en 1888. Elle représente un excursionniste dans un paysage.",
+      "images": {
+        "full": "images/paintings/full/excursionniste.jpg",
+        "icon": "images/paintings/icon/excursionniste.png"
+      },
+      "crop": {
+        "square": {
+          "x": 0,
+          "y": 93,
+          "width": 814,
+          "height": 814,
+          "matchPercentage": 1.0000
+        }
+      }
+    },
+    {
+      "name": "tour_de_babel",
+      "title": "La tour de Babel",
+      "artist": "Pieter Brueghel l'Ancien",
+      "year": 1563,
+      "description": "La tour de Babel est une peinture de Pieter Brueghel l'Ancien, réalisée en 1563. Elle représente la tour de Babel.",
+      "images": {
+        "full": "images/paintings/full/the_tower_of_babel.jpg",
+        "icon": "images/paintings/icon/the_tower_of_babel.png"
+      },
+      "crop": {
+        "square": {
+          "x": 0,
+          "y": 137,
+          "width": 749,
+          "height": 749,
+          "matchPercentage": 1.0000
+        }
+      }
+    },
+    {
+      "name": "femmes_tahiti",
+      "title": "Femmes de Tahiti",
+      "artist": "Paul Gauguin",
+      "year": 1899,
+      "description": "Femmes de Tahiti est une peinture de Paul Gauguin, réalisée en 1899. Elle représente des femmes de Tahiti.",
+      "images": {
+        "full": "images/paintings/full/femmes_de_tahiti.jpg",
+        "icon": "images/paintings/icon/femmes_de_tahiti.png"
+      },
+      "crop": {
+        "square": {
+          "x": 0,
+          "y": 403,
+          "width": 2369,
+          "height": 2369,
+          "matchPercentage": 1.0000
+        }
+      }
+    },
+    {
+      "name": "le_desespere",
+      "title": "Le désespéré",
+      "artist": "Gustave Courbet",
+      "year": 1857,
+      "description": "Le Désespéré est un autoportrait de Gustave Courbet réalisé entre 1843 et 1845",
+      "images": {
+        "full": "images/paintings/full/le_desespere.jpg",
+        "icon": "images/paintings/icon/le_desespere.png"
+      },
+      "crop": {
+        "square": {
+          "x": 0,
+          "y": 136,
+          "width": 1228,
+          "height": 1228,
+          "matchPercentage": 1.0000
+        }
+      }
     }
   ]
 }
