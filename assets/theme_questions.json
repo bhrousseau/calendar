@@ -1,124 +1,124 @@
 {
   "themeQuestions": {
     "composition_1916": {
-      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur",
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur...",
       "answer": "Piet Mondrian",
-      "alternatives": ["Mondrian", "mondrian", "piet mondrian", "Composition 1916", "composition 1916", "Composition en rouge, jaune, bleu et noir", "composition en rouge, jaune, bleu et noir"]
+      "alternatives": ["Mondrian", "Composition 1916", "Composition en rouge, jaune, bleu et noir", "Piet Cornelis Mondrian", "P. Mondrian", "Mondrian Piet", "Mondrian Piet Cornelis"]
     },
     "guernica": {
-      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur",
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur...",
       "answer": "Pablo Picasso",
-      "alternatives": ["Picasso", "picasso", "pablo picasso", "Guernica", "guernica"]
+      "alternatives": ["Picasso", "Guernica", "Pablo Ruiz Picasso", "P. Picasso", "Pablo Ruiz y Picasso", "Picasso Pablo", "Picasso Pablo Ruiz"]
     },
     "starry_night": {
-      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur",
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur...",
       "answer": "Vincent van Gogh",
-      "alternatives": ["Van Gogh", "van gogh", "vincent van gogh", "Van gogh", "La Nuit étoilée", "la nuit étoilée", "Nuit étoilée", "nuit étoilée", "Starry Night", "starry night"]
+      "alternatives": ["Van Gogh", "La Nuit étoilée", "Starry Night", "Vincent Willem van Gogh", "V. van Gogh", "van Gogh Vincent", "van Gogh Vincent Willem"]
     },
     "mona_lisa": {
-      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur",
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur...",
       "answer": "Leonardo da Vinci",
-      "alternatives": ["Léonard de Vinci", "leonardo da vinci", "da vinci", "vinci", "léonard de vinci", "La Joconde", "la joconde", "Joconde", "joconde", "Mona Lisa", "mona lisa"]
+      "alternatives": ["Léonard de Vinci", "da Vinci", "La Joconde", "Joconde", "Mona Lisa", "Leonardo di ser Piero da Vinci", "L. da Vinci", "da Vinci Leonardo", "da Vinci Leonardo di ser Piero"]
     },
     "pearl": {
-      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur",
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur...",
       "answer": "Johannes Vermeer",
-      "alternatives": ["Vermeer", "vermeer", "johannes vermeer", "La Jeune Fille à la perle", "la jeune fille à la perle", "Jeune Fille à la perle", "jeune fille à la perle", "Girl with a Pearl Earring", "girl with a pearl earring"]
+      "alternatives": ["Vermeer", "La Jeune Fille à la perle", "Girl with a Pearl Earring", "Jan Vermeer", "J. Vermeer", "Johannes van der Meer", "Vermeer Johannes", "Vermeer Jan"]
     },
     "kiss": {
-      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur",
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur...",
       "answer": "Gustav Klimt",
-      "alternatives": ["Klimt", "klimt", "gustav klimt", "Le Baiser", "le baiser", "Baiser", "baiser", "The Kiss", "the kiss"]
+      "alternatives": ["Klimt", "Le Baiser", "The Kiss", "G. Klimt", "Der Kuss", "Klimt Gustav"]
     },
     "on_white_ii": {
-      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur",
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur...",
       "answer": "Wassily Kandinsky",
-      "alternatives": ["Kandinsky", "kandinsky", "wassily kandinsky", "Sur blanc II", "sur blanc ii", "Sur blanc 2", "sur blanc 2", "On White II", "on white ii"]
+      "alternatives": ["Kandinsky", "Sur blanc II", "On White II", "Vassily Kandinsky", "W. Kandinsky", "Vasily Kandinsky", "Kandinsky Wassily", "Kandinsky Vassily", "Kandinsky Vasily"]
     },
     "impression": {
-      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur",
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur...",
       "answer": "Claude Monet",
-      "alternatives": ["Monet", "monet", "claude monet", "Impression, soleil levant", "impression, soleil levant", "Impression soleil levant", "impression soleil levant", "Soleil levant", "soleil levant"]
+      "alternatives": ["Monet", "Impression, soleil levant", "Soleil levant", "C. Monet", "Impression Sunrise", "Monet Claude"]
     },
     "nympheas": {
-      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur",
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur...",
       "answer": "Claude Monet",
-      "alternatives": ["Monet", "monet", "claude monet", "Les Nymphéas", "les nymphéas", "Nymphéas", "nymphéas", "Nénuphars", "nénuphars", "Water Lilies", "water lilies"]
+      "alternatives": ["Monet", "Les Nymphéas", "Nénuphars", "Water Lilies", "C. Monet", "Les Nymphéas de Giverny", "Monet Claude"]
     },
     "the_false_mirror": {
-      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur",
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur...",
       "answer": "René Magritte",
-      "alternatives": ["Magritte", "magritte", "rené magritte", "rene magritte", "Le Faux Miroir", "le faux miroir", "Faux Miroir", "faux miroir", "The False Mirror", "the false mirror"]
+      "alternatives": ["Magritte", "Le Faux Miroir", "The False Mirror", "R. Magritte", "René François Ghislain Magritte", "Magritte René"]
     },
     "composition_viii": {
-      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur",
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur...",
       "answer": "Wassily Kandinsky",
-      "alternatives": ["Kandinsky", "kandinsky", "wassily kandinsky", "Composition VIII", "composition viii", "Composition 8", "composition 8"]
+      "alternatives": ["Kandinsky", "Composition VIII", "Vassily Kandinsky", "W. Kandinsky", "Vasily Kandinsky", "Composition 8", "Kandinsky Wassily", "Kandinsky Vassily", "Kandinsky Vasily"]
     },
     "wave": {
-      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur",
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur...",
       "answer": "Hokusai",
-      "alternatives": ["hokusai", "Katsushika Hokusai", "katsushika hokusai", "La Grande Vague de Kanagawa", "la grande vague de kanagawa", "Grande Vague", "grande vague", "The Great Wave", "the great wave"]
+      "alternatives": ["Katsushika Hokusai", "La Grande Vague de Kanagawa", "The Great Wave", "K. Hokusai", "Hokusai Katsushika", "La Vague", "Hokusai Katsushika"]
     },
     "broadway": {
-      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur",
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur...",
       "answer": "Piet Mondrian",
-      "alternatives": ["Mondrian", "mondrian", "piet mondrian", "Broadway Boogie-Woogie", "broadway boogie-woogie", "Broadway Boogie Woogie", "broadway boogie woogie"]
+      "alternatives": ["Mondrian", "Broadway Boogie-Woogie", "Piet Cornelis Mondrian", "P. Mondrian", "Boogie-Woogie", "Mondrian Piet", "Mondrian Piet Cornelis"]
     },
     "son_of_man": {
-      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur",
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur...",
       "answer": "René Magritte",
-      "alternatives": ["Magritte", "magritte", "rené magritte", "rene magritte", "Le Fils de l'homme", "le fils de l'homme", "Fils de l'homme", "fils de l'homme", "The Son of Man", "the son of man"]
+      "alternatives": ["Magritte", "Le Fils de l'homme", "The Son of Man", "R. Magritte", "René François Ghislain Magritte", "Magritte René"]
     },
     "vertumnus": {
-      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur",
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur...",
       "answer": "Giuseppe Arcimboldo",
-      "alternatives": ["Arcimboldo", "arcimboldo", "giuseppe arcimboldo", "Vertumnus", "vertumnus", "Vertumne", "vertumne"]
+      "alternatives": ["Arcimboldo", "Vertumnus", "Vertumne", "G. Arcimboldo", "L'Empereur Rodolphe II en Vertumne", "Arcimboldo Giuseppe"]
     },
     "blue_fiddler": {
-      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur",
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur...",
       "answer": "Marc Chagall",
-      "alternatives": ["Chagall", "chagall", "marc chagall", "Le Violoniste bleu", "le violoniste bleu", "Violoniste bleu", "violoniste bleu", "Blue Fiddler", "blue fiddler"]
+      "alternatives": ["Chagall", "Le Violoniste bleu", "Blue Fiddler", "M. Chagall", "Marc Zakharovich Chagall", "Le Violoniste", "Chagall Marc"]
     },
     "three_musicians": {
-      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur",
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur...",
       "answer": "Pablo Picasso",
-      "alternatives": ["Picasso", "picasso", "pablo picasso", "Les Trois Musiciens", "les trois musiciens", "Trois Musiciens", "trois musiciens", "Three Musicians", "three musicians"]
+      "alternatives": ["Picasso", "Les Trois Musiciens", "Three Musicians", "Pablo Ruiz Picasso", "P. Picasso", "Pablo Ruiz y Picasso", "Picasso Pablo", "Picasso Pablo Ruiz"]
     },
     "i_and_village": {
-      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur",
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur...",
       "answer": "Marc Chagall",
-      "alternatives": ["Chagall", "chagall", "marc chagall", "Moi et le Village", "moi et le village", "I and the Village", "i and the village"]
+      "alternatives": ["Chagall", "Moi et le Village", "I and the Village", "M. Chagall", "Marc Zakharovich Chagall", "Chagall Marc"]
     },
     "sea_of_ice": {
-      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur",
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur...",
       "answer": "Caspar David Friedrich",
-      "alternatives": ["Friedrich", "friedrich", "caspar david friedrich", "caspar friedrich", "La Mer de glace", "la mer de glace", "Mer de glace", "mer de glace", "Sea of Ice", "sea of ice"]
+      "alternatives": ["Friedrich", "La Mer de glace", "Sea of Ice", "C. D. Friedrich", "C. Friedrich", "Das Eismeer", "Friedrich Caspar", "Friedrich Caspar David"]
     },
     "numbers_constellations": {
-      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur",
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur...",
       "answer": "Joan Miró",
-      "alternatives": ["Miró", "miro", "joan miro", "joan miró", "Nombres et constellations", "nombres et constellations", "Numbers and Constellations", "numbers and constellations"]
+      "alternatives": ["Miró", "Nombres et constellations", "Numbers and Constellations", "J. Miró", "Joan Miró i Ferrà", "Constellations", "Miró Joan"]
     },
     "card_players": {
-      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur",
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur...",
       "answer": "Paul Cézanne",
-      "alternatives": ["Cézanne", "cezanne", "paul cézanne", "paul cezanne", "Les Joueurs de cartes", "les joueurs de cartes", "Joueurs de cartes", "joueurs de cartes", "Card Players", "card players"]
+      "alternatives": ["Cézanne", "Les Joueurs de cartes", "Card Players", "P. Cézanne", "Paul Cézanne", "Les Joueurs", "Cézanne Paul"]
     },
     "scapigliata": {
-      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur",
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur...",
       "answer": "Leonardo da Vinci",
-      "alternatives": ["Léonard de Vinci", "leonardo da vinci", "da vinci", "vinci", "léonard de vinci", "La Scapigliata", "la scapigliata", "Scapigliata", "scapigliata"]
+      "alternatives": ["Léonard de Vinci", "da Vinci", "La Scapigliata", "Leonardo di ser Piero da Vinci", "L. da Vinci", "da Vinci Leonardo", "da Vinci Leonardo di ser Piero"]
     },
     "the_milkmaid": {
-      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur",
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur...",
       "answer": "Johannes Vermeer",
-      "alternatives": ["Vermeer", "vermeer", "johannes vermeer", "La Laitière", "la laitière", "Laitière", "laitière", "The Milkmaid", "the milkmaid"]
+      "alternatives": ["Vermeer", "La Laitière", "The Milkmaid", "Jan Vermeer", "J. Vermeer", "Johannes van der Meer", "Vermeer Johannes", "Vermeer Jan"]
     },
     "tree_of_life": {
-      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur",
+      "question": "Donner soit le titre de l'oeuvre, soit le nom de son créateur...",
       "answer": "Gustav Klimt",
-      "alternatives": ["Klimt", "klimt", "gustav klimt", "L'Arbre de vie", "l'arbre de vie", "Arbre de vie", "arbre de vie", "Tree of Life", "tree of life"]
+      "alternatives": ["Klimt", "L'Arbre de vie", "Tree of Life", "G. Klimt", "Der Lebensbaum", "Klimt Gustav"]
     }
   }
 } 

@@ -312,6 +312,8 @@ public class MastermindGameScreen extends GameScreen {
         float currentX, currentY; // Position actuelle
         float startX, startY; // Position de départ
         float targetX, targetY; // Position cible
+        // Coordonnées relatives au background (pour recalcul lors du resize)
+        float relativeTargetX = -1, relativeTargetY = -1; // -1 = non initialisé
         boolean isAnimating;
         float animationTime;
         float animationDuration;
@@ -954,40 +956,35 @@ public class MastermindGameScreen extends GameScreen {
     }
     
     /**
-     * Calcule les dimensions et l'échelle du background une seule fois
+     * Calcule les dimensions et l'échelle du background avec crop pour garder l'aspect ratio
+     * Logique identique à SlidingPuzzle et Crystalize pour un centrage cohérent
      */
     private void calculateBackgroundDimensions() {
-        // La largeur monde est fixe à 2048
+        if (backgroundTexture == null) return;
+        
         float screenWidth = DisplayConfig.WORLD_WIDTH;  // Toujours 2048
         float screenHeight = viewport.getWorldHeight(); // Variable selon aspect ratio
         float screenRatio = screenWidth / screenHeight;
         
-        if (backgroundTexture != null) {
-            float bgRatio = (float)backgroundTexture.getWidth() / backgroundTexture.getHeight();
-            
-            // Si le ratio de l'écran est plus large que 16:10 (1.6), on coupe en hauteur
-            if (screenRatio > 1.6f) {
-                // Adapter à la largeur
-                currentBgWidth = screenWidth;
-                currentBgHeight = currentBgWidth / bgRatio;
-                currentBgX = 0;
-                currentBgY = (screenHeight - currentBgHeight) / 2;
-            } else {
-                // Pour les ratios plus carrés que 16:10, adapter à la hauteur
-                currentBgHeight = screenHeight;
-                currentBgWidth = currentBgHeight * bgRatio;
-                // Si la largeur dépasse 2048, la limiter
-                if (currentBgWidth > screenWidth) {
-                    currentBgWidth = screenWidth;
-                    currentBgHeight = currentBgWidth / bgRatio;
-                }
-                currentBgX = (screenWidth - currentBgWidth) / 2;
-                currentBgY = 0;
-            }
-            
-            currentScaleX = currentBgWidth / backgroundTexture.getWidth();
-            currentScaleY = currentBgHeight / backgroundTexture.getHeight();
+        float bgRatio = (float)backgroundTexture.getWidth() / backgroundTexture.getHeight();
+        
+        // Adapter par crop (couvrir tout l'écran, crop le surplus)
+        if (screenRatio > bgRatio) {
+            // Écran plus large que l'image : fitter en largeur, crop en hauteur
+            currentBgWidth = screenWidth;
+            currentBgHeight = currentBgWidth / bgRatio;
+            currentBgX = 0;
+            currentBgY = (screenHeight - currentBgHeight) / 2;
+        } else {
+            // Écran plus haut que l'image : fitter en hauteur, crop en largeur
+            currentBgHeight = screenHeight;
+            currentBgWidth = currentBgHeight * bgRatio;
+            currentBgX = (screenWidth - currentBgWidth) / 2;
+            currentBgY = 0;
         }
+        
+        currentScaleX = currentBgWidth / backgroundTexture.getWidth();
+        currentScaleY = currentBgHeight / backgroundTexture.getHeight();
     }
     
     /**
@@ -1251,9 +1248,15 @@ public class MastermindGameScreen extends GameScreen {
                 float targetX = currentBgX + (rect.x + rect.width/2) * currentScaleX;
                 float targetY = currentBgY + (rect.y + rect.height/2) * currentScaleY;
                 
+                // Stocker les coordonnées relatives au background (pour recalcul lors du resize)
+                float relativeX = rect.x + rect.width/2;
+                float relativeY = rect.y + rect.height/2;
+                
                 // Créer le token en mouvement
                 AnimatedToken movingToken = new AnimatedToken(tokenType, startX, startY);
                 movingToken.gridSlot = slot;
+                movingToken.relativeTargetX = relativeX;
+                movingToken.relativeTargetY = relativeY;
                 
                 // Marquer le slot comme réservé
                 placedTokens.set(slot, tokenType);
@@ -1263,6 +1266,8 @@ public class MastermindGameScreen extends GameScreen {
                     // À la fin de l'animation, créer un token statique sur la grille
                     AnimatedToken gridToken = new AnimatedToken(tokenType, targetX, targetY);
                     gridToken.gridSlot = slot;
+                    gridToken.relativeTargetX = relativeX;
+                    gridToken.relativeTargetY = relativeY;
                     gridTokens.add(gridToken);
                     
                     // Vérifier la validation automatique
@@ -1881,11 +1886,12 @@ public class MastermindGameScreen extends GameScreen {
         // Capturer le framebuffer si demandé (AVANT les overlays)
         if (captureNextFramePending) {
             try {
-                // Capturer le framebuffer avec les dimensions exactes du viewport
+                // Capturer la zone correspondant au monde logique du viewport
+                // Nous devons capturer les pixels physiques qui correspondent à la zone du monde
                 int viewportWidth = (int) viewport.getScreenWidth();
                 int viewportHeight = (int) viewport.getScreenHeight();
                 
-                // Calculer l'offset pour centrer la capture dans la zone visible du viewport
+                // Calculer l'offset pour centrer la capture dans la zone visible
                 int screenWidth = Gdx.graphics.getBackBufferWidth();
                 int screenHeight = Gdx.graphics.getBackBufferHeight();
                 int offsetX = (screenWidth - viewportWidth) / 2;
@@ -1908,8 +1914,10 @@ public class MastermindGameScreen extends GameScreen {
                 // Démarrer la transition basée sur les Actions
                 startActionBasedTransition();
                 
-                Gdx.app.log("MastermindGameScreen", "État du plateau de jeu capturé avec succès - Texture: " + 
-                                 gameStateTexture.getWidth() + "x" + gameStateTexture.getHeight());
+                Gdx.app.log("MastermindGameScreen", "État du plateau de jeu capturé avec succès");
+                Gdx.app.log("MastermindGameScreen", "  Texture: " + gameStateTexture.getWidth() + "x" + gameStateTexture.getHeight());
+                Gdx.app.log("MastermindGameScreen", "  Viewport screen: " + viewport.getScreenWidth() + "x" + viewport.getScreenHeight());
+                Gdx.app.log("MastermindGameScreen", "  Viewport world: " + viewport.getWorldWidth() + "x" + viewport.getWorldHeight());
                 
             } catch (Exception e) {
                 Gdx.app.error("MastermindGameScreen", "Erreur lors de la capture de l'état du plateau: " + e.getMessage());
@@ -2295,6 +2303,10 @@ public class MastermindGameScreen extends GameScreen {
             calculateBackgroundDimensions();
         }
         
+        // Recalculer les positions de tous les tokens (placés et en mouvement)
+        // pour qu'ils maintiennent leur position relative au background
+        recalculateTokenPositions();
+        
         // Les boutons se repositionnent automatiquement basé sur la taille de l'écran
         // Le bouton d'information se positionne selon les coordonnées du background
         updateInfoButtonPosition();
@@ -2303,6 +2315,38 @@ public class MastermindGameScreen extends GameScreen {
         float screenDiagonal = (float) Math.sqrt(width * width + height * height);
         float baseScale = Math.max(0.8f, Math.min(1.5f, screenDiagonal / 1000f));
         infoFont.getData().setScale(baseScale);
+        
+        // CORRECTION: Mettre à jour le Stage de transition avec les nouvelles dimensions du viewport
+        if (transitionStage != null) {
+            transitionStage.getViewport().update(width, height, true);
+            
+            // Recalculer les tailles et positions des acteurs avec les nouvelles dimensions
+            float screenWidth = DisplayConfig.WORLD_WIDTH;
+            float screenHeight = viewport.getWorldHeight();
+            float halfWidth = screenWidth * 0.5f;
+            
+            if (leftPanelActor != null) {
+                leftPanelActor.setSize(halfWidth, screenHeight);
+                // Si l'animation est en cours, conserver la position actuelle
+                if (!isUsingActionBasedTransition) {
+                    leftPanelActor.setPosition(0, 0);
+                }
+                Gdx.app.log("MastermindGameScreen", "Resize - Panneau gauche: " + halfWidth + "x" + screenHeight);
+            }
+            
+            if (rightPanelActor != null) {
+                rightPanelActor.setSize(halfWidth, screenHeight);
+                // Si l'animation est en cours, ajuster la position X de base
+                if (!isUsingActionBasedTransition) {
+                    rightPanelActor.setPosition(halfWidth, 0);
+                } else {
+                    // En cours d'animation: ajuster seulement la position X de base
+                    float currentOffsetX = rightPanelActor.getX() - halfWidth;
+                    rightPanelActor.setPosition(halfWidth + currentOffsetX, 0);
+                }
+                Gdx.app.log("MastermindGameScreen", "Resize - Panneau droit: " + halfWidth + "x" + screenHeight);
+            }
+        }
     }
     
     @Override
@@ -2654,6 +2698,36 @@ public class MastermindGameScreen extends GameScreen {
     }
     
     /**
+     * Recalcule les positions de tous les tokens (placés et en mouvement) lors du resize
+     * Utilise les coordonnées relatives au background stockées dans chaque token
+     */
+    private void recalculateTokenPositions() {
+        // Recalculer les positions des tokens dans la grille (placés)
+        for (AnimatedToken token : gridTokens) {
+            if (token.relativeTargetX >= 0 && token.relativeTargetY >= 0) {
+                // Recalculer la position en coordonnées écran
+                token.currentX = currentBgX + token.relativeTargetX * currentScaleX;
+                token.currentY = currentBgY + token.relativeTargetY * currentScaleY;
+            }
+        }
+        
+        // Recalculer les positions cibles des tokens en mouvement
+        for (AnimatedToken token : movingTokens) {
+            if (token.relativeTargetX >= 0 && token.relativeTargetY >= 0) {
+                // Recalculer la position cible en coordonnées écran
+                token.targetX = currentBgX + token.relativeTargetX * currentScaleX;
+                token.targetY = currentBgY + token.relativeTargetY * currentScaleY;
+                
+                // Mettre à jour aussi la position de départ (relative aux positions de tokens)
+                if (token.tokenType < positionCentersX.size) {
+                    token.startX = positionCentersX.get(token.tokenType);
+                    token.startY = positionCentersY.get(token.tokenType);
+                }
+            }
+        }
+    }
+    
+    /**
      * Dessine tous les types de tokens (position de départ, en mouvement, sur grille)
      */
     private void drawAllTokens(float scaleX, float scaleY) {
@@ -2727,10 +2801,28 @@ public class MastermindGameScreen extends GameScreen {
         // Créer les deux panneaux qui se déplacent
         float halfWidth = screenWidth * 0.5f;
         
+        // Calculer la hauteur d'affichage en fonction du ratio entre pixels et coordonnées monde
+        // La texture a été capturée en pixels physiques, nous devons la mapper aux coordonnées monde
+        float worldWidth = viewport.getWorldWidth();
+        float worldHeight = viewport.getWorldHeight();
+        float screenPixelWidth = viewport.getScreenWidth();
+        float screenPixelHeight = viewport.getScreenHeight();
+        
+        // Ratio de conversion pixels -> monde
+        float pixelToWorldRatioX = worldWidth / screenPixelWidth;
+        float pixelToWorldRatioY = worldHeight / screenPixelHeight;
+        
+        // La hauteur d'affichage doit correspondre à la hauteur de la texture convertie en coordonnées monde
+        float displayHeight = worldHeight;
+        
+        Gdx.app.log("MastermindGameScreen", "DEBUG Ratios - World: " + worldWidth + "x" + worldHeight + 
+                         ", ScreenPixels: " + screenPixelWidth + "x" + screenPixelHeight);
+        Gdx.app.log("MastermindGameScreen", "DEBUG Ratios - PixelToWorld: " + pixelToWorldRatioX + "x" + pixelToWorldRatioY);
+        
         // Panneau gauche (se déplace vers la gauche)
         float leftPanelX = leftPanelOffset;
         float leftPanelWidth = halfWidth;
-        float leftPanelHeight = screenHeight;
+        float leftPanelHeight = displayHeight;
         
         // Panneau droit (se déplace vers la droite)  
         float rightPanelX = halfWidth + rightPanelOffset;
@@ -2746,13 +2838,13 @@ public class MastermindGameScreen extends GameScreen {
             int halfW = texW / 2;
             
             Gdx.app.log("MastermindGameScreen", "DEBUG: Texture - w:" + texW + " h:" + texH + " half:" + halfW);
-            Gdx.app.log("MastermindGameScreen", "DEBUG: Panneaux - leftX:" + leftPanelX + " rightX:" + rightPanelX + " width:" + leftPanelWidth + " height:" + screenHeight);
+            Gdx.app.log("MastermindGameScreen", "DEBUG: Panneaux - leftX:" + leftPanelX + " rightX:" + rightPanelX + " width:" + leftPanelWidth + " height:" + displayHeight);
             
             // Panneau gauche - partie gauche de la texture
             batch.draw(
                 gameStateTexture,
                 leftPanelX, 0,               // dest x,y
-                leftPanelWidth, screenHeight, // dest w,h
+                leftPanelWidth, displayHeight, // dest w,h
                 0, 0,                         // src x,y
                 halfW, texH,                  // src w,h
                 false, true                   // flipX, flipY
@@ -2762,7 +2854,7 @@ public class MastermindGameScreen extends GameScreen {
             batch.draw(
                 gameStateTexture,
                 rightPanelX, 0,               // dest x,y
-                rightPanelWidth, screenHeight, // dest w,h
+                rightPanelWidth, displayHeight, // dest w,h
                 halfW, 0,                     // src x,y
                 halfW, texH,                  // src w,h
                 false, true                   // flipX, flipY

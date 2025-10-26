@@ -13,11 +13,16 @@ import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.utils.ObjectMap;
+import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.JsonReader;
+import com.badlogic.gdx.utils.JsonValue;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.widedot.calendar.ui.BottomInputBar;
 import com.widedot.calendar.platform.PlatformRegistry;
+import com.widedot.calendar.utils.AnswerMatcher;
+import com.widedot.calendar.utils.GwtCompatibleFormatter;
 import com.widedot.calendar.AdventCalendarGame;
 import com.widedot.calendar.data.Theme;
 import com.widedot.calendar.config.Config;
@@ -70,8 +75,10 @@ public class CrystalizeGuessGameScreen extends GameScreen {
     private boolean gameFinished;
     private Theme theme;
     
-    // Input system (simplifié)
+    // Input system avec support des questions et réponses alternatives
     private String correctAnswer;
+    private String[] alternateResponses;
+    private String questionText;
     private int wrongAnswers;
     private boolean hasUsedHelp;
     
@@ -259,10 +266,36 @@ public class CrystalizeGuessGameScreen extends GameScreen {
         this.gameFinished = false;
         this.showInfoPanel = false;
         
-        // Initialiser le système d'input (simplifié)
-        this.correctAnswer = theme.getTitle(); // Utiliser le titre du thème comme réponse correcte
-        this.wrongAnswers = 0;
-        this.hasUsedHelp = false;
+        // Charger les données de question/réponse depuis theme_questions.json
+        loadThemeQuestionData();
+        
+        // Logs d'entrée du jeu avec informations sur la question/réponse
+        Gdx.app.log("CrystalizeGuessGameScreen", "========================================");
+        Gdx.app.log("CrystalizeGuessGameScreen", "DÉMARRAGE DU JEU CRYSTALIZE - Jour " + dayId);
+        Gdx.app.log("CrystalizeGuessGameScreen", "========================================");
+        Gdx.app.log("CrystalizeGuessGameScreen", "Thème: " + theme.getName());
+        Gdx.app.log("CrystalizeGuessGameScreen", "Titre: " + theme.getTitle());
+        Gdx.app.log("CrystalizeGuessGameScreen", "Artiste: " + theme.getArtist());
+        Gdx.app.log("CrystalizeGuessGameScreen", "Année: " + theme.getYear());
+        Gdx.app.log("CrystalizeGuessGameScreen", "Question: " + questionText);
+        Gdx.app.log("CrystalizeGuessGameScreen", "Réponse correcte: " + correctAnswer);
+        if (alternateResponses != null && alternateResponses.length > 0) {
+            Gdx.app.log("CrystalizeGuessGameScreen", "Réponses alternatives (" + alternateResponses.length + "):");
+            for (int i = 0; i < alternateResponses.length; i++) {
+                Gdx.app.log("CrystalizeGuessGameScreen", "  [" + (i+1) + "] " + alternateResponses[i]);
+            }
+        } else {
+            Gdx.app.log("CrystalizeGuessGameScreen", "Note: Aucune réponse alternative définie");
+        }
+        
+        // Test du système de matching (exemples)
+        Gdx.app.log("CrystalizeGuessGameScreen", "Tests du système de matching:");
+        Gdx.app.log("CrystalizeGuessGameScreen", "  'Vincent Van Gogh' vs 'vincent van gogh' -> " + AnswerMatcher.isSimilar("Vincent Van Gogh", "vincent van gogh"));
+        Gdx.app.log("CrystalizeGuessGameScreen", "  'La Nuit étoilée' vs 'la nuit etoilee' -> " + AnswerMatcher.isSimilar("La Nuit étoilée", "la nuit etoilee"));
+        Gdx.app.log("CrystalizeGuessGameScreen", "  'Pablo Picasso' vs 'picasso' -> " + AnswerMatcher.isSimilar("Pablo Picasso", "picasso"));
+        Gdx.app.log("CrystalizeGuessGameScreen", "  'Mona Lisa' vs 'mona lisa' -> " + AnswerMatcher.isSimilar("Mona Lisa", "mona lisa"));
+        Gdx.app.log("CrystalizeGuessGameScreen", "  'Leonardo da Vinci' vs 'leonardo da vinci' -> " + AnswerMatcher.isSimilar("Leonardo da Vinci", "leonardo da vinci"));
+        Gdx.app.log("CrystalizeGuessGameScreen", "========================================");
         
         // Initialiser le nouveau système d'input
         initializeInputSystem();
@@ -325,10 +358,66 @@ public class CrystalizeGuessGameScreen extends GameScreen {
         rootTable.row();
         rootTable.add(inputBar).expandX().fillX().pad(0).height(120).colspan(1); // Pas de padding horizontal pour toute la largeur
         
-        // Définir le texte de placeholder spécifique au jeu crystalize
-        inputBar.setPlaceholderText("Donner le nom de ce tableau ...");
+        // Utiliser la question du thème comme placeholder
+        inputBar.setPlaceholderText(questionText != null ? questionText : "Donner le nom de ce tableau ...");
         
         Gdx.app.log("CrystalizeGuessGameScreen", "Système d'input initialisé");
+    }
+    
+    /**
+     * Charge les données de question/réponse depuis theme_questions.json
+     */
+    private void loadThemeQuestionData() {
+        // Valeurs par défaut
+        this.correctAnswer = theme.getTitle();
+        this.alternateResponses = new String[0];
+        this.questionText = "Donner le nom de ce tableau ...";
+        this.wrongAnswers = 0;
+        this.hasUsedHelp = false;
+        
+        try {
+            // Charger le fichier JSON
+            JsonReader jsonReader = new JsonReader();
+            JsonValue root = jsonReader.parse(Gdx.files.internal("theme_questions.json"));
+            
+            if (root == null) {
+                Gdx.app.log("CrystalizeGuessGameScreen", "Fichier theme_questions.json non trouvé, utilisation des valeurs par défaut");
+                return;
+            }
+            
+            // Récupérer les données du thème
+            JsonValue themeQuestions = root.get("themeQuestions");
+            if (themeQuestions != null) {
+                JsonValue themeData = themeQuestions.get(theme.getName());
+                if (themeData != null) {
+                    // Charger la question
+                    if (themeData.has("question")) {
+                        this.questionText = themeData.getString("question");
+                    }
+                    
+                    // Charger la réponse correcte
+                    if (themeData.has("answer")) {
+                        this.correctAnswer = themeData.getString("answer");
+                    }
+                    
+                    // Charger les réponses alternatives
+                    if (themeData.has("alternatives")) {
+                        JsonValue alternatives = themeData.get("alternatives");
+                        Array<String> alternativesList = new Array<>();
+                        for (JsonValue alt : alternatives) {
+                            alternativesList.add(alt.asString());
+                        }
+                        this.alternateResponses = alternativesList.toArray(String.class);
+                    }
+                    
+                    Gdx.app.log("CrystalizeGuessGameScreen", "Données de thème chargées depuis theme_questions.json");
+                } else {
+                    Gdx.app.log("CrystalizeGuessGameScreen", "Thème '" + theme.getName() + "' non trouvé dans theme_questions.json");
+                }
+            }
+        } catch (Exception e) {
+            Gdx.app.error("CrystalizeGuessGameScreen", "Erreur lors du chargement de theme_questions.json: " + e.getMessage());
+        }
     }
     
     /**
@@ -355,13 +444,41 @@ public class CrystalizeGuessGameScreen extends GameScreen {
     }
     
     /**
+     * Vérifie si une réponse est correcte (réponse principale ou alternative)
+     * Utilise un matching intelligent avec tolérance aux fautes
+     */
+    private boolean checkAnswer(String userAnswer) {
+        // Créer un tableau avec toutes les réponses acceptables
+        String[] allAnswers = new String[1 + (alternateResponses != null ? alternateResponses.length : 0)];
+        allAnswers[0] = correctAnswer;
+        
+        if (alternateResponses != null) {
+            System.arraycopy(alternateResponses, 0, allAnswers, 1, alternateResponses.length);
+        }
+        
+        // Utiliser le matching intelligent
+        boolean isMatch = AnswerMatcher.matchesAny(userAnswer, allAnswers);
+        
+        // Les logs détaillés sont maintenant dans AnswerMatcher.matchesAny()
+        if (isMatch) {
+            Gdx.app.log("CrystalizeGuessGameScreen", "Réponse acceptée: '" + userAnswer + "'");
+        } else {
+            Gdx.app.log("CrystalizeGuessGameScreen", "Réponse rejetée: '" + userAnswer + "'");
+        }
+        
+        return isMatch;
+    }
+    
+    /**
      * Gère la soumission de l'input utilisateur
      */
     private void handleUserInput(String text) {
         if (gameFinished || text.trim().isEmpty()) return;
         
-        // Vérifier si la réponse est correcte
-        if (text.trim().equalsIgnoreCase(correctAnswer)) {
+        // Vérifier si la réponse est correcte (réponse principale ou alternatives)
+        boolean isCorrect = checkAnswer(text.trim());
+        
+        if (isCorrect) {
             // Effacer le champ de saisie
             inputBar.clear();
             
