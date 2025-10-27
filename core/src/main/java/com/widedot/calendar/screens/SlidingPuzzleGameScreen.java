@@ -21,6 +21,7 @@ import com.widedot.calendar.config.Config;
 import com.badlogic.gdx.utils.ObjectMap;
 import com.widedot.calendar.debug.SlidingPuzzleDebugManager;
 import com.widedot.calendar.config.DayMappingManager;
+import com.widedot.calendar.utils.CarlitoFontManager;
 
 /**
  * Écran de jeu pour le puzzle coulissant
@@ -357,7 +358,9 @@ public class SlidingPuzzleGameScreen extends GameScreen {
         }
         
         // Initialisation des couleurs et éléments UI
-        this.font = new BitmapFont();
+        // Utiliser le gestionnaire Distance Field pour une qualité optimale
+        CarlitoFontManager.initialize();
+        this.font = CarlitoFontManager.getFont();
         // Utiliser une échelle entière pour éviter les problèmes d'alignement de pixels
         font.getData().setScale(1.0f);
         this.layout = new GlyphLayout();
@@ -1566,26 +1569,26 @@ public class SlidingPuzzleGameScreen extends GameScreen {
         
         // Titre
         layout.setText(font, theme.getTitle(), Color.WHITE, panelWidth - 2 * textMargin, Align.center, false);
-        font.draw(batch, layout, Math.round(panelX + textMargin), Math.round(titleY));
+        CarlitoFontManager.drawText(batch, layout, Math.round(panelX + textMargin), Math.round(titleY));
 
         // Artiste
         font.setColor(0.1f, 0.1f, 0.2f, 1);
         layout.setText(font, theme.getArtist(), Color.WHITE, panelWidth - 2 * textMargin, Align.center, false);
-        font.draw(batch, layout, Math.round(panelX + textMargin), Math.round(artistY));
+        CarlitoFontManager.drawText(batch, layout, Math.round(panelX + textMargin), Math.round(artistY));
 
         // Année
         layout.setText(font, String.valueOf(theme.getYear()), Color.WHITE, panelWidth - 2 * textMargin, Align.center, false);
-        font.draw(batch, layout, Math.round(panelX + textMargin), Math.round(yearY));
+        CarlitoFontManager.drawText(batch, layout, Math.round(panelX + textMargin), Math.round(yearY));
 
         // Description
         layout.setText(font, theme.getDescription(), Color.WHITE, panelWidth - 2 * textMargin, Align.center, true);
-        font.draw(batch, layout, Math.round(panelX + textMargin), Math.round(descriptionY));
+        CarlitoFontManager.drawText(batch, layout, Math.round(panelX + textMargin), Math.round(descriptionY));
         
         // Indicateur de fermeture
         font.setColor(0.5f, 0.5f, 0.6f, 1);
         String closeHint = "Tapez pour fermer";
         layout.setText(font, closeHint);
-        font.draw(batch, layout, 
+        CarlitoFontManager.drawText(batch, layout, 
             panelX + panelWidth - layout.width - 10,
             panelY + 15);
     }

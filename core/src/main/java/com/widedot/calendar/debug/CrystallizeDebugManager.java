@@ -6,13 +6,13 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.ObjectMap;
 import com.badlogic.gdx.utils.JsonWriter;
 import com.badlogic.gdx.utils.JsonReader;
 import com.badlogic.gdx.utils.JsonValue;
 import com.widedot.calendar.shaders.CrystallizeShader;
+import com.widedot.calendar.utils.CarlitoFontManager;
 
 /**
  * Gestionnaire de debug pour le shader de cristallisation
@@ -59,9 +59,7 @@ public class CrystallizeDebugManager {
     private static final float KEY_HOLD_DELAY = 0.5f; // Délai avant l'appui continu
     private static final float KEY_HOLD_INTERVAL = 0.05f; // Intervalle entre les modifications en mode hold
     
-    // Interface
-    private final BitmapFont font;
-    private final GlyphLayout layout;
+    // Interface - plus besoin de GlyphLayout avec la méthode simplifiée
     
     // Callback pour appliquer les changements
     private DebugChangeCallback changeCallback;
@@ -82,9 +80,8 @@ public class CrystallizeDebugManager {
         void onDebugParameterChanged();
     }
     
-    public CrystallizeDebugManager(BitmapFont font) {
-        this.font = font;
-        this.layout = new GlyphLayout();
+    public CrystallizeDebugManager() {
+        CarlitoFontManager.initialize();
     }
     
     /**
@@ -392,141 +389,118 @@ public class CrystallizeDebugManager {
     
     
     /**
+     * Dessine du texte avec la couleur appropriée selon la sélection
+     */
+    private void drawTextWithSelection(SpriteBatch batch, String text, float x, float y, float fontSize, boolean isSelected) {
+        if (isSelected) {
+            // Couleur rouge pour la ligne sélectionnée
+            CarlitoFontManager.getFont().setColor(1.0f, 0.0f, 0.0f, 1.0f);
+        } else {
+            // Couleur blanche pour les autres lignes
+            CarlitoFontManager.getFont().setColor(1.0f, 1.0f, 1.0f, 1.0f);
+        }
+        CarlitoFontManager.drawText(batch, text, x, y, fontSize);
+    }
+    
+    /**
      * Dessine l'interface de debug
      */
     public void drawDebugInfo(SpriteBatch batch, float viewportHeight) {
         if (!debugMode) return;
         
+        // Variables mutualisées pour la taille et l'espacement
+        float fontSize = 0.7f; // Taille de font plus petite pour éviter le chevauchement
         float x = 20;
-        float y = viewportHeight - 30; // Utiliser la hauteur du viewport passée en paramètre
-        float lineHeight = 22; // Légèrement plus compact
+        float y = viewportHeight - 30;
+        float lineHeight = 16; // Plus compact
         
         // Titre
-        font.setColor(1, 1, 1, 1); // Blanc
-        String title = "DEBUG MODE";
-        layout.setText(font, title);
-        font.draw(batch, layout, x, y);
+        CarlitoFontManager.drawText(batch, "DEBUG MODE", x, y, fontSize);
         y -= lineHeight;
         
         // Taille des cellules
         boolean isCrystalSizeSelected = selectedDebugParameter == DebugParameter.CRYSTAL_SIZE;
-        font.setColor(isCrystalSizeSelected ? 1.0f : 1.0f, isCrystalSizeSelected ? 0.0f : 1.0f, isCrystalSizeSelected ? 0.0f : 1.0f, 1.0f);
         String crystalSizeText = "Crystal Size: " + GwtCompatibleFormatter.formatFloat(debugCrystalSize, 0);
-        layout.setText(font, crystalSizeText);
-        font.draw(batch, layout, x, y);
+        drawTextWithSelection(batch, crystalSizeText, x, y, fontSize, isCrystalSizeSelected);
         y -= lineHeight;
         
         // Épaisseur des bords (edge thickness)
         boolean isEdgeThicknessSelected = selectedDebugParameter == DebugParameter.EDGE_THICKNESS;
-        font.setColor(isEdgeThicknessSelected ? 1.0f : 1.0f, isEdgeThicknessSelected ? 0.0f : 1.0f, isEdgeThicknessSelected ? 0.0f : 1.0f, 1.0f);
         String edgeThicknessText = "Edge Thickness: " + GwtCompatibleFormatter.formatFloat(debugEdgeThickness, 3);
-        layout.setText(font, edgeThicknessText);
-        font.draw(batch, layout, x, y);
+        drawTextWithSelection(batch, edgeThicknessText, x, y, fontSize, isEdgeThicknessSelected);
         y -= lineHeight;
         
         // Randomness
         boolean isRandomnessSelected = selectedDebugParameter == DebugParameter.RANDOMNESS;
-        font.setColor(isRandomnessSelected ? 1.0f : 1.0f, isRandomnessSelected ? 0.0f : 1.0f, isRandomnessSelected ? 0.0f : 1.0f, 1.0f);
         String randomnessText = "Randomness: " + GwtCompatibleFormatter.formatFloat(debugRandomness, 4);
-        layout.setText(font, randomnessText);
-        font.draw(batch, layout, x, y);
+        drawTextWithSelection(batch, randomnessText, x, y, fontSize, isRandomnessSelected);
         y -= lineHeight;
         
         // Stretch
         boolean isStretchSelected = selectedDebugParameter == DebugParameter.STRETCH;
-        font.setColor(isStretchSelected ? 1.0f : 1.0f, isStretchSelected ? 0.0f : 1.0f, isStretchSelected ? 0.0f : 1.0f, 1.0f);
         String stretchText = "Stretch: " + GwtCompatibleFormatter.formatFloat(debugStretch, 3);
-        layout.setText(font, stretchText);
-        font.draw(batch, layout, x, y);
+        drawTextWithSelection(batch, stretchText, x, y, fontSize, isStretchSelected);
         y -= lineHeight;
         
         // Couleur de bord R
         boolean isEdgeColorRSelected = selectedDebugParameter == DebugParameter.EDGE_COLOR_R;
-        font.setColor(isEdgeColorRSelected ? 1.0f : 1.0f, isEdgeColorRSelected ? 0.0f : 1.0f, isEdgeColorRSelected ? 0.0f : 1.0f, 1.0f);
         String edgeColorRText = "Edge Color R: " + GwtCompatibleFormatter.formatFloat(debugEdgeColorR, 3);
-        layout.setText(font, edgeColorRText);
-        font.draw(batch, layout, x, y);
+        drawTextWithSelection(batch, edgeColorRText, x, y, fontSize, isEdgeColorRSelected);
         y -= lineHeight;
         
         // Couleur de bord G
         boolean isEdgeColorGSelected = selectedDebugParameter == DebugParameter.EDGE_COLOR_G;
-        font.setColor(isEdgeColorGSelected ? 1.0f : 1.0f, isEdgeColorGSelected ? 0.0f : 1.0f, isEdgeColorGSelected ? 0.0f : 1.0f, 1.0f);
         String edgeColorGText = "Edge Color G: " + GwtCompatibleFormatter.formatFloat(debugEdgeColorG, 3);
-        layout.setText(font, edgeColorGText);
-        font.draw(batch, layout, x, y);
+        drawTextWithSelection(batch, edgeColorGText, x, y, fontSize, isEdgeColorGSelected);
         y -= lineHeight;
         
         // Couleur de bord B
         boolean isEdgeColorBSelected = selectedDebugParameter == DebugParameter.EDGE_COLOR_B;
-        font.setColor(isEdgeColorBSelected ? 1.0f : 1.0f, isEdgeColorBSelected ? 0.0f : 1.0f, isEdgeColorBSelected ? 0.0f : 1.0f, 1.0f);
         String edgeColorBText = "Edge Color B: " + GwtCompatibleFormatter.formatFloat(debugEdgeColorB, 3);
-        layout.setText(font, edgeColorBText);
-        font.draw(batch, layout, x, y);
+        drawTextWithSelection(batch, edgeColorBText, x, y, fontSize, isEdgeColorBSelected);
         y -= lineHeight;
         
         // Couleur de bord A
         boolean isEdgeColorASelected = selectedDebugParameter == DebugParameter.EDGE_COLOR_A;
-        font.setColor(isEdgeColorASelected ? 1.0f : 1.0f, isEdgeColorASelected ? 0.0f : 1.0f, isEdgeColorASelected ? 0.0f : 1.0f, 1.0f);
         String edgeColorAText = "Edge Color A: " + GwtCompatibleFormatter.formatFloat(debugEdgeColorA, 3);
-        layout.setText(font, edgeColorAText);
-        font.draw(batch, layout, x, y);
+        drawTextWithSelection(batch, edgeColorAText, x, y, fontSize, isEdgeColorASelected);
         y -= lineHeight;
         
         // Fade Edges
         boolean isFadeEdgesSelected = selectedDebugParameter == DebugParameter.FADE_EDGES;
-        font.setColor(isFadeEdgesSelected ? 1.0f : 1.0f, isFadeEdgesSelected ? 0.0f : 1.0f, isFadeEdgesSelected ? 0.0f : 1.0f, 1.0f);
         String fadeEdgesText = "Fade Edges: " + (debugFadeEdges ? "ON" : "OFF");
-        layout.setText(font, fadeEdgesText);
-        font.draw(batch, layout, x, y);
+        drawTextWithSelection(batch, fadeEdgesText, x, y, fontSize, isFadeEdgesSelected);
         y -= lineHeight;
         
         // Paramètres HSL du background
         boolean isBgHueSelected = selectedDebugParameter == DebugParameter.BG_HUE;
-        font.setColor(isBgHueSelected ? 1.0f : 1.0f, isBgHueSelected ? 0.0f : 1.0f, isBgHueSelected ? 0.0f : 1.0f, 1.0f);
         String bgHueText = "Background Hue: " + GwtCompatibleFormatter.formatFloat(debugBackgroundHue, 1);
-        layout.setText(font, bgHueText);
-        font.draw(batch, layout, x, y);
+        drawTextWithSelection(batch, bgHueText, x, y, fontSize, isBgHueSelected);
         y -= lineHeight;
 
         boolean isBgSaturationSelected = selectedDebugParameter == DebugParameter.BG_SATURATION;
-        font.setColor(isBgSaturationSelected ? 1.0f : 1.0f, isBgSaturationSelected ? 0.0f : 1.0f, isBgSaturationSelected ? 0.0f : 1.0f, 1.0f);
         String bgSaturationText = "Background Saturation: " + GwtCompatibleFormatter.formatFloat(debugBackgroundSaturation, 1);
-        layout.setText(font, bgSaturationText);
-        font.draw(batch, layout, x, y);
+        drawTextWithSelection(batch, bgSaturationText, x, y, fontSize, isBgSaturationSelected);
         y -= lineHeight;
 
         boolean isBgLightnessSelected = selectedDebugParameter == DebugParameter.BG_LIGHTNESS;
-        font.setColor(isBgLightnessSelected ? 1.0f : 1.0f, isBgLightnessSelected ? 0.0f : 1.0f, isBgLightnessSelected ? 0.0f : 1.0f, 1.0f);
         String bgLightnessText = "Background Lightness: " + GwtCompatibleFormatter.formatFloat(debugBackgroundLightness, 1);
-        layout.setText(font, bgLightnessText);
-        font.draw(batch, layout, x, y);
+        drawTextWithSelection(batch, bgLightnessText, x, y, fontSize, isBgLightnessSelected);
         y -= lineHeight;
         
-                // Instructions
-                font.setColor(1, 1, 1, 1); // Blanc
-                String instructions = "UP/DOWN: Select Parameter | LEFT/RIGHT: Modify Value";
-                layout.setText(font, instructions);
-                font.draw(batch, layout, x, y);
-                y -= lineHeight;
-
-                String holdInstructions = "Hold LEFT/RIGHT for continuous modification";
-                layout.setText(font, holdInstructions);
-                font.draw(batch, layout, x, y);
-                y -= lineHeight;
+        // Instructions
+        CarlitoFontManager.getFont().setColor(0.5f, 0.5f, 0.5f, 1.0f);
+        CarlitoFontManager.drawText(batch, "UP/DOWN: Select Parameter | LEFT/RIGHT: Modify Value", x, y, fontSize);
+        y -= lineHeight;
+        CarlitoFontManager.drawText(batch, "Hold LEFT/RIGHT for continuous modification", x, y, fontSize);
+        y -= lineHeight;
+        CarlitoFontManager.drawText(batch, "S: Save current settings to games.json", x, y, fontSize);
+        y -= lineHeight;
                 
-                String saveInstructions = "S: Save current settings to games.json";
-                layout.setText(font, saveInstructions);
-                font.draw(batch, layout, x, y);
-                y -= lineHeight;
-                
-                // Afficher la confirmation de sauvegarde si active
-                if (showSaveConfirmation) {
-                    font.setColor(0.0f, 1.0f, 0.0f, 1.0f); // Vert
-                    String confirmationText = "✓ SETTINGS SAVED!";
-                    layout.setText(font, confirmationText);
-                    font.draw(batch, layout, x, y);
-                    font.setColor(1.0f, 1.0f, 1.0f, 1.0f); // Remettre en blanc
-                }
+        // Afficher la confirmation de sauvegarde si active
+        if (showSaveConfirmation) {
+            CarlitoFontManager.drawText(batch, "✓ SETTINGS SAVED!", x, y, fontSize);
+        }
     }
     
     // Getters pour les paramètres de debug

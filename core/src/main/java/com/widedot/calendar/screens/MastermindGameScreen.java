@@ -28,6 +28,7 @@ import com.widedot.calendar.AdventCalendarGame;
 import com.widedot.calendar.data.Theme;
 import com.widedot.calendar.config.Config;
 import com.widedot.calendar.display.DisplayConfig;
+import com.widedot.calendar.utils.CarlitoFontManager;
 
 /**
  * Écran de jeu pour le mini-jeu Mastermind
@@ -506,15 +507,14 @@ public class MastermindGameScreen extends GameScreen {
         this.isTestMode = Config.getInstance().isTestModeEnabled();
         Gdx.app.log("MastermindGameScreen", "Mode test Mastermind: " + isTestMode);
         
-        // Initialiser les éléments UI
-        this.font = new BitmapFont();
+        // Initialiser les éléments UI avec Distance Field
+        CarlitoFontManager.initialize();
+        this.font = CarlitoFontManager.getFont();
         this.font.getData().setScale(1.2f);
-        this.font.getRegion().getTexture().setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
-        this.bigFont = new BitmapFont();
+        this.bigFont = CarlitoFontManager.getFont();
         this.bigFont.getData().setScale(1.8f);
-        this.bigFont.getRegion().getTexture().setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
-        this.infoFont = new BitmapFont();
-        this.infoFont.getRegion().getTexture().setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+        this.infoFont = CarlitoFontManager.getFont();
+        this.infoFont.getData().setScale(1.0f);
         this.layout = new GlyphLayout();
         
         this.backButton = new Rectangle(20, 20, 100, 50);
@@ -2095,7 +2095,7 @@ public class MastermindGameScreen extends GameScreen {
         bigFont.setColor(correctColor);
         String title = "Bonne réponse!";
         layout.setText(bigFont, title);
-        bigFont.draw(batch, layout, 
+        CarlitoFontManager.drawText(batch, layout, 
             (screenWidth - layout.width) / 2,
             screenHeight - 50);
     }
@@ -2233,7 +2233,7 @@ public class MastermindGameScreen extends GameScreen {
         infoFont.setColor(0.2f, 0.3f, 0.8f, 1);
         String title = "Règles du Mastermind";
         layout.setText(infoFont, title);
-        infoFont.draw(batch, layout, 
+        CarlitoFontManager.drawText(batch, layout, 
             panelX + (panelWidth - layout.width) / 2,
             panelY + panelHeight - 30 * scaleFactor);
         
@@ -2270,12 +2270,12 @@ public class MastermindGameScreen extends GameScreen {
                     float tempScale = textScale * 1.1f;
                     infoFont.getData().setScale(tempScale);
                     layout.setText(infoFont, rule);
-                    infoFont.draw(batch, layout, panelX + leftMargin, textY);
+                    CarlitoFontManager.drawText(batch, layout, panelX + leftMargin, textY);
                     infoFont.getData().setScale(textScale);
                     infoFont.setColor(0.1f, 0.1f, 0.2f, 1);
                 } else {
                     layout.setText(infoFont, rule);
-                    infoFont.draw(batch, layout, panelX + leftMargin, textY);
+                    CarlitoFontManager.drawText(batch, layout, panelX + leftMargin, textY);
                 }
             }
             textY -= lineHeight;
@@ -2286,7 +2286,7 @@ public class MastermindGameScreen extends GameScreen {
         infoFont.setColor(0.5f, 0.5f, 0.6f, 1);
         String closeHint = "Tapez pour fermer";
         layout.setText(infoFont, closeHint);
-        infoFont.draw(batch, layout, 
+        CarlitoFontManager.drawText(batch, layout, 
             panelX + panelWidth - layout.width - 10,
             panelY + 15);
         

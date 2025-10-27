@@ -5,13 +5,16 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.utils.FocusListener;
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.widedot.calendar.platform.PlatformRegistry;
+import com.widedot.calendar.utils.CarlitoFontManager;
 
 /**
  * Barre d'input en bas d'écran avec TextField monoligne
@@ -29,11 +32,6 @@ public class BottomInputBar extends Table {
 
     // ✅ Texture statique réutilisable pour le fond noir
     private static Texture backgroundTexture;
-    
-    // Curseur clignotant
-    private float cursorBlinkTimer = 0f;
-    private static final float CURSOR_BLINK_INTERVAL = 0.5f; // 0.5 seconde
-    private boolean cursorVisible = true;
 
     public BottomInputBar(Skin skin) {
         super(skin);
@@ -52,13 +50,20 @@ public class BottomInputBar extends Table {
         TextField.TextFieldStyle textFieldStyle;
         try {
             textFieldStyle = skin.get(TextField.TextFieldStyle.class);
-            if (textFieldStyle.font != null) {
-                textFieldStyle.font.getData().setScale(3.0f);
-            }
+            // Créer une nouvelle font Carlito spécifiquement pour le TextField
+            textFieldStyle.font = new com.badlogic.gdx.graphics.g2d.BitmapFont(Gdx.files.internal("skin/carlito.fnt"));
+            textFieldStyle.font.getData().setScale(2.0f);
+            textFieldStyle.fontColor = Color.WHITE;
+            Pixmap pm = new Pixmap(2, 16, Pixmap.Format.RGBA8888);
+            pm.setColor(Color.WHITE);
+            pm.fill();
+            textFieldStyle.cursor = new TextureRegionDrawable(new TextureRegion(new Texture(pm)));
+            pm.dispose();
         } catch (Exception e) {
             textFieldStyle = new TextField.TextFieldStyle();
-            textFieldStyle.font = new com.badlogic.gdx.graphics.g2d.BitmapFont();
-            textFieldStyle.font.getData().setScale(3.0f);
+            // Créer une nouvelle font Carlito spécifiquement pour le TextField
+            textFieldStyle.font = new com.badlogic.gdx.graphics.g2d.BitmapFont(Gdx.files.internal("skin/carlito.fnt"));
+            textFieldStyle.font.getData().setScale(2.0f);
             textFieldStyle.fontColor = Color.WHITE;
         }
 
@@ -120,18 +125,6 @@ public class BottomInputBar extends Table {
     }
 
     @Override
-    public void act(float delta) {
-        super.act(delta);
-        
-        // Gérer le clignotement du curseur
-        cursorBlinkTimer += delta;
-        if (cursorBlinkTimer >= CURSOR_BLINK_INTERVAL) {
-            cursorBlinkTimer = 0f;
-            cursorVisible = !cursorVisible;
-        }
-    }
-
-    @Override
     public void draw(Batch batch, float parentAlpha) {
         // ✅ Dessiner le rectangle noir semi-transparent derrière la barre
         Color old = batch.getColor();
@@ -139,39 +132,14 @@ public class BottomInputBar extends Table {
         batch.draw(backgroundTexture, getX(), getY(), getWidth(), getHeight());
         batch.setColor(old);
 
+        // Appliquer le shader Distance Field pour le TextField
+        com.badlogic.gdx.graphics.glutils.ShaderProgram originalShader = batch.getShader();
+        batch.setShader(CarlitoFontManager.getShader());
+        
         super.draw(batch, parentAlpha);
         
-        // Dessiner le curseur clignotant si le champ a le focus
-        if (field.hasKeyboardFocus() && cursorVisible) {
-            drawCursor(batch);
-        }
-    }
-
-    /**
-     * Dessine le curseur clignotant vertical
-     */
-    private void drawCursor(Batch batch) {
-        // Calculer la position du curseur à la fin du texte
-        String text = field.getText();
-        com.badlogic.gdx.graphics.g2d.BitmapFont font = field.getStyle().font;
-        
-        if (font != null) {
-            // Mesurer la largeur du texte
-            com.badlogic.gdx.graphics.g2d.GlyphLayout layout = new com.badlogic.gdx.graphics.g2d.GlyphLayout();
-            layout.setText(font, text);
-            float textWidth = layout.width;
-            
-            // Position du curseur (à la fin du texte + padding)
-            float cursorX = field.getX() + 10 + textWidth; // 10px de padding
-            float cursorY = field.getY() + 5; // 5px de padding vertical
-            float cursorHeight = field.getHeight() - 10; // Hauteur du curseur
-            
-            // Dessiner le curseur vertical (pipe)
-            Color oldColor = batch.getColor();
-            batch.setColor(Color.WHITE);
-            batch.draw(backgroundTexture, cursorX, cursorY, 2, cursorHeight); // 2px de largeur
-            batch.setColor(oldColor);
-        }
+        // Restaurer le shader d'origine
+        batch.setShader(originalShader);
     }
 
     /** Appelé à la fermeture de l'app pour nettoyer la texture */

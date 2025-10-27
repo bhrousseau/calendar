@@ -8,6 +8,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Array;
+import com.widedot.calendar.utils.CarlitoFontManager;
 
 /**
  * Classe représentant un panneau dans l'interface utilisateur
@@ -89,7 +90,7 @@ public class Panel {
         for (String line : textLines) {
             layout.setText(font, line, Color.WHITE, bounds.width - 2 * textMargin, Align.center, false);
             float textX = bounds.x + textMargin;
-            font.draw(batch, layout, textX, textY);
+            CarlitoFontManager.drawText(batch, layout, textX, textY);
             textY -= layout.height + 10;
         }
     }

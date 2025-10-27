@@ -26,6 +26,7 @@ import com.badlogic.gdx.utils.ObjectMap;
 import com.widedot.calendar.config.ThemeManager;
 import com.widedot.calendar.data.Theme;
 import com.widedot.calendar.screens.TransitionScreen;
+import com.widedot.calendar.utils.CarlitoFontManager;
 
 /**
  * Écran principal du calendrier de l'Avent
@@ -139,7 +140,8 @@ public class AdventCalendarScreen implements Screen {
         this.camera.update();
 
         this.batch = new SpriteBatch();
-        this.font = new BitmapFont();
+        CarlitoFontManager.initialize();
+        this.font = CarlitoFontManager.getFont();
 
         // Load resources
         this.foregroundTexture = loadTextureSafe(FOREGROUND_TEXTURE_PATH);

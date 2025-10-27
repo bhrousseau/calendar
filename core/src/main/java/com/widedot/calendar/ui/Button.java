@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.utils.Align;
+import com.widedot.calendar.utils.CarlitoFontManager;
 
 /**
  * Classe représentant un bouton dans l'interface utilisateur
@@ -58,7 +59,7 @@ public class Button {
         layout.setText(font, text, textColor, bounds.width, Align.center, false);
         float textX = bounds.x + (bounds.width - layout.width) / 2;
         float textY = bounds.y + (bounds.height + layout.height) / 2;
-        font.draw(batch, layout, textX, textY);
+        CarlitoFontManager.drawText(batch, layout, textX, textY);
     }
     
     /**

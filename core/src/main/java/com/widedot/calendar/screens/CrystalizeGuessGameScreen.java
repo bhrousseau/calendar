@@ -7,7 +7,6 @@ import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
@@ -23,6 +22,7 @@ import com.widedot.calendar.ui.BottomInputBar;
 import com.widedot.calendar.platform.PlatformRegistry;
 import com.widedot.calendar.utils.AnswerMatcher;
 import com.widedot.calendar.utils.GwtCompatibleFormatter;
+import com.widedot.calendar.utils.CarlitoFontManager;
 import com.widedot.calendar.AdventCalendarGame;
 import com.widedot.calendar.data.Theme;
 import com.widedot.calendar.config.Config;
@@ -48,8 +48,6 @@ public class CrystalizeGuessGameScreen extends GameScreen {
     private InputAdapter inputProcessor;
     
     // UI
-    private final BitmapFont font;
-    private final BitmapFont bigFont;
     private final GlyphLayout layout;
     private final Rectangle closeButton;
     private final Rectangle infoButton;
@@ -226,10 +224,7 @@ public class CrystalizeGuessGameScreen extends GameScreen {
         }
         
         // Initialiser les éléments UI
-        this.font = new BitmapFont();
-        this.font.getData().setScale(1.2f);
-        this.bigFont = new BitmapFont();
-        this.bigFont.getData().setScale(2.0f);
+        CarlitoFontManager.initialize();
         this.layout = new GlyphLayout();
         
         this.closeButton = new Rectangle(0, 0, 100, 100);
@@ -323,16 +318,7 @@ public class CrystalizeGuessGameScreen extends GameScreen {
     private void initializeInputSystem() {
         // Créer le stage pour l'input
         inputStage = new Stage(viewport);
-        
-        // Créer le skin (utiliser le skin par défaut de LibGDX)
-        try {
-            inputSkin = new Skin(Gdx.files.internal("uiskin.json"));
-            Gdx.app.log("CrystalizeGuessGameScreen", "Skin uiskin.json chargé avec succès");
-        } catch (Exception e) {
-            Gdx.app.log("CrystalizeGuessGameScreen", "Skin uiskin.json non trouvé, création d'un skin basique");
-            // Fallback: créer un skin basique avec les styles par défaut
-            inputSkin = createBasicSkin();
-        }
+        inputSkin = createBasicSkin();
         
         // Créer la table racine
         rootTable = new Table();
@@ -425,18 +411,11 @@ public class CrystalizeGuessGameScreen extends GameScreen {
      */
     private Skin createBasicSkin() {
         Skin basicSkin = new Skin();
-        
-        // Créer une police basique
-        BitmapFont basicFont = new BitmapFont();
-        
-        // Créer un style TextField basique
         com.badlogic.gdx.scenes.scene2d.ui.TextField.TextFieldStyle textFieldStyle = 
             new com.badlogic.gdx.scenes.scene2d.ui.TextField.TextFieldStyle();
-        textFieldStyle.font = basicFont;
+        CarlitoFontManager.initialize();
+        textFieldStyle.font = CarlitoFontManager.getFont();
         textFieldStyle.fontColor = Color.WHITE;
-        // Pas de cursor personnalisé pour éviter les erreurs
-        
-        // Ajouter le style au skin
         basicSkin.add("default", textFieldStyle);
         
         Gdx.app.log("CrystalizeGuessGameScreen", "Skin basique créé avec succès");
@@ -565,7 +544,7 @@ public class CrystalizeGuessGameScreen extends GameScreen {
      * Initialise le système de debug
      */
     private void initializeDebugManager() {
-        debugManager = new CrystallizeDebugManager(font);
+        debugManager = new CrystallizeDebugManager();
         debugManager.setChangeCallback(new CrystallizeDebugManager.DebugChangeCallback() {
             @Override
             public void onDebugParameterChanged() {
@@ -1369,14 +1348,14 @@ public class CrystalizeGuessGameScreen extends GameScreen {
         batch.draw(whiteTexture, panelX + panelWidth - borderWidth, panelY, borderWidth, panelHeight);
         
         // Contenu
-        font.setColor(0.2f, 0.3f, 0.8f, 1);
+        CarlitoFontManager.getFont().setColor(0.2f, 0.3f, 0.8f, 1);
         String title = "Devine l'Image";
-        layout.setText(font, title);
-        font.draw(batch, layout, 
+        layout.setText(CarlitoFontManager.getFont(), title);
+        CarlitoFontManager.drawText(batch, layout, 
                  panelX + (panelWidth - layout.width) / 2,
                  panelY + panelHeight - 30);
         
-        font.setColor(0.1f, 0.1f, 0.2f, 1);
+        CarlitoFontManager.getFont().setColor(0.1f, 0.1f, 0.2f, 1);
         float textY = panelY + panelHeight - 80;
         float lineHeight = 25;
         
@@ -1394,8 +1373,8 @@ public class CrystalizeGuessGameScreen extends GameScreen {
         };
         
         for (String rule : rules) {
-            layout.setText(font, rule);
-            font.draw(batch, layout, panelX + 20, textY);
+            layout.setText(CarlitoFontManager.getFont(), rule);
+            CarlitoFontManager.drawText(batch, layout, panelX + 20, textY);
             textY -= lineHeight;
         }
     }
@@ -1416,8 +1395,6 @@ public class CrystalizeGuessGameScreen extends GameScreen {
     @Override
     public void dispose() {
         super.dispose();
-        font.dispose();
-        bigFont.dispose();
         whiteTexture.dispose();
         if (originalImageTexture != null) originalImageTexture.dispose();
         // currentCrystalizedTexture et animatedTexture proviennent du FrameBuffer, ne pas les disposer séparément

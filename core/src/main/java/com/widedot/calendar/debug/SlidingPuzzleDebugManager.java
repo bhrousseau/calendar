@@ -12,6 +12,7 @@ import com.badlogic.gdx.utils.ObjectMap;
 import com.badlogic.gdx.utils.JsonWriter;
 import com.badlogic.gdx.utils.JsonReader;
 import com.badlogic.gdx.utils.JsonValue;
+import com.widedot.calendar.utils.CarlitoFontManager;
 
 /**
  * Gestionnaire de debug pour le sliding puzzle
@@ -76,7 +77,8 @@ public class SlidingPuzzleDebugManager {
     }
 
     public SlidingPuzzleDebugManager(BitmapFont font) {
-        this.font = font;
+        CarlitoFontManager.initialize();
+        this.font = CarlitoFontManager.getFont();
         this.layout = new GlyphLayout();
         
         // Créer une texture blanche pour le fond
@@ -437,7 +439,7 @@ public class SlidingPuzzleDebugManager {
         font.setColor(1, 1, 1, 1); // Blanc
         String title = "DEBUG MODE - SLIDING PUZZLE";
         layout.setText(font, title);
-        font.draw(batch, layout, x, y);
+        CarlitoFontManager.drawText(batch, layout, x, y);
         y -= lineHeight;
 
         // Taille du puzzle
@@ -445,7 +447,7 @@ public class SlidingPuzzleDebugManager {
         font.setColor(isSizeSelected ? 1.0f : 1.0f, isSizeSelected ? 0.0f : 1.0f, isSizeSelected ? 0.0f : 1.0f, 1.0f);
         String sizeText = "Size: " + debugSize + "x" + debugSize;
         layout.setText(font, sizeText);
-        font.draw(batch, layout, x, y);
+        CarlitoFontManager.drawText(batch, layout, x, y);
         y -= lineHeight;
 
         // Couleur de fond RGB
@@ -453,21 +455,21 @@ public class SlidingPuzzleDebugManager {
         font.setColor(isBgColorRSelected ? 1.0f : 1.0f, isBgColorRSelected ? 0.0f : 1.0f, isBgColorRSelected ? 0.0f : 1.0f, 1.0f);
         String bgColorRText = "Background R: " + debugBgColorR;
         layout.setText(font, bgColorRText);
-        font.draw(batch, layout, x, y);
+        CarlitoFontManager.drawText(batch, layout, x, y);
         y -= lineHeight;
 
         boolean isBgColorGSelected = selectedDebugParameter == DebugParameter.BG_COLOR_G;
         font.setColor(isBgColorGSelected ? 1.0f : 1.0f, isBgColorGSelected ? 0.0f : 1.0f, isBgColorGSelected ? 0.0f : 1.0f, 1.0f);
         String bgColorGText = "Background G: " + debugBgColorG;
         layout.setText(font, bgColorGText);
-        font.draw(batch, layout, x, y);
+        CarlitoFontManager.drawText(batch, layout, x, y);
         y -= lineHeight;
 
         boolean isBgColorBSelected = selectedDebugParameter == DebugParameter.BG_COLOR_B;
         font.setColor(isBgColorBSelected ? 1.0f : 1.0f, isBgColorBSelected ? 0.0f : 1.0f, isBgColorBSelected ? 0.0f : 1.0f, 1.0f);
         String bgColorBText = "Background B: " + debugBgColorB;
         layout.setText(font, bgColorBText);
-        font.draw(batch, layout, x, y);
+        CarlitoFontManager.drawText(batch, layout, x, y);
         y -= lineHeight;
 
         // Paramètres HSL
@@ -475,21 +477,21 @@ public class SlidingPuzzleDebugManager {
         font.setColor(isBgHueSelected ? 1.0f : 1.0f, isBgHueSelected ? 0.0f : 1.0f, isBgHueSelected ? 0.0f : 1.0f, 1.0f);
         String bgHueText = "Background Hue: " + GwtCompatibleFormatter.formatFloat(debugBackgroundHue, 1);
         layout.setText(font, bgHueText);
-        font.draw(batch, layout, x, y);
+        CarlitoFontManager.drawText(batch, layout, x, y);
         y -= lineHeight;
 
         boolean isBgSaturationSelected = selectedDebugParameter == DebugParameter.BG_SATURATION;
         font.setColor(isBgSaturationSelected ? 1.0f : 1.0f, isBgSaturationSelected ? 0.0f : 1.0f, isBgSaturationSelected ? 0.0f : 1.0f, 1.0f);
         String bgSaturationText = "Background Saturation: " + GwtCompatibleFormatter.formatFloat(debugBackgroundSaturation, 1);
         layout.setText(font, bgSaturationText);
-        font.draw(batch, layout, x, y);
+        CarlitoFontManager.drawText(batch, layout, x, y);
         y -= lineHeight;
 
         boolean isBgLightnessSelected = selectedDebugParameter == DebugParameter.BG_LIGHTNESS;
         font.setColor(isBgLightnessSelected ? 1.0f : 1.0f, isBgLightnessSelected ? 0.0f : 1.0f, isBgLightnessSelected ? 0.0f : 1.0f, 1.0f);
         String bgLightnessText = "Background Lightness: " + GwtCompatibleFormatter.formatFloat(debugBackgroundLightness, 1);
         layout.setText(font, bgLightnessText);
-        font.draw(batch, layout, x, y);
+        CarlitoFontManager.drawText(batch, layout, x, y);
         y -= lineHeight;
 
         // Nombre de mélanges
@@ -497,7 +499,7 @@ public class SlidingPuzzleDebugManager {
         font.setColor(isShuffleSelected ? 1.0f : 1.0f, isShuffleSelected ? 0.0f : 1.0f, isShuffleSelected ? 0.0f : 1.0f, 1.0f);
         String shuffleText = "Shuffle Count: " + debugShuffle;
         layout.setText(font, shuffleText);
-        font.draw(batch, layout, x, y);
+        CarlitoFontManager.drawText(batch, layout, x, y);
         y -= lineHeight;
 
         // Vitesse d'animation
@@ -505,24 +507,24 @@ public class SlidingPuzzleDebugManager {
         font.setColor(isAnimationSpeedSelected ? 1.0f : 1.0f, isAnimationSpeedSelected ? 0.0f : 1.0f, isAnimationSpeedSelected ? 0.0f : 1.0f, 1.0f);
         String animationSpeedText = "Animation Speed: " + GwtCompatibleFormatter.formatFloat(debugAnimationSpeed, 1);
         layout.setText(font, animationSpeedText);
-        font.draw(batch, layout, x, y);
+        CarlitoFontManager.drawText(batch, layout, x, y);
         y -= lineHeight;
 
         // Instructions
         font.setColor(1, 1, 1, 1); // Blanc
         String instructions = "UP/DOWN: Select Parameter | LEFT/RIGHT: Modify Value";
         layout.setText(font, instructions);
-        font.draw(batch, layout, x, y);
+        CarlitoFontManager.drawText(batch, layout, x, y);
         y -= lineHeight;
 
         String holdInstructions = "Hold LEFT/RIGHT for continuous modification";
         layout.setText(font, holdInstructions);
-        font.draw(batch, layout, x, y);
+        CarlitoFontManager.drawText(batch, layout, x, y);
         y -= lineHeight;
 
         String saveInstructions = "S: Save current settings to games.json";
         layout.setText(font, saveInstructions);
-        font.draw(batch, layout, x, y);
+        CarlitoFontManager.drawText(batch, layout, x, y);
         y -= lineHeight;
 
         // Afficher la confirmation de sauvegarde si active
@@ -530,7 +532,7 @@ public class SlidingPuzzleDebugManager {
             font.setColor(0.0f, 1.0f, 0.0f, 1.0f); // Vert
             String confirmationText = "✓ SETTINGS SAVED!";
             layout.setText(font, confirmationText);
-            font.draw(batch, layout, x, y);
+            CarlitoFontManager.drawText(batch, layout, x, y);
             font.setColor(1.0f, 1.0f, 1.0f, 1.0f); // Remettre en blanc
         }
     }
