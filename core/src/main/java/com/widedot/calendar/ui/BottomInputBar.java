@@ -7,6 +7,8 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
@@ -25,6 +27,7 @@ public class BottomInputBar extends Table {
     public interface Listener {
         void onSubmit(String text);
         default void onFocusChanged(boolean focused) {}
+        default void onExitInputMode() {}
     }
 
     private final TextField field;
@@ -48,33 +51,47 @@ public class BottomInputBar extends Table {
 
         // Style du TextField
         TextField.TextFieldStyle textFieldStyle;
-        try {
-            textFieldStyle = skin.get(TextField.TextFieldStyle.class);
-            // Créer une nouvelle font Carlito spécifiquement pour le TextField
-            textFieldStyle.font = new com.badlogic.gdx.graphics.g2d.BitmapFont(Gdx.files.internal("skin/carlito.fnt"));
-            textFieldStyle.font.getData().setScale(2.0f);
-            textFieldStyle.fontColor = Color.WHITE;
-            Pixmap pm = new Pixmap(2, 16, Pixmap.Format.RGBA8888);
-            pm.setColor(Color.WHITE);
-            pm.fill();
-            textFieldStyle.cursor = new TextureRegionDrawable(new TextureRegion(new Texture(pm)));
-            pm.dispose();
-        } catch (Exception e) {
-            textFieldStyle = new TextField.TextFieldStyle();
-            // Créer une nouvelle font Carlito spécifiquement pour le TextField
-            textFieldStyle.font = new com.badlogic.gdx.graphics.g2d.BitmapFont(Gdx.files.internal("skin/carlito.fnt"));
-            textFieldStyle.font.getData().setScale(2.0f);
-            textFieldStyle.fontColor = Color.WHITE;
-        }
+        
+        // Créer directement le style sans dépendre du skin
+        textFieldStyle = new TextField.TextFieldStyle();
+        // Créer une font indépendante avec les bonnes configurations Distance Field (comme CarlitoFontManager)
+        com.badlogic.gdx.graphics.Texture textFieldTexture = new com.badlogic.gdx.graphics.Texture(Gdx.files.internal("skin/carlito.png"), true);
+        textFieldTexture.setFilter(com.badlogic.gdx.graphics.Texture.TextureFilter.MipMapLinearNearest, com.badlogic.gdx.graphics.Texture.TextureFilter.Linear);
+        textFieldStyle.font = new com.badlogic.gdx.graphics.g2d.BitmapFont(Gdx.files.internal("skin/carlito.fnt"), new com.badlogic.gdx.graphics.g2d.TextureRegion(textFieldTexture), false);
+        textFieldStyle.font.getData().setScale(2.0f);
+        textFieldStyle.fontColor = Color.WHITE;
+        
+        // Créer un curseur personnalisé
+        Pixmap pm = new Pixmap(2, 16, Pixmap.Format.RGBA8888);
+        pm.setColor(Color.WHITE);
+        pm.fill();
+        textFieldStyle.cursor = new TextureRegionDrawable(new TextureRegion(new Texture(pm)));
+        pm.dispose();
 
         field = new TextField("", textFieldStyle);
         field.setMessageText("Tapez votre réponse...");
         field.setFocusTraversal(false);
         field.setMaxLength(100);
 
-        // Enter → submit
+        // Enter → submit, Échap → sortir du mode saisie
         field.setTextFieldListener((tf, c) -> {
-            if (c == '\n' || c == '\r') submit();
+            if (c == '\n' || c == '\r') {
+                submit();
+            } else if (c == 27) { // Échap (ASCII 27)
+                exitInputMode();
+            }
+        });
+        
+        // Ajouter un listener pour gérer la touche Échap au niveau du Stage
+        field.addListener(new InputListener() {
+            @Override
+            public boolean keyDown(InputEvent event, int keycode) {
+                if (keycode == com.badlogic.gdx.Input.Keys.ESCAPE) {
+                    exitInputMode();
+                    return true;
+                }
+                return false;
+            }
         });
 
         add(field).expandX().fillX();
@@ -91,6 +108,25 @@ public class BottomInputBar extends Table {
         });
 
         field.setOnscreenKeyboard(visible -> Gdx.input.setOnscreenKeyboardVisible(visible));
+        
+        // Ajouter un listener global au niveau de la Table pour capturer les clics en dehors du TextField
+        addListener(new InputListener() {
+            @Override
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                // Vérifier si le clic est en dehors du TextField
+                // Convertir les coordonnées locales du TextField
+                com.badlogic.gdx.math.Vector2 localCoords = new com.badlogic.gdx.math.Vector2(x, y);
+                localCoords = field.parentToLocalCoordinates(localCoords);
+                
+                // Si le clic est en dehors du TextField, sortir du mode saisie
+                if (localCoords.x < 0 || localCoords.x > field.getWidth() || 
+                    localCoords.y < 0 || localCoords.y > field.getHeight()) {
+                    exitInputMode();
+                    return true;
+                }
+                return false;
+            }
+        });
     }
 
     public void setListener(Listener l) {
@@ -105,6 +141,18 @@ public class BottomInputBar extends Table {
 
         Stage stage = getStage();
         if (stage != null) stage.setKeyboardFocus(null);
+    }
+    
+    private void exitInputMode() {
+        // Vider le champ pour réafficher le hint avec la question
+        field.setText("");
+        
+        // Perdre le focus du TextField
+        Stage stage = getStage();
+        if (stage != null) stage.setKeyboardFocus(null);
+        
+        // Notifier le listener pour réafficher la question
+        if (listener != null) listener.onExitInputMode();
     }
 
     public void focus() {
@@ -122,6 +170,31 @@ public class BottomInputBar extends Table {
 
     public void setPlaceholderText(String placeholderText) {
         field.setMessageText(placeholderText);
+    }
+    
+    /**
+     * Force la sortie du mode saisie (appelé par les jeux lors d'un clic en dehors)
+     */
+    public void forceExitInputMode() {
+        exitInputMode();
+    }
+    
+    /**
+     * Vérifie si le champ a le focus
+     */
+    public boolean hasFocus() {
+        Stage stage = getStage();
+        return stage != null && stage.getKeyboardFocus() == field;
+    }
+    
+    /**
+     * Vérifie si un point (en coordonnées du Stage) est sur le TextField
+     */
+    public boolean containsPoint(float stageX, float stageY) {
+        com.badlogic.gdx.math.Vector2 localCoords = new com.badlogic.gdx.math.Vector2(stageX, stageY);
+        localCoords = field.stageToLocalCoordinates(localCoords);
+        return localCoords.x >= 0 && localCoords.x <= field.getWidth() && 
+               localCoords.y >= 0 && localCoords.y <= field.getHeight();
     }
 
     @Override

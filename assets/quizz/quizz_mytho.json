@@ -2,13 +2,13 @@
   "questions": [
     {
       "id": 1,
-      "question": "Quel est le dieu grec du ciel et souverain des dieux de l’Olympe ?",
+      "question": "Quel est le dieu grec du ciel et souverain des dieux de l'Olympe ?",
       "answer": "Zeus",
       "alternatives": ["zeus"]
     },
     {
       "id": 2,
-      "question": "Quel est l’équivalent romain de Zeus ?",
+      "question": "Quel est l'équivalent romain de Zeus ?",
       "answer": "Jupiter",
       "alternatives": ["jupiter"]
     },
@@ -20,7 +20,7 @@
     },
     {
       "id": 4,
-      "question": "Quel est le nom romain d’Athéna ?",
+      "question": "Quel est le nom romain d'Athéna ?",
       "answer": "Minerve",
       "alternatives": ["minerve"]
     },
@@ -32,7 +32,7 @@
     },
     {
       "id": 6,
-      "question": "Quel est l’équivalent romain de Poséidon ?",
+      "question": "Quel est l'équivalent romain de Poséidon ?",
       "answer": "Neptune",
       "alternatives": ["neptune"]
     },
@@ -44,19 +44,19 @@
     },
     {
       "id": 8,
-      "question": "Quel est le nom romain d’Hadès ?",
+      "question": "Quel est le nom romain d'Hadès ?",
       "answer": "Pluton",
       "alternatives": ["pluton"]
     },
     {
       "id": 9,
-      "question": "Quelle déesse grecque est associée à l’amour et à la beauté ?",
+      "question": "Quelle déesse grecque est associée à l'amour et à la beauté ?",
       "answer": "Aphrodite",
       "alternatives": ["aphrodite"]
     },
     {
       "id": 10,
-      "question": "Quel est le nom romain d’Aphrodite ?",
+      "question": "Quel est le nom romain d'Aphrodite ?",
       "answer": "Vénus",
       "alternatives": ["vénus","venus","Venus"]
     },
@@ -68,7 +68,7 @@
     },
     {
       "id": 12,
-      "question": "Quel est l’équivalent romain d’Arès ?",
+      "question": "Quel est l'équivalent romain d'Arès ?",
       "answer": "Mars",
       "alternatives": ["mars"]
     },
@@ -80,7 +80,7 @@
     },
     {
       "id": 14,
-      "question": "Quel est le nom romain d’Héphaïstos ?",
+      "question": "Quel est le nom romain d'Héphaïstos ?",
       "answer": "Vulcain",
       "alternatives": ["vulcain"]
     },
@@ -92,19 +92,19 @@
     },
     {
       "id": 16,
-      "question": "Quel est le nom romain d’Apollon ?",
+      "question": "Quel est le nom romain d'Apollon ?",
       "answer": "Apollon",
       "alternatives": ["apollon","Apollo","apollo"]
     },
     {
       "id": 17,
-      "question": "Quelle déesse grecque est la sœur jumelle d’Apollon ?",
+      "question": "Quelle déesse grecque est la sœur jumelle d'Apollon ?",
       "answer": "Artémis",
       "alternatives": ["artémis","Artemis","artemis"]
     },
     {
       "id": 18,
-      "question": "Quel est le nom romain d’Artémis ?",
+      "question": "Quel est le nom romain d'Artémis ?",
       "answer": "Diane",
       "alternatives": ["diane"]
     },
@@ -116,7 +116,7 @@
     },
     {
       "id": 20,
-      "question": "Quel est le nom romain d’Hestia ?",
+      "question": "Quel est le nom romain d'Hestia ?",
       "answer": "Vesta",
       "alternatives": ["vesta"]
     },
@@ -128,7 +128,7 @@
     },
     {
       "id": 22,
-      "question": "Quel est le nom romain d’Héra ?",
+      "question": "Quel est le nom romain d'Héra ?",
       "answer": "Junon",
       "alternatives": ["junon"]
     },
@@ -140,7 +140,7 @@
     },
     {
       "id": 24,
-      "question": "Quel est le nom romain d’Hermès ?",
+      "question": "Quel est le nom romain d'Hermès ?",
       "answer": "Mercure",
       "alternatives": ["mercure"]
     },
@@ -158,7 +158,7 @@
     },
     {
       "id": 27,
-      "question": "Qui est la déesse grecque de l’agriculture et des moissons ?",
+      "question": "Qui est la déesse grecque de l'agriculture et des moissons ?",
       "answer": "Déméter",
       "alternatives": ["demeter","Demeter","deméter","Deméter","déméter", "démeter","Démeter"]
     },
@@ -176,7 +176,7 @@
     },
     {
       "id": 30,
-      "question": "Quel est l’équivalent romain de Cronos ?",
+      "question": "Quel est l'équivalent romain de Cronos ?",
       "answer": "Saturne",
       "alternatives": ["saturne"]
     },

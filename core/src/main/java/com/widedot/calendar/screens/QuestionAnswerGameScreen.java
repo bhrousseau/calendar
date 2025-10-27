@@ -26,6 +26,7 @@ import com.widedot.calendar.ui.BottomInputBar;
 import com.widedot.calendar.utils.AnswerMatcher;
 import com.widedot.calendar.debug.QuestionAnswerDebugManager;
 import com.widedot.calendar.utils.CarlitoFontManager;
+import com.widedot.calendar.animation.QnaAnimationManager;
 
 /**
  * Écran de jeu pour le mini-jeu de Questions et Réponses
@@ -97,6 +98,9 @@ public class QuestionAnswerGameScreen extends GameScreen {
     private String questionsFile = ""; // Valeur par défaut vide
     private QuestionAnswerDebugManager debugManager;
     
+    // Animation system
+    private QnaAnimationManager animationManager;
+    
     /**
      * Constructeur avec paramètres dynamiques
      */
@@ -148,8 +152,8 @@ public class QuestionAnswerGameScreen extends GameScreen {
         this.infoPanelColor = new Color(0.3f, 0.3f, 0.3f, 0.8f);
         this.showInfoPanel = false;
         
-        // Couleur de fond par défaut
-        this.backgroundColor = new Color(0.1f, 0.1f, 0.2f, 1);
+        // Couleur de fond noire pour le jeu QNA
+        this.backgroundColor = new Color(0f, 0f, 0f, 1);
         
         // Initialiser les variables de jeu
         this.allQuestions = new Array<>();
@@ -187,6 +191,9 @@ public class QuestionAnswerGameScreen extends GameScreen {
         
         // Créer l'input processor
         createInputProcessor();
+        
+        // Initialiser le système d'animation
+        initializeAnimationManager();
         
         Gdx.app.log("QuestionAnswerGameScreen", "Constructeur QuestionAnswerGameScreen terminé avec succès");
     }
@@ -253,6 +260,11 @@ public class QuestionAnswerGameScreen extends GameScreen {
         
         // Initialiser l'interface de saisie
         initializeInputInterface();
+        
+        // Démarrer l'animation d'initialisation
+        if (animationManager != null) {
+            animationManager.triggerEvent(QnaAnimationManager.AnimationEvent.GAME_START);
+        }
         
         Gdx.app.log("QuestionAnswerGameScreen", "Jeu QNA initialisé");
     }
@@ -407,11 +419,10 @@ public class QuestionAnswerGameScreen extends GameScreen {
         }
         
         QuestionData currentQuestion = currentQuestions.get(currentQuestionIndex);
-        String placeholder = "Question " + (currentQuestionIndex + 1) + "/" + currentQuestions.size + ": " + currentQuestion.question;
-        inputBar.setPlaceholderText(placeholder);
+        inputBar.setPlaceholderText(currentQuestion.question);
         inputBar.clear();
         
-        Gdx.app.log("QuestionAnswerGameScreen", "Question " + (currentQuestionIndex + 1) + ": " + currentQuestion.question);
+        Gdx.app.log("QuestionAnswerGameScreen", "Question: " + currentQuestion.question);
         Gdx.app.log("QuestionAnswerGameScreen", "Réponse correcte: " + currentQuestion.answer);
     }
     
@@ -437,12 +448,24 @@ public class QuestionAnswerGameScreen extends GameScreen {
             correctAnswers++;
             Gdx.app.log("QuestionAnswerGameScreen", "Réponse correcte! (" + correctAnswers + "/" + currentQuestions.size + ")");
             
+            // Déclencher l'animation de bonne réponse
+            if (animationManager != null) {
+                animationManager.updateGameStats(correctAnswers, currentQuestionIndex);
+                animationManager.triggerEvent(QnaAnimationManager.AnimationEvent.CORRECT_ANSWER);
+            }
+            
             // Son de victoire pour une bonne réponse
             if (winSound != null) {
                 winSound.play(0.5f);
             }
         } else {
             Gdx.app.log("QuestionAnswerGameScreen", "Réponse incorrecte. Réponse attendue: " + currentQuestion.answer);
+            
+            // Déclencher l'animation de mauvaise réponse
+            if (animationManager != null) {
+                animationManager.updateGameStats(correctAnswers, currentQuestionIndex);
+                animationManager.triggerEvent(QnaAnimationManager.AnimationEvent.WRONG_ANSWER);
+            }
             
             // Son d'erreur
             if (wrongSound != null) {
@@ -475,6 +498,11 @@ public class QuestionAnswerGameScreen extends GameScreen {
             gameWon = true;
             Gdx.app.log("QuestionAnswerGameScreen", "VICTOIRE! Seuil atteint!");
             
+            // Déclencher l'animation de victoire
+            if (animationManager != null) {
+                animationManager.triggerEvent(QnaAnimationManager.AnimationEvent.GAME_WON);
+            }
+            
             // Jouer la musique de victoire
             if (winSound != null) {
                 winSound.play(1.0f);
@@ -487,23 +515,28 @@ public class QuestionAnswerGameScreen extends GameScreen {
                 adventGame.setVisited(dayId, true);
             }
             
-            // Retourner au menu après un délai
+            // Retourner au menu après l'animation de victoire
             com.badlogic.gdx.utils.Timer.schedule(new com.badlogic.gdx.utils.Timer.Task() {
                 @Override
                 public void run() {
                     returnToMainMenu();
                 }
-            }, 2.0f);
+            }, 4.0f); // Délai plus long pour permettre l'animation de victoire
         } else {
             Gdx.app.log("QuestionAnswerGameScreen", "Échec! Seuil non atteint.");
             
-            // Retourner au menu après un délai
+            // Déclencher l'animation de défaite
+            if (animationManager != null) {
+                animationManager.triggerEvent(QnaAnimationManager.AnimationEvent.GAME_LOST);
+            }
+            
+            // Retourner au menu après l'animation de défaite
             com.badlogic.gdx.utils.Timer.schedule(new com.badlogic.gdx.utils.Timer.Task() {
                 @Override
                 public void run() {
                     returnToMainMenu();
                 }
-            }, 2.0f);
+            }, 3.0f); // Délai pour permettre l'animation de défaite
         }
     }
     
@@ -513,6 +546,11 @@ public class QuestionAnswerGameScreen extends GameScreen {
         if (debugManager != null) {
             debugManager.update(delta);
         }
+        
+        // Mettre à jour le système d'animation
+        if (animationManager != null) {
+            animationManager.update(delta);
+        }
     }
     
     @Override
@@ -521,8 +559,14 @@ public class QuestionAnswerGameScreen extends GameScreen {
         batch.setColor(backgroundColor);
         batch.draw(whiteTexture, 0, 0, DisplayConfig.WORLD_WIDTH, viewport.getWorldHeight());
         
-        // Dessiner l'interface de jeu
-        drawGameInterface();
+        // Dessiner les animations
+        if (animationManager != null) {
+            animationManager.draw(batch, viewport.getWorldHeight());
+        }
+        
+        // Dessiner les boutons par-dessus tout le reste
+        drawCloseButton();
+        drawInfoButton();
         
         // Dessiner le panneau d'information par-dessus tout le reste s'il est visible
         if (showInfoPanel) {
@@ -541,14 +585,6 @@ public class QuestionAnswerGameScreen extends GameScreen {
         }
     }
     
-    /**
-     * Dessine l'interface de jeu (boutons, etc.)
-     */
-    private void drawGameInterface() {
-        // Dessiner les boutons avec leurs textures
-        drawCloseButton();
-        drawInfoButton();
-    }
     
     private void drawInfoButton() {
         if (infoButtonTexture != null) {
@@ -650,11 +686,32 @@ public class QuestionAnswerGameScreen extends GameScreen {
         inputProcessor = new InputAdapter() {
             @Override
             public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+                // Vérifier si le clic est sur la barre d'input
+                boolean clickOnInput = false;
+                if (inputStage != null && inputStage.getActors().size > 0) {
+                    com.badlogic.gdx.math.Vector2 stageCoords = inputStage.screenToStageCoordinates(
+                        new com.badlogic.gdx.math.Vector2(screenX, screenY)
+                    );
+                    for (com.badlogic.gdx.scenes.scene2d.Actor actor : inputStage.getActors()) {
+                        if (actor instanceof com.widedot.calendar.ui.BottomInputBar) {
+                            com.widedot.calendar.ui.BottomInputBar inputBar = (com.widedot.calendar.ui.BottomInputBar) actor;
+                            clickOnInput = inputBar.containsPoint(stageCoords.x, stageCoords.y);
+                            
+                            // Si on a le focus et qu'on clique en dehors, sortir du mode saisie
+                            if (inputBar.hasFocus() && !clickOnInput) {
+                                inputBar.forceExitInputMode();
+                            }
+                            break;
+                        }
+                    }
+                }
+                
+                // Traiter le clic pour le jeu (boutons, etc.)
                 Vector3 worldCoords = new Vector3(screenX, screenY, 0);
                 viewport.unproject(worldCoords);
                 handleClick(worldCoords.x, worldCoords.y);
                 return true;
-    }
+            }
     
     @Override
             public boolean keyDown(int keycode) {
@@ -674,6 +731,45 @@ public class QuestionAnswerGameScreen extends GameScreen {
                 if (keycode == Input.Keys.N && isTestMode && 
                     (Gdx.input.isKeyPressed(Input.Keys.ALT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.ALT_RIGHT))) {
                     triggerVictoryPhase();
+                    return true;
+                }
+                
+                // Alt+I : Activer/désactiver le mode debug pour les positions
+                if (keycode == Input.Keys.I && 
+                    (Gdx.input.isKeyPressed(Input.Keys.ALT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.ALT_RIGHT))) {
+                    if (animationManager != null) {
+                        animationManager.toggleDebugMode();
+                    }
+                    return true;
+                }
+                
+                // Échap : Sortir du mode saisie
+                if (keycode == Input.Keys.ESCAPE) {
+                    if (inputStage != null && inputStage.getActors().size > 0) {
+                        // Chercher la BottomInputBar dans les acteurs du Stage
+                        for (com.badlogic.gdx.scenes.scene2d.Actor actor : inputStage.getActors()) {
+                            if (actor instanceof com.widedot.calendar.ui.BottomInputBar) {
+                                com.widedot.calendar.ui.BottomInputBar inputBar = (com.widedot.calendar.ui.BottomInputBar) actor;
+                                inputBar.forceExitInputMode();
+                                break;
+                            }
+                        }
+                    }
+                    return true;
+                }
+                
+                // Gestion des touches de debug du gestionnaire d'animation
+                if (animationManager != null && animationManager.handleDebugKeyDown(keycode)) {
+                    return true;
+                }
+                
+                return false;
+            }
+            
+            @Override
+            public boolean keyUp(int keycode) {
+                // Gestion du relâchement des touches de debug
+                if (animationManager != null && animationManager.handleDebugKeyUp(keycode)) {
                     return true;
                 }
                 
@@ -697,6 +793,7 @@ public class QuestionAnswerGameScreen extends GameScreen {
         } else if (infoButton.contains(worldX, worldY)) {
             showInfoPanel = true;
         }
+        // La sortie du mode saisie est gérée dans touchDown de l'inputProcessor
     }
     
     @Override
@@ -781,6 +878,12 @@ public class QuestionAnswerGameScreen extends GameScreen {
             inputStage.getViewport().update(width, height, true);
         }
         
+        // Mettre à jour les positions des animations
+        if (animationManager != null) {
+            animationManager.calculateBackgroundDimensions(DisplayConfig.WORLD_WIDTH, viewport.getWorldHeight());
+            updateAnimationPositions();
+        }
+        
         Gdx.app.log("QuestionAnswerGameScreen", "Redimensionnement: " + width + "x" + height);
         Gdx.app.log("QuestionAnswerGameScreen", "Viewport: " + viewport.getWorldWidth() + "x" + viewport.getWorldHeight());
     }
@@ -808,5 +911,98 @@ public class QuestionAnswerGameScreen extends GameScreen {
         if (inputSkin != null) {
             inputSkin.dispose();
         }
+        if (animationManager != null) {
+            animationManager.dispose();
+        }
+    }
+    
+    /**
+     * Initialise le gestionnaire d'animation
+     */
+    private void initializeAnimationManager() {
+        animationManager = new QnaAnimationManager(totalQuestions, victoryThreshold);
+        
+        // Définir le callback pour les événements d'animation
+        animationManager.setCallback(new QnaAnimationManager.AnimationCallback() {
+            @Override
+            public void onAnimationComplete(QnaAnimationManager.AnimationState completedState) {
+                Gdx.app.log("QuestionAnswerGameScreen", "Animation terminée: " + completedState);
+                
+                // Actions spécifiques selon l'état d'animation terminé
+                switch (completedState) {
+                    case INITIALIZING:
+                        Gdx.app.log("QuestionAnswerGameScreen", "Animation d'initialisation terminée");
+                        break;
+                    case BALL_MOVING_CORRECT:
+                        Gdx.app.log("QuestionAnswerGameScreen", "Animation de bonne réponse terminée");
+                        break;
+                    case BALL_DISAPPEARING:
+                        Gdx.app.log("QuestionAnswerGameScreen", "Animation de mauvaise réponse terminée");
+                        break;
+                    case VICTORY_ANIMATION:
+                        Gdx.app.log("QuestionAnswerGameScreen", "Animation de victoire terminée");
+                        break;
+                    case DEFEAT_ANIMATION:
+                        Gdx.app.log("QuestionAnswerGameScreen", "Animation de défaite terminée");
+                        break;
+                }
+            }
+            
+            @Override
+            public void onAnimationStarted(QnaAnimationManager.AnimationState startedState) {
+                Gdx.app.log("QuestionAnswerGameScreen", "Animation démarrée: " + startedState);
+            }
+        });
+        
+        // Charger les textures d'animation
+        animationManager.loadTextures();
+        
+        // Calculer les dimensions du background
+        animationManager.calculateBackgroundDimensions(DisplayConfig.WORLD_WIDTH, viewport.getWorldHeight());
+        
+        // Définir les positions des éléments d'animation
+        updateAnimationPositions();
+        
+        Gdx.app.log("QuestionAnswerGameScreen", "Gestionnaire d'animation initialisé");
+    }
+    
+    /**
+     * Met à jour les positions des éléments d'animation
+     */
+    private void updateAnimationPositions() {
+        if (animationManager == null) return;
+        
+        float viewportWidth = DisplayConfig.WORLD_WIDTH;
+        float viewportHeight = viewport.getWorldHeight();
+        
+        // Calculer les positions des éléments d'animation
+        // Réservoir : côté gauche de l'écran
+        float reservoirWidth = 200f;
+        float reservoirHeight = 300f;
+        float reservoirX = 50f;
+        float reservoirY = (viewportHeight - reservoirHeight) / 2;
+        
+        // Roue : centre de l'écran
+        float wheelSize = 150f;
+        float wheelX = (viewportWidth - wheelSize) / 2;
+        float wheelY = (viewportHeight - wheelSize) / 2;
+        
+        // Zone de succès : côté droit de l'écran
+        float successAreaWidth = 200f;
+        float successAreaHeight = 300f;
+        float successAreaX = viewportWidth - successAreaWidth - 50f;
+        float successAreaY = (viewportHeight - successAreaHeight) / 2;
+        
+        // Définir les positions dans le gestionnaire d'animation
+        animationManager.setPositions(
+            reservoirX, reservoirY, reservoirWidth, reservoirHeight,
+            wheelX, wheelY, wheelSize, wheelSize,
+            successAreaX, successAreaY, successAreaWidth, successAreaHeight
+        );
+        
+        // Les positions relatives des assets d'initialisation sont déjà définies dans le constructeur
+        // Elles seront automatiquement recalculées lors du resize grâce au système de positions relatives
+        
+        Gdx.app.log("QuestionAnswerGameScreen", "Positions d'animation mises à jour");
     }
 } 

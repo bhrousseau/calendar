@@ -1,0 +1,44 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main  # Déclenche le déploiement lors d'un push sur main
+  workflow_dispatch:  # Permet de lancer manuellement le déploiement
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+      
+    - name: Build HTML distribution
+      run: ./gradlew :html:dist
+      
+    - name: Prepare deployment files
+      run: |
+        mkdir -p deploy
+        cp -r html/build/dist/* deploy/
+        # Créer un fichier .nojekyll pour éviter que GitHub Pages ignore les fichiers commençant par _
+        touch deploy/.nojekyll
+        
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./deploy
+        publish_branch: gh-pages
+        force_orphan: true
+        commit_message: 'Deploy calendar game'
+

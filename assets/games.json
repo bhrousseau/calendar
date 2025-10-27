@@ -218,7 +218,9 @@
 		"gameTemplate": "QNA",
 		"theme": "starry_night",
 		"parameters": {
-			"questionsFile": "questions.json"
+			"questionsFile": "quizz_gastro .json",
+			"totalQuestions": 10,
+			"victoryThreshold": 3
 		}
 	},
 	{

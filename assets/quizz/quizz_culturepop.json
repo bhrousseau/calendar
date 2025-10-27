@@ -63,8 +63,8 @@
     {
       "id": 11,
       "question": "Quel film met en scène un extraterrestre à vélo ?",
-      "answer": "E.T. l’extra-terrestre",
-      "alternatives": ["e.t.","E.T.","E.T. l’extra-terrestre","ET the Extra-Terrestrial", "E.T. (1982)","ET","et", "E T","E-T","E.T","E.T. l’extra-terrestre","ET the Extra-Terrestrial", "E.T. (1982)"]
+      "answer": "E.T. l'extra-terrestre",
+      "alternatives": ["e.t.","E.T.","E.T. l'extra-terrestre","ET the Extra-Terrestrial", "E.T. (1982)","ET","et", "E T","E-T","E.T","E.T. l'extra-terrestre","ET the Extra-Terrestrial", "E.T. (1982)"]
     },
     {
       "id": 12,
@@ -86,7 +86,7 @@
     },
     {
       "id": 15,
-      "question": "Quel chanteur a sorti l’album 'Thriller' en 1982 ?",
+      "question": "Quel chanteur a sorti l'album 'Thriller' en 1982 ?",
       "answer": "Michael Jackson",
       "alternatives": ["MJ", "M. Jackson", "Michael J. Jackson"]
     },
@@ -110,13 +110,13 @@
     },
     {
       "id": 19,
-      "question": "Quel film d’animation met en scène des jouets qui prennent vie ?",
+      "question": "Quel film d'animation met en scène des jouets qui prennent vie ?",
       "answer": "Toy Story",
       "alternatives": ["ToyStory", "Histoire de jouets", "Toy Story (Pixar)"]
     },
     {
       "id": 20,
-      "question": "Quel rappeur américain a sorti l’album 'The Marshall Mathers LP' ?",
+      "question": "Quel rappeur américain a sorti l'album 'The Marshall Mathers LP' ?",
       "answer": "Eminem",
       "alternatives": ["Slim Shady", "Marshall Mathers", "Eminem (rappeur)"]
     },
@@ -158,7 +158,7 @@
     },
     {
       "id": 27,
-      "question": "Quel film d’animation de Disney met en scène Simba ?",
+      "question": "Quel film d'animation de Disney met en scène Simba ?",
       "answer": "Le Roi Lion",
       "alternatives": ["The Lion King", "Roi Lion", "Le Roi Lion (Disney)"]
     },
@@ -188,9 +188,9 @@
     },
     {
       "id": 32,
-      "question": "Quel film raconte l’histoire d’un jeune magicien nommé Harry Potter ?",
-      "answer": "Harry Potter à l’école des sorciers",
-      "alternatives": ["Harry Potter 1", "Harry Potter and the Philosopher’s Stone", "Harry Potter et la pierre philosophale"]
+      "question": "Quel film raconte l'histoire d'un jeune magicien nommé Harry Potter ?",
+      "answer": "Harry Potter à l'école des sorciers",
+      "alternatives": ["Harry Potter 1", "Harry Potter and the Philosopher's Stone", "Harry Potter et la pierre philosophale"]
     },
     {
       "id": 33,
@@ -202,7 +202,7 @@
       "id": 34,
       "question": "Quel super-héros est aussi connu sous le nom de Peter Parker ?",
       "answer": "Spider-Man",
-      "alternatives": ["Spiderman", "L’homme-araignée", "Spider Man"]
+      "alternatives": ["Spiderman", "L'homme-araignée", "Spider Man"]
     },
     {
       "id": 35,
@@ -254,13 +254,13 @@
     },
     {
       "id": 43,
-      "question": "Quelle série humoristique met en scène un groupe d’amis à New York ?",
+      "question": "Quelle série humoristique met en scène un groupe d'amis à New York ?",
       "answer": "Friends",
       "alternatives": ["FRIENDS", "Friends (NBC)", "la série Friends","Friends","Friends (NBC)","Friends (NBC) Friends"]
     },
     {
       "id": 44,
-      "question": "Quel film d’animation présente Elsa et Anna ?",
+      "question": "Quel film d'animation présente Elsa et Anna ?",
       "answer": "La Reine des Neiges",
       "alternatives": ["Frozen", "Frozen (Disney)", "La Reine des Neiges (2013)"]
     },

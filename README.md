@@ -1,8 +1,14 @@
-# calendar
+# Calendar - Jeu de Calendrier de l'Avent
 
-A [libGDX](https://libgdx.com/) project generated with [gdx-liftoff](https://github.com/libgdx/gdx-liftoff).
+Un jeu de calendrier de l'avent interactif développé avec [libGDX](https://libgdx.com/).
 
-This project was generated with a template including simple application launchers and an `ApplicationAdapter` extension that draws libGDX logo.
+## 🎮 Jouer en ligne
+
+Le jeu est disponible en ligne : [Démo GitHub Pages](https://votre-username.github.io/calendar/)
+
+## 📦 Déploiement
+
+Pour plus d'informations sur le déploiement automatique sur GitHub Pages, consultez [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ## Platforms
 

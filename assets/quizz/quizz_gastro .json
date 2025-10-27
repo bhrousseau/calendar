@@ -4,7 +4,7 @@
         "id": 1,
         "question": "Spécialité sucrée à base d'amandes et de melon confit ?",
         "answer": "Calissons d'Aix-en-Provence",
-        "alternatives": ["Calissons", "Calisson d’Aix", "Calissons d'Aix", "le calisson", "les calissons"]
+        "alternatives": ["Calissons", "Calisson d'Aix", "Calissons d'Aix", "le calisson", "les calissons"]
       },
       {
         "id": 2,
@@ -44,7 +44,7 @@
       },
       {
         "id": 8,
-        "question": "Quel petit gâteau moelleux, parfumé à la rose ou à l’amande, est une spécialité de Nancy ?",
+        "question": "Quel petit gâteau moelleux, parfumé à la rose ou à l'amande, est une spécialité de Nancy ?",
         "answer": "Macarons de Nancy",
         "alternatives": ["Macarons de Nancy", "les macarons", "Macarons", "le macaron"]
       },
@@ -74,7 +74,7 @@
       },
       {
         "id": 13,
-        "question": "Quel fromage bleu est affiné dans des caves naturelles du département de l’Aveyron ?",
+        "question": "Quel fromage bleu est affiné dans des caves naturelles du département de l'Aveyron ?",
         "answer": "Roquefort",
         "alternatives": ["Roquefort", "le roquefort"]
       },
@@ -98,7 +98,7 @@
       },
       {
         "id": 17,
-        "question": "Dans le nord de la France, c'est la star des friteries, tout le monde sait ce qu’il y a dedans, mais personne ne le dit.",
+        "question": "Dans le nord de la France, c'est la star des friteries, tout le monde sait ce qu'il y a dedans, mais personne ne le dit.",
         "answer": "la fricadelle",
         "alternatives": ["fricandelle", "la fricandelle", "fricadelle", "la fricadelle"]
       },

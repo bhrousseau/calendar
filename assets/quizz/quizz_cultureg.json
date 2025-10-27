@@ -20,13 +20,13 @@
     },
     {
       "id": 4,
-      "question": "Quel est l’élément chimique dont le symbole est O ?",
+      "question": "Quel est l'élément chimique dont le symbole est O ?",
       "answer": "Oxygène",
       "alternatives": ["Oxygen", "Oxygene", "Oxygène (gaz)"]
     },
     {
       "id": 5,
-      "question": "Quel écrivain français est l’auteur des 'Misérables' ?",
+      "question": "Quel écrivain français est l'auteur des 'Misérables' ?",
       "answer": "Victor Hugo",
       "alternatives": ["V. Hugo", "Hugo Victor", "Victor-Marie Hugo","Hugo"]
     },
@@ -40,7 +40,7 @@
       "id": 7,
       "question": "En quelle année a eu lieu la Révolution française ?",
       "answer": "1789",
-      "alternatives": ["l’an 1789", "année 1789", "1789 après J.-C.","en 1789"]
+      "alternatives": ["l'an 1789", "année 1789", "1789 après J.-C.","en 1789"]
     },
     {
       "id": 8,
@@ -76,7 +76,7 @@
       "id": 13,
       "question": "Quel est le plus grand désert du monde ?",
       "answer": "Antarctique",
-      "alternatives": ["Désert Antarctique", "L’Antarctique", "Antarctica"]
+      "alternatives": ["Désert Antarctique", "L'Antarctique", "Antarctica"]
     },
     {
       "id": 14,
@@ -87,8 +87,8 @@
     {
       "id": 15,
       "question": "Quel est le plus grand animal terrestre ?",
-      "answer": "Éléphant d’Afrique",
-      "alternatives": ["Éléphant africain", "Loxodonta africana", "Elephant d’Afrique", "éléphant","elephant", "l'éléphant","l'Éléphant","l'éléphant africain","l'Éléphant africain"]
+      "answer": "Éléphant d'Afrique",
+      "alternatives": ["Éléphant africain", "Loxodonta africana", "Elephant d'Afrique", "éléphant","elephant", "l'éléphant","l'Éléphant","l'éléphant africain","l'Éléphant africain"]
     },
     {
       "id": 16,
@@ -98,7 +98,7 @@
     },
     {
       "id": 17,
-      "question": "Quel est l’instrument principal de Ludwig van Beethoven ?",
+      "question": "Quel est l'instrument principal de Ludwig van Beethoven ?",
       "answer": "Piano",
       "alternatives": ["Pianoforte", "Clavier", "Piano-forte"]
     },
@@ -116,7 +116,7 @@
     },
     {
       "id": 20,
-      "question": "Qui est l’inventeur de l’imprimerie à caractères mobiles en Europe ?",
+      "question": "Qui est l'inventeur de l'imprimerie à caractères mobiles en Europe ?",
       "answer": "Johannes Gutenberg",
       "alternatives": ["Gutenberg", "Johann Gutenberg", "Johannes Gensfleisch zur Laden zum Gutenberg","gutenberg","Gutenberg","Johann Gutenberg","Johannes Gensfleisch zur Laden zum Gutenberg", "Johannes Gensfleisch zur Laden zum Gutenberg Johannes Gutenberg"]
     },
@@ -146,7 +146,7 @@
     },
     {
       "id": 25,
-      "question": "Quelle est la capitale de l’Australie ?",
+      "question": "Quelle est la capitale de l'Australie ?",
       "answer": "Canberra",
       "alternatives": ["Canberra", "Ville de Canberra", "canberra","Canberra","Canberra Australie"]
     },
@@ -182,9 +182,9 @@
     },
     {
       "id": 31,
-      "question": "Quel est l’océan situé entre l’Afrique et l’Australie ?",
+      "question": "Quel est l'océan situé entre l'Afrique et l'Australie ?",
       "answer": "Océan Indien",
-      "alternatives": ["Océan de l’Inde", "Indian Ocean", "l'océan indien","l'Océan Indien","l'océan indien","l'Océan Indien"]
+      "alternatives": ["Océan de l'Inde", "Indian Ocean", "l'océan indien","l'Océan Indien","l'océan indien","l'Océan Indien"]
     },
     {
       "id": 32,
@@ -196,7 +196,7 @@
       "id": 33,
       "question": "Quel pays a pour capitale Canberra ?",
       "answer": "Australie",
-      "alternatives": ["Australia", "Commonwealth d’Australie", "Pays australien", "l'Australie"]
+      "alternatives": ["Australia", "Commonwealth d'Australie", "Pays australien", "l'Australie"]
     },
     {
       "id": 34,
@@ -206,7 +206,7 @@
     },
     {
       "id": 35,
-      "question": "Quel peintre espagnol est l’auteur de 'Guernica' ?",
+      "question": "Quel peintre espagnol est l'auteur de 'Guernica' ?",
       "answer": "Pablo Picasso",
       "alternatives": ["Picasso", "Pablo Ruiz Picasso", "Don Pablo Picasso", "picasso pablo","pablo picasso","pablo ruiz picasso","don pablo picasso"]
     },
@@ -224,7 +224,7 @@
     },
     {
       "id": 38,
-      "question": "Quel pays a organisé les Jeux olympiques d’été en 2024 ?",
+      "question": "Quel pays a organisé les Jeux olympiques d'été en 2024 ?",
       "answer": "France",
       "alternatives": ["La france","La France"]
     },
