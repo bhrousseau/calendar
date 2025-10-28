@@ -21,7 +21,11 @@ public class GwtLauncher extends GwtApplication {
             cfg.padVertical = 0;
             cfg.padHorizontal = 0;
             cfg.useDebugGL = true; // Activer les logs
-            logToConsole("GwtLauncher: getConfig() returned");
+            
+            // Note: preventDefault n'est pas disponible dans GwtApplicationConfiguration
+            // La gestion du preventDefault se fait au niveau CSS avec touch-action: none
+            
+            logToConsole("GwtLauncher: getConfig() returned with preventDefault=false");
             return cfg;
         }
 

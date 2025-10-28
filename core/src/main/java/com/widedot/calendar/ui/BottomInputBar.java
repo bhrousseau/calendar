@@ -96,6 +96,22 @@ public class BottomInputBar extends Table {
 
         add(field).expandX().fillX();
 
+        // Ajouter un listener sur le field pour le focus synchrone (crucial pour iOS)
+        field.addListener(new InputListener() {
+            @Override
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                // 1) Prendre le focus Scene2D
+                Stage stage = getStage();
+                if (stage != null) stage.setKeyboardFocus(field);
+
+                // 2) Demander le keyboard natif (sera routé vers IosKeyboardBridge)
+                if (PlatformRegistry.get() != null && PlatformRegistry.get().isMobileBrowser()) {
+                    PlatformRegistry.get().onVirtualKeyboardRequest(true);
+                }
+                return false; // laisser TextField gérer le reste
+            }
+        });
+
         // Gestion du focus (mobile)
         field.addListener(new FocusListener() {
             @Override
@@ -139,6 +155,11 @@ public class BottomInputBar extends Table {
         if (listener != null) listener.onSubmit(text);
         field.setText("");
 
+        // Vider l'input natif si on est sur mobile
+        if (PlatformRegistry.get() != null && PlatformRegistry.get().isMobileBrowser()) {
+            PlatformRegistry.get().clearNativeInput();
+        }
+
         Stage stage = getStage();
         if (stage != null) stage.setKeyboardFocus(null);
     }
@@ -170,6 +191,22 @@ public class BottomInputBar extends Table {
 
     public void setPlaceholderText(String placeholderText) {
         field.setMessageText(placeholderText);
+    }
+    
+    /**
+     * Met à jour le texte du champ (utilisé pour la synchronisation avec l'input natif)
+     * @param text Le nouveau texte
+     */
+    public void setText(String text) {
+        field.setText(text);
+    }
+    
+    /**
+     * Ajoute du texte au champ (utilisé pour la synchronisation avec l'input natif)
+     * @param text Le texte à ajouter
+     */
+    public void appendText(String text) {
+        field.setText(field.getText() + text);
     }
     
     /**

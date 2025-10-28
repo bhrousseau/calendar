@@ -1,11 +1,20 @@
 canvas {
     cursor: default;
     outline: none;
+    /* iOS moderne supporte touch-action pour ne pas empêcher le focus */
+    touch-action: none;
 }
 
 body {
     background-color: #222222;
     margin: 0px;
+}
+
+/* Styles pour iOS - éviter le scroll/zoom involontaire */
+canvas, body, html {
+    overscroll-behavior: contain;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 p {

@@ -15,4 +15,11 @@ public interface PlatformInfo {
      * @param visible true si le clavier virtuel doit être affiché
      */
     void onVirtualKeyboardRequest(boolean visible);
+    
+    /**
+     * Vide l'input natif (pour la synchronisation avec le clavier iOS)
+     */
+    default void clearNativeInput() {
+        // Implémentation par défaut vide pour les plateformes non-mobiles
+    }
 }
