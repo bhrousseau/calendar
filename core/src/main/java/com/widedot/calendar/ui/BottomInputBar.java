@@ -16,6 +16,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.utils.FocusListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.widedot.calendar.platform.PlatformRegistry;
+import com.widedot.calendar.platform.KeyboardInsetsRegistry;
 import com.widedot.calendar.utils.CarlitoFontManager;
 
 /**
@@ -42,6 +43,9 @@ public class BottomInputBar extends Table {
     public BottomInputBar(Skin skin) {
         super(skin);
         pad(20);
+        
+        // S'enregistrer pour recevoir les notifications d'insets clavier
+        KeyboardInsetsRegistry.register(this);
 
         // Créer la texture blanche une seule fois
         if (backgroundTexture == null) {
@@ -291,6 +295,13 @@ public class BottomInputBar extends Table {
         
         // Restaurer le shader d'origine
         batch.setShader(originalShader);
+    }
+
+    /**
+     * Méthode pour se désenregistrer du registre d'insets
+     */
+    public void dispose() {
+        KeyboardInsetsRegistry.unregister(this);
     }
 
     /** Appelé à la fermeture de l'app pour nettoyer la texture */

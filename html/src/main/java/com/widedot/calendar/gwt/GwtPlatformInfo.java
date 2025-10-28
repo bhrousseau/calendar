@@ -3,6 +3,7 @@ package com.widedot.calendar.gwt;
 import com.badlogic.gdx.Gdx;
 import com.widedot.calendar.IosKeyboardBridge;
 import com.widedot.calendar.platform.PlatformInfo;
+import com.widedot.calendar.platform.KeyboardInsetsRegistry;
 
 /**
  * Implémentation GWT de PlatformInfo
@@ -54,8 +55,9 @@ public class GwtPlatformInfo implements PlatformInfo {
     @Override
     public void onKeyboardInsetsChanged(int bottomInsetPx) {
         // Cette méthode sera appelée par IosInsetsBridge
-        // Le BottomInputBar écoutera ces changements via PlatformRegistry
+        // Transmettre l'offset au BottomInputBar actif via le registre
         Gdx.app.log("GwtPlatformInfo", "Keyboard insets changed: " + bottomInsetPx + "px");
+        KeyboardInsetsRegistry.notifyInsetsChanged(bottomInsetPx);
     }
     
     /**
