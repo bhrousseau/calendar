@@ -3,6 +3,7 @@ package com.widedot.calendar.gwt;
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.backends.gwt.GwtApplication;
 import com.badlogic.gdx.backends.gwt.GwtApplicationConfiguration;
+import com.badlogic.gdx.backends.gwt.preloader.Preloader;
 import com.badlogic.gdx.Gdx;
 import com.widedot.calendar.Main;
 import com.widedot.calendar.platform.PlatformFactory;
@@ -14,6 +15,11 @@ import com.google.gwt.core.client.GWT;
 /** Launches the GWT application. */
 public class GwtLauncher extends GwtApplication {
         
+        @Override
+        public Preloader.PreloaderCallback getPreloaderCallback() {
+            return createPreloaderPanel(GWT.getHostPageBaseURL() + "logo.png");
+        }
+
         @Override
         public GwtApplicationConfiguration getConfig () {
             logToConsole("GwtLauncher: getConfig() CALLED");
