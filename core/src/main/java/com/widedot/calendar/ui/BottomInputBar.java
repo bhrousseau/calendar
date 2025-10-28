@@ -263,19 +263,28 @@ public class BottomInputBar extends Table {
     public void act(float delta) {
         super.act(delta);
         
-        // Appliquer l'offset du clavier pour iOS
-        if (keyboardBottomInsetPx > 0) {
-            // Convertir pixels HTML -> pixels LibGDX (GWT remappe déjà, souvent 1:1)
-            float offset = keyboardBottomInsetPx;
+        // Appliquer l'offset du clavier pour iOS/Android
+        // IMPORTANT : Modifier le padding de la Table parent, pas setY()
+        // car la Table avec setFillParent(true) repositionne le widget à chaque layout
+        if (getParent() instanceof com.badlogic.gdx.scenes.scene2d.ui.Table) {
+            com.badlogic.gdx.scenes.scene2d.ui.Table parentTable = (com.badlogic.gdx.scenes.scene2d.ui.Table) getParent();
+            com.badlogic.gdx.scenes.scene2d.ui.Cell<?> cell = parentTable.getCell(this);
             
-            // Laisser 8dp d'air
-            float extra = 8f * Gdx.graphics.getDensity();
-            
-            // Positionner la barre au-dessus du clavier
-            setY(offset + extra);
-        } else {
-            // Pas de clavier, position normale
-            setY(0);
+            if (cell != null) {
+                if (keyboardBottomInsetPx > 0) {
+                    // Convertir pixels HTML -> pixels LibGDX (GWT remappe déjà, souvent 1:1)
+                    float offset = keyboardBottomInsetPx;
+                    
+                    // Ajouter un padding pour la safe-area iPhone (34px)
+                    float safeArea = 34f;
+                    
+                    // Appliquer le padding bas à la cellule
+                    cell.padBottom(offset + safeArea);
+                } else {
+                    // Pas de clavier, padding par défaut
+                    cell.padBottom(0);
+                }
+            }
         }
     }
 

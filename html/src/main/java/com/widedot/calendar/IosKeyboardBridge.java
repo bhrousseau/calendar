@@ -39,12 +39,17 @@ public final class IosKeyboardBridge {
         s.setLeft(0, Style.Unit.PX);
         
         // Important pour iOS/Android :
+        // iPad nécessite une taille minimale pour ouvrir le clavier virtuel
         s.setWidth(1, Style.Unit.PX);
-        s.setHeight(1, Style.Unit.PX);
+        s.setHeight(32, Style.Unit.PX);  // Au moins 32px de hauteur pour iPad
         s.setOpacity(0.01);            // pas 0
         s.setZIndex(2147483647);       // au-dessus du canvas
         s.setProperty("pointerEvents", "auto"); // peut recevoir le focus
         s.setProperty("fontSize", "16px");      // évite le zoom iOS et aide l'ouverture du clavier
+        s.setProperty("color", "transparent");  // Texte invisible
+        s.setProperty("background", "transparent"); // Fond transparent
+        s.setProperty("border", "none");        // Pas de bordure
+        s.setProperty("outline", "none");       // Pas d'outline
 
         // Désactiver l'autocap/autocorrect pour un comportement console
         input.setAttribute("autocapitalize", "off");
@@ -56,7 +61,12 @@ public final class IosKeyboardBridge {
 
         RootPanel.get().getElement().appendChild(input);
 
-        input.focus(); // Crucial : appeler pendant le handler du tap
+        // Crucial : appeler pendant le handler du tap
+        input.focus();
+        
+        // iPad : forcer le focus après un court délai pour contourner les restrictions Safari
+        forceFocusDelayed(input);
+        
         mounted = true;
     }
 
@@ -83,5 +93,21 @@ public final class IosKeyboardBridge {
     public static void clear() {
         if (input != null) input.setValue("");
     }
+    
+    /**
+     * Force le focus avec un court délai pour iPad
+     * iPad Safari peut nécessiter plusieurs tentatives de focus
+     */
+    private static native void forceFocusDelayed(InputElement input) /*-{
+        // Tenter le focus immédiatement
+        setTimeout(function() {
+            input.focus();
+        }, 50);
+        
+        // Tenter à nouveau après 100ms (au cas où)
+        setTimeout(function() {
+            input.focus();
+        }, 100);
+    }-*/;
 }
 

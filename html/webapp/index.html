@@ -45,6 +45,9 @@
       if (vv) {
         // Espace en-dessous du viewport visuel (clavier)
         const keyboard = Math.max(0, (window.innerHeight - (vv.height + vv.offsetTop)));
+        
+        // Pas besoin d'ajouter safe-area ici, elle est gérée côté LibGDX
+        // Le CSS padding-bottom: env(safe-area-inset-bottom) gère déjà la safe-area
         return Math.round(keyboard);
       } else {
         // Fallback pour anciens navigateurs Android
