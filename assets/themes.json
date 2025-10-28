@@ -112,10 +112,10 @@
       },
       "crop": {
         "square": {
-          "x": 89,
-          "y": 96,
-          "width": 3340,
-          "height": 3340,
+          "x": 0,
+          "y": 22,
+          "width": 3368,
+          "height": 3368,
           "matchPercentage": 0.9044
         }
       }
@@ -332,10 +332,10 @@
       },
       "crop": {
         "square": {
-          "x": 289,
+          "x": 375,
           "y": 0,
-          "width": 570,
-          "height": 570,
+          "width": 2475,
+          "height": 2475,
           "matchPercentage": 0.9957
         }
       }
@@ -532,10 +532,10 @@
       },
       "crop": {
         "square": {
-          "x": 297,
+          "x": 300,
           "y": 0,
-          "width": 686,
-          "height": 686,
+          "width": 1201,
+          "height": 1201,
           "matchPercentage": 1.0000
         }
       }
@@ -593,9 +593,9 @@
       "crop": {
         "square": {
           "x": 0,
-          "y": 80,
-          "width": 637,
-          "height": 637,
+          "y": 248,
+          "width": 2000,
+          "height": 2000,
           "matchPercentage": 1.0000
         }
       }
@@ -613,9 +613,9 @@
       "crop": {
         "square": {
           "x": 0,
-          "y": 238,
-          "width": 804,
-          "height": 804,
+          "y": 253,
+          "width": 1094,
+          "height": 1094,
           "matchPercentage": 1.0000
         }
       }
@@ -693,10 +693,10 @@
       },
       "crop": {
         "square": {
-          "x": 0,
-          "y": 137,
-          "width": 749,
-          "height": 749,
+          "x": 343,
+          "y": 0,
+          "width": 1873,
+          "height": 1873,
           "matchPercentage": 1.0000
         }
       }

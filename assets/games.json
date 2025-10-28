@@ -64,9 +64,9 @@
 		"parameters": {
 			"size": 4,
 			"bgColor": "0,0,0",
-			"bgHue": 0.0,
-			"bgSaturation": 0.0,
-			"bgLightness": 0.0,
+			"bgHue": 160.0,
+			"bgSaturation": 75.0,
+			"bgLightness": -50.0,
 			"shuffle": 100,
 			"animationSpeed": 10.0
 		}
