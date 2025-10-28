@@ -272,14 +272,32 @@ public class BottomInputBar extends Table {
             
             if (cell != null) {
                 if (keyboardBottomInsetPx > 0) {
-                    // Convertir pixels HTML -> pixels LibGDX (GWT remappe déjà, souvent 1:1)
-                    float offset = keyboardBottomInsetPx;
+                    // CRUCIAL : Convertir pixels CSS -> unités viewport LibGDX
+                    // Le viewport LibGDX peut être scalé (ex: 2048x1280 sur un écran 1024x768)
+                    // Il faut multiplier par le ratio viewport/screen
                     
-                    // Ajouter un padding pour la safe-area iPhone (34px)
-                    float safeArea = 34f;
-                    
-                    // Appliquer le padding bas à la cellule
-                    cell.padBottom(offset + safeArea);
+                    Stage stage = getStage();
+                    if (stage != null && stage.getViewport() != null) {
+                        com.badlogic.gdx.utils.viewport.Viewport viewport = stage.getViewport();
+                        
+                        // Ratio de scaling : viewport height / screen height
+                        float viewportHeight = viewport.getWorldHeight();
+                        float screenHeight = Gdx.graphics.getHeight();
+                        float scaleFactor = viewportHeight / screenHeight;
+                        
+                        // Convertir pixels CSS en unités viewport
+                        float offsetInViewport = keyboardBottomInsetPx * scaleFactor;
+                        
+                        // Ajouter safe-area iPhone (34px CSS)
+                        float safeAreaInViewport = 34f * scaleFactor;
+                        
+                        // Appliquer le padding bas à la cellule en unités viewport
+                        cell.padBottom(offsetInViewport + safeAreaInViewport);
+                        
+                        // Debug log
+                        Gdx.app.log("BottomInputBar", "Keyboard offset: " + keyboardBottomInsetPx + "px CSS -> " + 
+                                   offsetInViewport + " viewport units (scale: " + scaleFactor + ")");
+                    }
                 } else {
                     // Pas de clavier, padding par défaut
                     cell.padBottom(0);
