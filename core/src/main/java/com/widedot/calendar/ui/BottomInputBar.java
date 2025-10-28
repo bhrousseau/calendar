@@ -265,8 +265,9 @@ public class BottomInputBar extends Table {
             
             if (cell != null) {
                 if (keyboardBottomInsetPx > 0) {
-                    float safeArea = 34f; // iPhone safe-area
-                    cell.padBottom(keyboardBottomInsetPx + safeArea);
+                    float safeArea = 34f;
+                    float totalPadding = keyboardBottomInsetPx + safeArea;
+                    cell.padBottom(totalPadding);
                 } else {
                     cell.padBottom(0);
                 }

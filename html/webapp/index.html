@@ -59,7 +59,15 @@
     function notifyInsets() {
       const inset = computeBottomInset();
       if (window.gdxKeyboardInsetsChanged) {
-        window.gdxKeyboardInsetsChanged(inset);
+        const dpr = window.devicePixelRatio || 1;
+        
+        // ====================================================
+        // STRATÉGIE C : Pixels bruts (sans conversion DPR)
+        // Scene2D Stage utilise les mêmes pixels que le CSS
+        // ====================================================
+        const finalInset = Math.round(inset);
+        
+        window.gdxKeyboardInsetsChanged(finalInset);
       }
     }
 
