@@ -32,6 +32,9 @@ public class BottomInputBar extends Table {
 
     private final TextField field;
     private Listener listener;
+    
+    // Offset du clavier pour iOS
+    private int keyboardBottomInsetPx = 0; // pixels HTML
 
     // ✅ Texture statique réutilisable pour le fond noir
     private static Texture backgroundTexture;
@@ -232,6 +235,44 @@ public class BottomInputBar extends Table {
         localCoords = field.stageToLocalCoordinates(localCoords);
         return localCoords.x >= 0 && localCoords.x <= field.getWidth() && 
                localCoords.y >= 0 && localCoords.y <= field.getHeight();
+    }
+    
+    /**
+     * Définit l'offset du clavier pour iOS/Android
+     * @param px Hauteur du clavier en pixels HTML
+     */
+    public void setKeyboardInsetPx(int px) {
+        this.keyboardBottomInsetPx = px;
+    }
+    
+    /**
+     * Synchronise le texte avec l'input natif (Android composition)
+     * @param text Le texte de l'input natif
+     */
+    public void syncWithNativeInput(String text) {
+        if (text != null && !text.equals(field.getText())) {
+            field.setText(text);
+        }
+    }
+
+    @Override
+    public void act(float delta) {
+        super.act(delta);
+        
+        // Appliquer l'offset du clavier pour iOS
+        if (keyboardBottomInsetPx > 0) {
+            // Convertir pixels HTML -> pixels LibGDX (GWT remappe déjà, souvent 1:1)
+            float offset = keyboardBottomInsetPx;
+            
+            // Laisser 8dp d'air
+            float extra = 8f * Gdx.graphics.getDensity();
+            
+            // Positionner la barre au-dessus du clavier
+            setY(offset + extra);
+        } else {
+            // Pas de clavier, position normale
+            setY(0);
+        }
     }
 
     @Override

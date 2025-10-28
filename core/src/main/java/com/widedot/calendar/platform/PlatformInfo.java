@@ -22,4 +22,20 @@ public interface PlatformInfo {
     default void clearNativeInput() {
         // Implémentation par défaut vide pour les plateformes non-mobiles
     }
+    
+    /**
+     * Appelé quand la hauteur du clavier change (pour ajuster l'UI)
+     * @param bottomInsetPx Hauteur du clavier en pixels
+     */
+    default void onKeyboardInsetsChanged(int bottomInsetPx) {
+        // Implémentation par défaut vide pour les plateformes non-mobiles
+    }
+    
+    /**
+     * Appelé quand le texte change dans l'input natif (Android composition)
+     * @param text Le nouveau texte
+     */
+    default void onNativeInputChanged(String text) {
+        // Implémentation par défaut vide pour les plateformes non-mobiles
+    }
 }

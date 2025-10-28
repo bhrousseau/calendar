@@ -6,10 +6,8 @@ import com.google.gwt.dom.client.Style;
 import com.google.gwt.user.client.ui.RootPanel;
 
 /**
- * Bridge pour gérer le clavier natif iOS via un input HTML invisible
+ * Bridge pour gérer le clavier natif iOS/Android via un input HTML invisible
  * Nécessaire car Safari iOS n'ouvre le clavier que sur un vrai input focusé
- * 
- * Version simplifiée sans synchronisation complexe - l'input sert juste à ouvrir le clavier
  */
 public final class IosKeyboardBridge {
     private static InputElement input;
@@ -39,15 +37,22 @@ public final class IosKeyboardBridge {
         s.setPosition(Style.Position.FIXED);
         s.setBottom(0, Style.Unit.PX);
         s.setLeft(0, Style.Unit.PX);
+        
+        // Important pour iOS/Android :
         s.setWidth(1, Style.Unit.PX);
         s.setHeight(1, Style.Unit.PX);
-        s.setOpacity(0.01);     // surtout pas display:none
-        s.setZIndex(9999);
+        s.setOpacity(0.01);            // pas 0
+        s.setZIndex(2147483647);       // au-dessus du canvas
+        s.setProperty("pointerEvents", "auto"); // peut recevoir le focus
+        s.setProperty("fontSize", "16px");      // évite le zoom iOS et aide l'ouverture du clavier
 
         // Désactiver l'autocap/autocorrect pour un comportement console
         input.setAttribute("autocapitalize", "off");
         input.setAttribute("autocorrect", "off");
         input.setAttribute("spellcheck", "false");
+        input.setAttribute("autocomplete", "off");   // Android : évite les suggestions
+        input.setAttribute("inputmode", "text");     // iPadOS/Android : influence l'apparition du clavier
+        input.setAttribute("enterkeyhint", "done");  // IME "Done" sur Android
 
         RootPanel.get().getElement().appendChild(input);
 
@@ -79,3 +84,4 @@ public final class IosKeyboardBridge {
         if (input != null) input.setValue("");
     }
 }
+

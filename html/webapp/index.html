@@ -32,5 +32,43 @@
   
   <!-- Script LibGDX -->
   <script type="text/javascript" src="html/html.nocache.js"></script>
+  
+  <!-- Script pour mesurer la hauteur du clavier iOS/Android -->
+  <script>
+  (function () {
+    // Fallback pour anciens navigateurs Android (Firefox/Samsung)
+    const BASE = window.innerHeight;
+    
+    function computeBottomInset() {
+      // Hauteur réellement mangée par le clavier + barres iOS/Android
+      const vv = window.visualViewport;
+      if (vv) {
+        // Espace en-dessous du viewport visuel (clavier)
+        const keyboard = Math.max(0, (window.innerHeight - (vv.height + vv.offsetTop)));
+        return Math.round(keyboard);
+      } else {
+        // Fallback pour anciens navigateurs Android
+        const now = window.innerHeight;
+        return Math.max(0, BASE - now); // diff ≈ hauteur clavier
+      }
+    }
+
+    function notifyInsets() {
+      const inset = computeBottomInset();
+      if (window.gdxKeyboardInsetsChanged) {
+        window.gdxKeyboardInsetsChanged(inset);
+      }
+    }
+
+    window.addEventListener('resize', notifyInsets);
+    window.addEventListener('orientationchange', notifyInsets);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', notifyInsets);
+      window.visualViewport.addEventListener('scroll', notifyInsets);
+    }
+    // premier calcul
+    setTimeout(notifyInsets, 0);
+  })();
+  </script>
 </body>
 </html> 

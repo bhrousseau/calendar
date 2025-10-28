@@ -8,6 +8,7 @@ import com.widedot.calendar.Main;
 import com.widedot.calendar.platform.PlatformFactory;
 import com.widedot.calendar.platform.HtmlPlatform;
 import com.widedot.calendar.platform.PlatformRegistry;
+import com.widedot.calendar.IosInsetsBridge;
 import com.google.gwt.core.client.GWT;
 
 /** Launches the GWT application. */
@@ -62,6 +63,16 @@ public class GwtLauncher extends GwtApplication {
                         logToConsole("GwtLauncher: ERROR during PlatformRegistry.set(): " + t.getMessage());
                         logStackTrace(t);
                         throw t;
+                    }
+                    
+                    try {
+                        logToConsole("GwtLauncher: Installing IosInsetsBridge");
+                        IosInsetsBridge.install();
+                        logToConsole("GwtLauncher: IosInsetsBridge installed - SUCCESS");
+                    } catch (Throwable t) {
+                        logToConsole("GwtLauncher: ERROR during IosInsetsBridge installation: " + t.getMessage());
+                        logStackTrace(t);
+                        // Ne pas faire échouer l'app pour ça
                     }
                     
                     try {

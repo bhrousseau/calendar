@@ -17,6 +17,30 @@ canvas, body, html {
     user-select: none;
 }
 
+/* Safe-area pour iPhone avec "menton" */
+:root {
+    /* fallback si env() indispo */
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Si ta page a un conteneur, ajoute un padding-bottom égal au safe-area.
+   La remontée "clavier" est faite côté Java, mais ça évite les recouvrements natifs. */
+body, html {
+    padding-bottom: var(--safe-bottom);
+    /* Android : évite les sauts quand la barre d'adresse se rétracte */
+    height: 100dvh;
+}
+
+/* Android : gestion des interactions tactiles */
+canvas {
+    touch-action: none;        /* le canvas ne "scroll" pas la page */
+    -webkit-tap-highlight-color: transparent;
+}
+
+input, textarea {
+    touch-action: manipulation; /* laisse interagir les inputs */
+}
+
 p {
     text-align: center;
     color: #eeeeee;

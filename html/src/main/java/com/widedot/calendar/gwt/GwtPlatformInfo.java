@@ -43,11 +43,19 @@ public class GwtPlatformInfo implements PlatformInfo {
     public void onNativeInputChanged(String text) {
         // Cette méthode sera appelée par IosKeyboardBridge
         // Le BottomInputBar écoutera ces changements via PlatformRegistry
+        Gdx.app.log("GwtPlatformInfo", "Native input changed: " + text);
     }
     
     @Override
     public void clearNativeInput() {
         IosKeyboardBridge.clear();
+    }
+    
+    @Override
+    public void onKeyboardInsetsChanged(int bottomInsetPx) {
+        // Cette méthode sera appelée par IosInsetsBridge
+        // Le BottomInputBar écoutera ces changements via PlatformRegistry
+        Gdx.app.log("GwtPlatformInfo", "Keyboard insets changed: " + bottomInsetPx + "px");
     }
     
     /**
