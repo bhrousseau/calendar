@@ -31,39 +31,16 @@ public class GwtPlatformInfo implements PlatformInfo {
     
     @Override
     public void onVirtualKeyboardRequest(boolean visible) {
-        // Utiliser le bridge iOS pour gérer le clavier natif
         if (isMobileBrowser()) {
             IosKeyboardBridge.show(visible, "Tapez votre réponse...");
         }
     }
     
-    /**
-     * Appelé quand le texte change dans l'input natif
-     * @param text Le nouveau texte
-     */
-    public void onNativeInputChanged(String text) {
-        // Cette méthode sera appelée par IosKeyboardBridge
-        // Le BottomInputBar écoutera ces changements via PlatformRegistry
-        Gdx.app.log("GwtPlatformInfo", "Native input changed: " + text);
-    }
-    
-    @Override
-    public void clearNativeInput() {
-        IosKeyboardBridge.clear();
-    }
-    
     @Override
     public void onKeyboardInsetsChanged(int bottomInsetPx) {
-        // Cette méthode sera appelée par IosInsetsBridge
-        // Transmettre l'offset au BottomInputBar actif via le registre
-        Gdx.app.log("GwtPlatformInfo", "Keyboard insets changed: " + bottomInsetPx + "px");
         KeyboardInsetsRegistry.notifyInsetsChanged(bottomInsetPx);
     }
     
-    /**
-     * Obtient le user-agent du navigateur
-     * @return Le user-agent
-     */
     private native String getUserAgent() /*-{
         return $wnd.navigator.userAgent || "";
     }-*/;

@@ -162,11 +162,6 @@ public class BottomInputBar extends Table {
         if (listener != null) listener.onSubmit(text);
         field.setText("");
 
-        // Vider l'input natif si on est sur mobile
-        if (PlatformRegistry.get() != null && PlatformRegistry.get().isMobileBrowser()) {
-            PlatformRegistry.get().clearNativeInput();
-        }
-
         Stage stage = getStage();
         if (stage != null) stage.setKeyboardFocus(null);
     }
@@ -264,42 +259,15 @@ public class BottomInputBar extends Table {
         super.act(delta);
         
         // Appliquer l'offset du clavier pour iOS/Android
-        // IMPORTANT : Modifier le padding de la Table parent, pas setY()
-        // car la Table avec setFillParent(true) repositionne le widget à chaque layout
         if (getParent() instanceof com.badlogic.gdx.scenes.scene2d.ui.Table) {
             com.badlogic.gdx.scenes.scene2d.ui.Table parentTable = (com.badlogic.gdx.scenes.scene2d.ui.Table) getParent();
             com.badlogic.gdx.scenes.scene2d.ui.Cell<?> cell = parentTable.getCell(this);
             
             if (cell != null) {
                 if (keyboardBottomInsetPx > 0) {
-                    // CRUCIAL : Convertir pixels CSS -> unités viewport LibGDX
-                    // Le viewport LibGDX peut être scalé (ex: 2048x1280 sur un écran 1024x768)
-                    // Il faut multiplier par le ratio viewport/screen
-                    
-                    Stage stage = getStage();
-                    if (stage != null && stage.getViewport() != null) {
-                        com.badlogic.gdx.utils.viewport.Viewport viewport = stage.getViewport();
-                        
-                        // Ratio de scaling : viewport height / screen height
-                        float viewportHeight = viewport.getWorldHeight();
-                        float screenHeight = Gdx.graphics.getHeight();
-                        float scaleFactor = viewportHeight / screenHeight;
-                        
-                        // Convertir pixels CSS en unités viewport
-                        float offsetInViewport = keyboardBottomInsetPx * scaleFactor;
-                        
-                        // Ajouter safe-area iPhone (34px CSS)
-                        float safeAreaInViewport = 34f * scaleFactor;
-                        
-                        // Appliquer le padding bas à la cellule en unités viewport
-                        cell.padBottom(offsetInViewport + safeAreaInViewport);
-                        
-                        // Debug log
-                        Gdx.app.log("BottomInputBar", "Keyboard offset: " + keyboardBottomInsetPx + "px CSS -> " + 
-                                   offsetInViewport + " viewport units (scale: " + scaleFactor + ")");
-                    }
+                    float safeArea = 34f; // iPhone safe-area
+                    cell.padBottom(keyboardBottomInsetPx + safeArea);
                 } else {
-                    // Pas de clavier, padding par défaut
                     cell.padBottom(0);
                 }
             }
@@ -308,19 +276,16 @@ public class BottomInputBar extends Table {
 
     @Override
     public void draw(Batch batch, float parentAlpha) {
-        // ✅ Dessiner le rectangle noir semi-transparent derrière la barre
+        // Dessiner le rectangle noir semi-transparent derrière la barre
         Color old = batch.getColor();
-        batch.setColor(0, 0, 0, 0.6f); // 60% d'opacité
+        batch.setColor(0, 0, 0, 0.6f);
         batch.draw(backgroundTexture, getX(), getY(), getWidth(), getHeight());
         batch.setColor(old);
 
         // Appliquer le shader Distance Field pour le TextField
         com.badlogic.gdx.graphics.glutils.ShaderProgram originalShader = batch.getShader();
         batch.setShader(CarlitoFontManager.getShader());
-        
         super.draw(batch, parentAlpha);
-        
-        // Restaurer le shader d'origine
         batch.setShader(originalShader);
     }
 
