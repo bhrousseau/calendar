@@ -933,10 +933,14 @@ public class QuestionAnswerGameScreen extends GameScreen {
                     case INITIALIZING:
                         Gdx.app.log("QuestionAnswerGameScreen", "Animation d'initialisation terminée");
                         break;
-                    case BALL_MOVING_CORRECT:
+                    case BALL_DISAPPEARING_CORRECT:
+                    case BALL_APPEARING_IN_SLOT:
+                    case SLOTS_ROTATING:
+                    case TUBE_DESCENDING_CORRECT:
                         Gdx.app.log("QuestionAnswerGameScreen", "Animation de bonne réponse terminée");
                         break;
-                    case BALL_DISAPPEARING:
+                    case BALL_DISAPPEARING_WRONG:
+                    case TUBE_DESCENDING_WRONG:
                         Gdx.app.log("QuestionAnswerGameScreen", "Animation de mauvaise réponse terminée");
                         break;
                     case VICTORY_ANIMATION:
@@ -956,6 +960,9 @@ public class QuestionAnswerGameScreen extends GameScreen {
         
         // Charger les textures d'animation
         animationManager.loadTextures();
+        
+        // Charger les sons d'animation
+        animationManager.loadSounds();
         
         // Calculer les dimensions du background
         animationManager.calculateBackgroundDimensions(DisplayConfig.WORLD_WIDTH, viewport.getWorldHeight());
