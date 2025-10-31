@@ -83,9 +83,9 @@
 			"stretch": 1.0,
 			"fadeEdges": false,
 			"edgeColor": "0.0,0.0,0.0,1.0",
-			"bgHue": 0.0,
-			"bgSaturation": 0.0,
-			"bgLightness": 0.0
+			"bgHue": 31.0,
+			"bgSaturation": 57.0,
+			"bgLightness": -41.0
 		}
 	},
 	{
