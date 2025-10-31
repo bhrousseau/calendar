@@ -917,7 +917,7 @@ public class CrystalizeGuessGameScreen extends GameScreen {
     private void improveImage() {
         // Améliorer l'image en réduisant le crystal size à 75
         Gdx.app.log("CrystalizeGuessGameScreen", "Amélioration de l'image après 5 mauvaises réponses");
-        startCrystalizeAnimation(75);
+        startCrystalizeAnimation(250);
     }
     
     private void startFinalRevealAnimation() {
@@ -1071,11 +1071,20 @@ public class CrystalizeGuessGameScreen extends GameScreen {
         float progress = calculateAnimationProgress();
         float currentCrystalSize = interpolateCrystalSize(progress);
         
+        // Si la taille de cristal est <= 1, utiliser directement l'image originale sans shader
+        // pour éviter les artefacts
+        if (currentCrystalSize <= 1.0f) {
+            animatedTexture = originalImageTexture;
+            return;
+        }
+        
         try {
             animatedTexture = applyCrystallizeShader(originalImageTexture, currentCrystalSize);
         } catch (Exception e) {
             Gdx.app.error("CrystalizeGuessGameScreen", "Erreur lors de la génération de la texture animée: " + e.getMessage());
             // Stack trace logged automatically
+            // En cas d'erreur, utiliser l'image originale
+            animatedTexture = originalImageTexture;
         }
     }
     
@@ -1103,7 +1112,16 @@ public class CrystalizeGuessGameScreen extends GameScreen {
         currentCrystalSize = endCrystalSize;
         
         disposeOldTexture();
-        updateCurrentTexture();
+        
+        // Si la taille finale est <= 1, utiliser directement l'image originale sans shader
+        if (endCrystalSize <= 1) {
+            currentCrystalizedTexture = originalImageTexture;
+            animatedTexture = null;
+            Gdx.app.log("CrystalizeGuessGameScreen", "Taille de cristal <= 1, utilisation de l'image originale sans shader");
+        } else {
+            updateCurrentTexture();
+        }
+        
         resetAnimation();
         
         // Si c'est l'animation de révélation finale, afficher l'image complète

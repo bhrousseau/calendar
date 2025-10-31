@@ -134,9 +134,9 @@
 			"stretch": 1.0,
 			"fadeEdges": false,
 			"edgeColor": "0.0,0.0,0.0,1.0",
-			"bgHue": 0.0,
-			"bgSaturation": 0.0,
-			"bgLightness": 0.0
+			"bgHue": 50.0,
+			"bgSaturation": 75.0,
+			"bgLightness": -84.0
 		}
 	},
 	{
@@ -196,7 +196,7 @@
 		"parameters": {
 			"questionsFile": "quizz_merveille.json",
 			"totalQuestions": 10,
-			"victoryThreshold": 6
+			"victoryThreshold": 5
 		}
 	},
 	{

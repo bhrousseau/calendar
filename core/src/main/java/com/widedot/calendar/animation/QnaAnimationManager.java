@@ -2,6 +2,7 @@ package com.widedot.calendar.animation;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.audio.Sound;
+import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -14,6 +15,7 @@ import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.ObjectMap;
 import com.widedot.calendar.utils.CarlitoFontManager;
 import com.widedot.calendar.utils.GwtCompatibleFormatter;
+import com.widedot.calendar.display.DisplayConfig;
 
 /**
  * Gestionnaire d'animations pour le jeu QNA (Questions et Réponses)
@@ -45,7 +47,7 @@ public class QnaAnimationManager implements Disposable {
         SLOTS_ROTATING,            // Rotation slots + wheel + son sliding
         TUBE_DESCENDING_CORRECT,   // Descente des billes + son close
         
-        VICTORY_ANIMATION,         // Animation finale de victoire
+        VICTORY_ANIMATION,         // Animation finale de victoire (rotation center wheel + fade out)
         DEFEAT_ANIMATION,          // Animation finale de défaite
         COMPLETED                  // Animation terminée
     }
@@ -111,6 +113,7 @@ public class QnaAnimationManager implements Disposable {
     private Sound wrongSound;
     private Sound slidingSound;
     private Sound closeSound;
+    private Sound open2Sound;
     
     // Assets d'initialisation (ordre d'affichage : arrière vers avant)
     private Texture backgroundTexture;
@@ -140,15 +143,34 @@ public class QnaAnimationManager implements Disposable {
     private float slotsRadius;                     // Rayon du cercle (relatif au background)
     private float slotsStartAngle;                 // Angle de départ (0° = droite)
     private float slotsCurrentRotation;            // Rotation actuelle (pour animation)
+    private float wheelOuterPermanentRotation;     // Rotation permanente accumulée de la wheel-outer
     
     // Tube de billes (colonne verticale)
     private float tubeColumnBaseX, tubeColumnBaseY; // Position bille du bas (relatif)
     private float ballHeight;                       // Hauteur d'une bille (relatif)
     private float tubeCurrentOffset;                // Offset pour descente animée
+    private boolean isTubeDescending;               // Flag pour l'animation de descente
+    private float tubeDescentTimer;                 // Timer pour l'animation de descente
+    private float tubeDescentDuration;              // Durée de l'animation de descente
     
     // État d'animation
     private float stateTimer;                       // Timer pour animations chronométrées
     private int nextSlotIndex;                      // Prochain slot à remplir
+    
+    // Animation finale de victoire
+    private float victoryAnimationTimer;            // Timer pour l'animation finale
+    private float victoryRotationDuration;          // Durée de rotation center wheel (première partie)
+    private float victoryWaitAfterRotation;          // Délai après rotation (500ms) + son open2
+    private float victoryFadeOutDuration;           // Durée du fade out et montée (deuxième partie)
+    private float victoryPaintingFadeInDuration;    // Durée du fade in de la peinture (troisième partie)
+    private float victoryCenterWheelRotation;       // Rotation actuelle de la center wheel
+    private float victoryFadeAlpha;                  // Alpha pour le fade out (1.0 -> 0.0)
+    private float victoryVerticalOffset;            // Offset vertical pour le mouvement vers le haut (0 -> viewportHeight)
+    private float victoryPaintingAlpha;              // Alpha pour le fade in de la peinture (0.0 -> 1.0)
+    private Texture paintingTexture;                 // Texture de la peinture à afficher
+    private Texture whiteTexture;                    // Texture blanche pour le fond noir
+    private boolean open2SoundPlayed;                // Flag pour jouer open2.wav une seule fois
+    private boolean winSoundPlayedForPainting;       // Flag pour jouer win.mp3 une seule fois au début du fade in
     
     // Mode debug
     private boolean debugMode = false;
@@ -168,7 +190,7 @@ public class QnaAnimationManager implements Disposable {
     private float successAreaX, successAreaY, successAreaWidth, successAreaHeight;
     
     // Configuration des animations
-    private float ballMoveDuration = 1.0f;
+    private float ballMoveDuration = 0.1f;
     private float ballDisappearDuration = 0.5f;
     private float wheelSpinDuration = 1.5f;
     private float reservoirFillDuration = 2.0f;
@@ -213,12 +235,30 @@ public class QnaAnimationManager implements Disposable {
         this.slotsRadius = 0.182f;
         this.slotsStartAngle = 0f;
         this.slotsCurrentRotation = 0f;
+        this.wheelOuterPermanentRotation = 0f;
         this.tubeColumnBaseX = 0.785f;
         this.tubeColumnBaseY = 0.512f;
         this.ballHeight = 0.044f;
         this.tubeCurrentOffset = 0f;
+        this.isTubeDescending = false;
+        this.tubeDescentTimer = 0f;
+        this.tubeDescentDuration = 0.4f;
         this.stateTimer = 0f;
         this.nextSlotIndex = 0;
+        
+        // Initialiser l'animation finale de victoire
+        this.victoryAnimationTimer = 0f;
+        this.victoryRotationDuration = 1.5f;
+        this.victoryWaitAfterRotation = 1.0f;
+        this.victoryFadeOutDuration = 2.0f;  // Durée doublée pour le scroll vertical
+        this.victoryPaintingFadeInDuration = 0.8f;
+        this.victoryCenterWheelRotation = 0f;
+        this.victoryFadeAlpha = 1.0f;
+        this.victoryVerticalOffset = 0f;
+        this.victoryPaintingAlpha = 0f;
+        this.paintingTexture = null;
+        this.open2SoundPlayed = false;
+        this.winSoundPlayedForPainting = false;
         
         // Initialiser les éléments animés
         this.wheel = new AnimatedWheel();
@@ -229,6 +269,13 @@ public class QnaAnimationManager implements Disposable {
         if (debugFont != null) {
             debugFont.getData().setScale(0.8f);
         }
+        
+        // Créer une texture blanche pour le fond noir
+        Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        pixmap.setColor(1, 1, 1, 1);
+        pixmap.fill();
+        this.whiteTexture = new Texture(pixmap);
+        pixmap.dispose();
         
         Gdx.app.log("QnaAnimationManager", "Initialisé avec " + totalQuestions + " questions, seuil: " + victoryThreshold);
     }
@@ -298,6 +345,31 @@ public class QnaAnimationManager implements Disposable {
             updateStateTransitions();
         }
         
+        // Mettre à jour l'animation finale de victoire
+        if (currentState == AnimationState.VICTORY_ANIMATION) {
+            victoryAnimationTimer += delta;
+            updateVictoryAnimation(delta);
+        }
+        
+        // Mettre à jour l'animation de descente du tube avec gravité
+        if (isTubeDescending) {
+            tubeDescentTimer += delta;
+            float progress = Math.min(tubeDescentTimer / tubeDescentDuration, 1f);
+            
+            // Interpolation avec gravité (accélération) : pow2In pour simuler la chute
+            float easedProgress = Interpolation.pow2In.apply(progress);
+            
+            // Calculer l'offset de descente (de 0 à -ballHeight)
+            float ballHeightAbs = ballHeight * currentBgHeight;
+            tubeCurrentOffset = -easedProgress * ballHeightAbs;
+            
+            // Vérifier si l'animation est terminée
+            if (progress >= 1f) {
+                // Animation terminée : finaliser la descente
+                finalizeTubeDescent();
+            }
+        }
+        
         // Mettre à jour le système de répétition des touches en mode debug
         if (debugMode && lastPressedKey != -1) {
             keyRepeatTimer += delta;
@@ -324,60 +396,100 @@ public class QnaAnimationManager implements Disposable {
      * 5. Billes du tube (sous tube-front)
      * 6. Tube-front
      * 7. Slots (back, billes, front)
+     * 
+     * Pendant l'animation finale de victoire :
+     * - Tous les assets ont un fade out et montent vers le haut
+     * - La center wheel tourne en sens inverse
+     * - Après l'animation, la peinture est affichée en plein écran
      */
     public void draw(SpriteBatch batch, float viewportHeight) {
+        // Calculer l'alpha et l'offset vertical pour l'animation finale
+        float alpha = 1.0f;
+        float verticalOffset = 0f;
+        if (currentState == AnimationState.VICTORY_ANIMATION) {
+            alpha = victoryFadeAlpha;
+            verticalOffset = victoryVerticalOffset * viewportHeight;
+            
+            // Dessiner la peinture en premier (sous tous les autres éléments)
+            // Elle sera révélée naturellement quand les autres éléments montent
+            drawFinalPainting(batch, viewportHeight);
+        }
+        
         // 1. Dessiner le background avec crop (comme SlidingPuzzle)
         if (backgroundTexture != null) {
-            batch.setColor(1, 1, 1, 1);
-            batch.draw(backgroundTexture, currentBgX, currentBgY, currentBgWidth, currentBgHeight);
+            batch.setColor(1, 1, 1, alpha);
+            batch.draw(backgroundTexture, currentBgX, currentBgY + verticalOffset, currentBgWidth, currentBgHeight);
         }
         
         // 2. Dessiner door
         if (doorTexture != null) {
-            batch.setColor(1, 1, 1, 1);
-            batch.draw(doorTexture, doorPosition.x, doorPosition.y);
+            batch.setColor(1, 1, 1, alpha);
+            batch.draw(doorTexture, doorPosition.x, doorPosition.y + verticalOffset);
         }
         
-        // 3. Dessiner wheel-outer (avec rotation)
+        // 3. Dessiner wheel-outer (avec rotation permanente + rotation d'animation)
         if (wheelOuterTexture != null) {
-            batch.setColor(1, 1, 1, 1);
+            batch.setColor(1, 1, 1, alpha);
             float centerX = wheelOuterPosition.x + wheelOuterTexture.getWidth() / 2;
             float centerY = wheelOuterPosition.y + wheelOuterTexture.getHeight() / 2;
+            
+            // Rotation totale = rotation permanente accumulée + rotation d'animation courante
+            float totalRotation = wheelOuterPermanentRotation + slotsCurrentRotation;
+            
             batch.draw(wheelOuterTexture,
-                      wheelOuterPosition.x, wheelOuterPosition.y,
+                      wheelOuterPosition.x, wheelOuterPosition.y + verticalOffset,
                       wheelOuterTexture.getWidth() / 2, wheelOuterTexture.getHeight() / 2,
                       wheelOuterTexture.getWidth(), wheelOuterTexture.getHeight(),
                       1f, 1f,
-                      slotsCurrentRotation,
+                      totalRotation,
                       0, 0,
                       wheelOuterTexture.getWidth(), wheelOuterTexture.getHeight(),
                       false, false);
         }
         
-        // 4. Dessiner wheel-center
+        // 4. Dessiner wheel-center (avec rotation si animation finale)
         if (wheelCenterTexture != null) {
-            batch.setColor(1, 1, 1, 1);
-            batch.draw(wheelCenterTexture, wheelCenterPosition.x, wheelCenterPosition.y);
+            batch.setColor(1, 1, 1, alpha);
+            float centerX = wheelCenterPosition.x + wheelCenterTexture.getWidth() / 2;
+            float centerY = wheelCenterPosition.y + wheelCenterTexture.getHeight() / 2;
+            
+            if (currentState == AnimationState.VICTORY_ANIMATION) {
+                // Rotation en sens inverse pendant l'animation finale
+                batch.draw(wheelCenterTexture,
+                          wheelCenterPosition.x, wheelCenterPosition.y + verticalOffset,
+                          wheelCenterTexture.getWidth() / 2, wheelCenterTexture.getHeight() / 2,
+                          wheelCenterTexture.getWidth(), wheelCenterTexture.getHeight(),
+                          1f, 1f,
+                          victoryCenterWheelRotation,
+                          0, 0,
+                          wheelCenterTexture.getWidth(), wheelCenterTexture.getHeight(),
+                          false, false);
+            } else {
+                batch.draw(wheelCenterTexture, wheelCenterPosition.x, wheelCenterPosition.y + verticalOffset);
+            }
         }
         
         // 5. Dessiner les billes du tube (uniquement celles qui sont IN_TUBE ou DISAPPEARING_FROM_TUBE)
         for (AnimatedBall ball : balls) {
             if (ball.state == BallState.IN_TUBE || 
                 ball.state == BallState.DISAPPEARING_FROM_TUBE) {
-                ball.draw(batch);
+                ball.draw(batch, alpha, verticalOffset);
             }
         }
         
         // 6. Dessiner tube-front
         if (tubeFrontTexture != null) {
-            batch.setColor(1, 1, 1, 1);
-            batch.draw(tubeFrontTexture, tubeFrontPosition.x, tubeFrontPosition.y);
+            batch.setColor(1, 1, 1, alpha);
+            batch.draw(tubeFrontTexture, tubeFrontPosition.x, tubeFrontPosition.y + verticalOffset);
         }
         
         // 7. Dessiner les slots (back, billes dans slots, front)
         for (Slot slot : slots) {
-            slot.draw(batch);
+            slot.draw(batch, alpha, verticalOffset);
         }
+        
+        // Réinitialiser la couleur pour les éléments suivants
+        batch.setColor(1, 1, 1, 1);
         
         // Dessiner le réservoir (legacy, si nécessaire)
         reservoir.draw(batch);
@@ -389,6 +501,53 @@ public class QnaAnimationManager implements Disposable {
         if (debugMode && debugFont != null) {
             drawDebugInfo(batch, viewportHeight);
         }
+    }
+    
+    /**
+     * Dessine la peinture finale en plein écran (comme Mastermind)
+     */
+    private void drawFinalPainting(SpriteBatch batch, float viewportHeight) {
+        if (paintingTexture == null) return;
+        
+        float screenWidth = DisplayConfig.WORLD_WIDTH;
+        float screenHeight = viewportHeight;
+        
+        // Calculer les dimensions adaptatives pour utiliser toute la hauteur du viewport
+        float originalWidth = paintingTexture.getWidth();
+        float originalHeight = paintingTexture.getHeight();
+        float aspectRatio = originalWidth / originalHeight;
+        
+        float imageWidth, imageHeight;
+        
+        // Calculer les dimensions pour remplir l'écran tout en conservant le ratio
+        if (screenWidth / aspectRatio <= screenHeight) {
+            // L'image sera limitée par la largeur
+            imageWidth = screenWidth;
+            imageHeight = imageWidth / aspectRatio;
+        } else {
+            // L'image sera limitée par la hauteur
+            imageHeight = screenHeight;
+            imageWidth = imageHeight * aspectRatio;
+        }
+        
+        // Dessiner un fond noir pour toute la zone
+        batch.setColor(0f, 0f, 0f, 1f);
+        if (whiteTexture != null) {
+            batch.draw(whiteTexture, 0, 0, screenWidth, screenHeight);
+        } else if (backgroundTexture != null) {
+            batch.draw(backgroundTexture, 0, 0, screenWidth, screenHeight);
+        }
+        
+        // Centrer l'image
+        float imageX = (screenWidth - imageWidth) / 2;
+        float imageY = (screenHeight - imageHeight) / 2;
+        
+        // Dessiner la peinture complète (visible dès le début, révélée par le scroll vertical)
+        batch.setColor(1f, 1f, 1f, 1f);
+        batch.draw(paintingTexture, imageX, imageY, imageWidth, imageHeight);
+        
+        // Réinitialiser la couleur
+        batch.setColor(1, 1, 1, 1);
     }
     
     /**
@@ -490,6 +649,24 @@ public class QnaAnimationManager implements Disposable {
     }
     
     /**
+     * Charge la texture de la peinture pour l'animation finale
+     */
+    public void loadPaintingTexture(String paintingPath) {
+        try {
+            if (paintingTexture != null) {
+                paintingTexture.dispose();
+            }
+            paintingTexture = new Texture(Gdx.files.internal(paintingPath));
+            // Appliquer un filtrage Linear pour l'antialiasing lors du redimensionnement
+            paintingTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+            Gdx.app.log("QnaAnimationManager", "Peinture chargée avec antialiasing: " + paintingPath);
+        } catch (Exception e) {
+            Gdx.app.error("QnaAnimationManager", "Erreur chargement peinture: " + e.getMessage());
+            paintingTexture = null;
+        }
+    }
+    
+    /**
      * Charge les sons nécessaires
      */
     public void loadSounds() {
@@ -519,6 +696,13 @@ public class QnaAnimationManager implements Disposable {
             Gdx.app.log("QnaAnimationManager", "Son close.mp3 chargé");
         } catch (Exception e) {
             Gdx.app.error("QnaAnimationManager", "Erreur chargement close.mp3: " + e.getMessage());
+        }
+        
+        try {
+            open2Sound = Gdx.audio.newSound(Gdx.files.internal("audio/open2.mp3"));
+            Gdx.app.log("QnaAnimationManager", "Son open2.mp3 chargé");
+        } catch (Exception e) {
+            Gdx.app.error("QnaAnimationManager", "Erreur chargement open2.mp3: " + e.getMessage());
         }
         
         Gdx.app.log("QnaAnimationManager", "Sons chargés");
@@ -585,10 +769,62 @@ public class QnaAnimationManager implements Disposable {
     }
     
     /**
-     * Obtient l'état actuel
+     * Obtient l'alpha actuel pour le fade out (utilisé par QuestionAnswerGameScreen pour les boutons)
      */
-    public AnimationState getCurrentState() {
-        return currentState;
+    public float getVictoryFadeAlpha() {
+        if (currentState == AnimationState.VICTORY_ANIMATION) {
+            return victoryFadeAlpha;
+        }
+        return 1.0f;
+    }
+    
+    /**
+     * Obtient l'offset vertical actuel pour le mouvement vers le haut (utilisé par QuestionAnswerGameScreen pour les boutons)
+     */
+    public float getVictoryVerticalOffset() {
+        if (currentState == AnimationState.VICTORY_ANIMATION) {
+            return victoryVerticalOffset;
+        }
+        return 0f;
+    }
+    
+    /**
+     * Vérifie si on est en phase finale (peinture visible ou animation finale en cours)
+     */
+    public boolean isInFinalPhase() {
+        if (currentState == AnimationState.VICTORY_ANIMATION) {
+            // Dès que l'animation finale commence, on masque l'input
+            // La peinture devient visible après le fade out
+            return true;
+        }
+        return false;
+    }
+    
+    /**
+     * Vérifie si toutes les billes sont épuisées (plus de billes dans le tube)
+     */
+    public boolean areBallsExhausted() {
+        return getRemainingBallsCount() == 0;
+    }
+    
+    /**
+     * Compte le nombre de billes restantes dans le tube
+     */
+    public int getRemainingBallsCount() {
+        int remainingBalls = 0;
+        for (AnimatedBall ball : balls) {
+            if (ball.state == BallState.IN_TUBE) {
+                remainingBalls++;
+            }
+        }
+        return remainingBalls;
+    }
+    
+    /**
+     * Obtient la texture de la peinture (pour affichage dans QuestionAnswerGameScreen)
+     */
+    public Texture getPaintingTexture() {
+        return paintingTexture;
     }
     
     /**
@@ -880,22 +1116,25 @@ public class QnaAnimationManager implements Disposable {
                 float easedProgress = Interpolation.smooth.apply(progress);
                 
                 // Calculer l'angle de rotation (un arc de cercle entre deux slots)
-                float angleStep = 360f / victoryThreshold;
-                float targetRotation = angleStep; // Rotation d'un slot
+                // SENS ANTIHORAIRE : on utilise un angle négatif
+                float angleStep = -360f / victoryThreshold;
+                float targetRotation = angleStep; // Rotation d'un slot (sens antihoraire)
                 
                 // Appliquer la rotation progressive
                 slotsCurrentRotation = easedProgress * targetRotation;
                 
                 // Rotation terminée ?
                 if (stateTimer >= wheelSpinDuration) {
-                    // Finaliser la rotation
-                    slotsCurrentRotation = angleStep;
+                    // Finaliser la rotation : accumuler dans la rotation permanente
+                    wheelOuterPermanentRotation += angleStep;
                     
                     // Recalculer les angles de base des slots pour prendre en compte la rotation
                     for (Slot slot : slots) {
                         slot.baseAngle += angleStep;
                     }
-                    slotsCurrentRotation = 0f; // Reset rotation actuelle
+                    
+                    // Reset rotation actuelle (animation terminée)
+                    slotsCurrentRotation = 0f;
                     
                     transitionToTubeDescending();
                 }
@@ -903,11 +1142,75 @@ public class QnaAnimationManager implements Disposable {
                 
             case TUBE_DESCENDING_CORRECT:
             case TUBE_DESCENDING_WRONG:
-                // Descente terminée ?
-                if (stateTimer >= 0.3f) {
-                    transitionToIdle();
-                }
+                // L'animation de descente est gérée par isTubeDescending
+                // On attend juste que l'animation soit terminée (géré dans finalizeTubeDescent)
                 break;
+                
+            case VICTORY_ANIMATION:
+                // L'animation finale est gérée par updateVictoryAnimation()
+                // Pas de transition automatique ici
+                break;
+        }
+    }
+    
+    /**
+     * Met à jour l'animation finale de victoire
+     */
+    private void updateVictoryAnimation(float delta) {
+        float rotationEndTime = victoryRotationDuration;
+        float fadeOutStartTime = rotationEndTime + victoryWaitAfterRotation;
+        float totalDuration = fadeOutStartTime + victoryFadeOutDuration + victoryPaintingFadeInDuration;
+        
+        if (victoryAnimationTimer < rotationEndTime) {
+            // Phase 1 : Rotation d'un quart de tour de la center wheel (sens horaire, opposé à l'outer wheel)
+            float progress = victoryAnimationTimer / victoryRotationDuration;
+            float easedProgress = Interpolation.smooth.apply(progress);
+            
+            // Rotation d'un quart de tour (90°) dans le sens horaire (positif)
+            victoryCenterWheelRotation = 90f * easedProgress;
+        } else if (victoryAnimationTimer < fadeOutStartTime) {
+            // Phase 1.5 : Attente après rotation (2.0s) + jouer open2.wav
+            if (!open2SoundPlayed) {
+                // Jouer le son open2.wav une seule fois à la fin de la rotation
+                if (open2Sound != null) {
+                    open2Sound.play();
+                }
+                open2SoundPlayed = true;
+                Gdx.app.log("QnaAnimationManager", "Son open2.wav joué après rotation");
+            }
+            // Maintenir la rotation finale (quart de tour)
+            victoryCenterWheelRotation = 90f;
+        } else if (victoryAnimationTimer < fadeOutStartTime + victoryFadeOutDuration) {
+            // Phase 2 : Montée de tous les assets (sans fade out, restent opaques)
+            float fadeProgress = (victoryAnimationTimer - fadeOutStartTime) / victoryFadeOutDuration;
+            float easedFadeProgress = Interpolation.smooth.apply(fadeProgress);
+            
+            // Alpha reste à 1.0 (pas de fade out)
+            victoryFadeAlpha = 1.0f;
+            
+            // L'offset vertical augmente (les assets montent)
+            // On utilise une interpolation pour une montée fluide
+            // Multiplier par 1.5 pour monter plus haut (1.5 fois la hauteur du viewport)
+            victoryVerticalOffset = easedFadeProgress * 1.5f; // Multiplié par viewportHeight dans draw
+        } else if (victoryAnimationTimer < totalDuration) {
+            // Phase 3 : Fade in de la peinture (plus nécessaire maintenant, mais gardé pour compatibilité)
+            float fadeInProgress = (victoryAnimationTimer - fadeOutStartTime - victoryFadeOutDuration) / victoryPaintingFadeInDuration;
+            float easedFadeInProgress = Interpolation.smooth.apply(fadeInProgress);
+            
+            // Alpha augmente de 0.0 à 1.0 (pour la peinture, mais elle est déjà visible)
+            victoryPaintingAlpha = easedFadeInProgress;
+            
+            // Les assets restent opaques et sont complètement montés
+            victoryFadeAlpha = 1.0f;
+            victoryVerticalOffset = 1.5f; // Montée plus haute
+        } else {
+            // Animation terminée
+            victoryPaintingAlpha = 1.0f;
+            victoryFadeAlpha = 1.0f; // Reste opaque
+            victoryVerticalOffset = 1.5f; // Montée plus haute
+            
+            // Ne pas passer à COMPLETED ici, on reste en VICTORY_ANIMATION pour afficher la peinture
+            // Le callback gérera le retour au calendrier sur clic
         }
     }
     
@@ -931,6 +1234,13 @@ public class QnaAnimationManager implements Disposable {
     }
     
     private void transitionToSlotRotating() {
+        // Vérifier si c'est le dernier slot (tous les slots sont remplis)
+        if (nextSlotIndex >= victoryThreshold) {
+            // Dernier slot rempli : démarrer l'animation finale au lieu de tourner
+            startVictoryAnimation();
+            return;
+        }
+        
         currentState = AnimationState.SLOTS_ROTATING;
         stateTimer = 0f;
         
@@ -953,42 +1263,32 @@ public class QnaAnimationManager implements Disposable {
         
         stateTimer = 0f;
         
-        // Animer la descente du tube
-        animateTubeDescending();
+        // Démarrer l'animation de descente du tube avec gravité
+        startTubeDescentAnimation();
         
-        // Jouer le son de fermeture
-        if (closeSound != null) {
-            closeSound.play();
-        }
+        // Le son close.mp3 sera joué après que les billes soient tombées (dans finalizeTubeDescent)
         
-        Gdx.app.log("QnaAnimationManager", "Descente du tube démarrée");
+        Gdx.app.log("QnaAnimationManager", "Descente du tube démarrée (avec animation)");
     }
     
-    private void transitionToIdle() {
-        currentState = AnimationState.COMPLETED;
-        
-        if (callback != null) {
-            callback.onAnimationComplete(currentState);
-        }
-        
-        // Retourner à l'état IDLE
-        Gdx.app.postRunnable(new Runnable() {
-            @Override
-            public void run() {
-                currentState = AnimationState.IDLE;
-                stateTimer = 0f;
-            }
-        });
-        
-        Gdx.app.log("QnaAnimationManager", "Transition vers IDLE");
+    /**
+     * Démarre l'animation de descente du tube avec gravité
+     */
+    private void startTubeDescentAnimation() {
+        isTubeDescending = true;
+        tubeDescentTimer = 0f;
+        tubeCurrentOffset = 0f;
     }
     
-    private void animateTubeDescending() {
-        // Calculer la hauteur d'une bille en pixels absolus
-        float ballHeightAbs = ballHeight * currentBgHeight;
+    /**
+     * Finalise la descente du tube après l'animation
+     */
+    private void finalizeTubeDescent() {
+        // L'animation est terminée
+        isTubeDescending = false;
+        tubeDescentTimer = 0f;
         
-        // L'offset cible est -ballHeight (les billes descendent)
-        // Pour simuler l'animation, on va simplement décrémenter l'index de chaque bille
+        // Décrémenter l'index de chaque bille dans le tube
         for (AnimatedBall ball : balls) {
             if (ball.state == BallState.IN_TUBE) {
                 ball.moveDownInTube();
@@ -1002,6 +1302,44 @@ public class QnaAnimationManager implements Disposable {
                 balls.removeIndex(i);
             }
         }
+        
+        // Réinitialiser l'offset
+        tubeCurrentOffset = 0f;
+        
+        // Vérifier si toutes les billes sont épuisées avant de jouer le son
+        boolean allBallsExhausted = areBallsExhausted();
+        
+        // Jouer le son de fermeture APRÈS que les billes soient tombées
+        // Ne pas jouer si c'est la dernière bille qui vient de disparaître
+        if (closeSound != null && !allBallsExhausted) {
+            closeSound.play();
+        }
+        
+        // Transition vers IDLE
+        transitionToIdle();
+        
+        Gdx.app.log("QnaAnimationManager", "Descente du tube terminée");
+    }
+    
+    private void transitionToIdle() {
+        // Stocker l'état précédent avant de passer à COMPLETED
+        AnimationState previousState = currentState;
+        currentState = AnimationState.COMPLETED;
+        
+        if (callback != null) {
+            callback.onAnimationComplete(previousState);
+        }
+        
+        // Retourner à l'état IDLE
+        Gdx.app.postRunnable(new Runnable() {
+            @Override
+            public void run() {
+                currentState = AnimationState.IDLE;
+                stateTimer = 0f;
+            }
+        });
+        
+        Gdx.app.log("QnaAnimationManager", "Transition vers IDLE");
     }
     
     private Slot findNextEmptySlot() {
@@ -1095,22 +1433,20 @@ public class QnaAnimationManager implements Disposable {
     
     private void startVictoryAnimation() {
         currentState = AnimationState.VICTORY_ANIMATION;
+        victoryAnimationTimer = 0f;
+        victoryCenterWheelRotation = 0f;
+        victoryFadeAlpha = 1.0f;
+        victoryVerticalOffset = 0f;
+        victoryPaintingAlpha = 0f;
+        open2SoundPlayed = false;
+        winSoundPlayedForPainting = false;
         
-        // Animation de victoire : toutes les billes restantes se déplacent vers la zone de succès
-        for (AnimatedBall ball : balls) {
-            if (ball.isInReservoir()) {
-                ball.startMoveToSuccessArea(successAreaX, successAreaY, successAreaWidth, successAreaHeight, ballMoveDuration);
-            }
-        }
-        
-        // Animation spéciale de la roue
-        wheel.startVictoryAnimation(victoryAnimationDuration);
-        
+        // Notifier le callback pour masquer l'input au début de l'animation finale
         if (callback != null) {
             callback.onAnimationStarted(currentState);
         }
         
-        Gdx.app.log("QnaAnimationManager", "Animation de victoire démarrée");
+        Gdx.app.log("QnaAnimationManager", "Animation finale de victoire démarrée");
     }
     
     private void startDefeatAnimation() {
@@ -1138,6 +1474,22 @@ public class QnaAnimationManager implements Disposable {
         balls.clear();
         wheel.reset();
         reservoir.reset();
+        
+        // Réinitialiser les rotations
+        slotsCurrentRotation = 0f;
+        wheelOuterPermanentRotation = 0f;
+        nextSlotIndex = 0;
+        
+        // Réinitialiser l'animation de descente du tube
+        isTubeDescending = false;
+        tubeDescentTimer = 0f;
+        tubeCurrentOffset = 0f;
+        
+        // Réinitialiser les angles de base des slots
+        for (int i = 0; i < slots.size; i++) {
+            Slot slot = slots.get(i);
+            slot.baseAngle = slotsStartAngle + (360f / victoryThreshold) * i;
+        }
         
         Gdx.app.log("QnaAnimationManager", "Animations réinitialisées");
     }
@@ -1299,6 +1651,16 @@ public class QnaAnimationManager implements Disposable {
             slotFrontTexture.dispose();
         }
         
+        // Nettoyer la peinture
+        if (paintingTexture != null) {
+            paintingTexture.dispose();
+        }
+        
+        // Nettoyer la texture blanche
+        if (whiteTexture != null) {
+            whiteTexture.dispose();
+        }
+        
         // Nettoyer les textures existantes
         for (Texture texture : ballTextures) {
             texture.dispose();
@@ -1326,6 +1688,9 @@ public class QnaAnimationManager implements Disposable {
         }
         if (closeSound != null) {
             closeSound.dispose();
+        }
+        if (open2Sound != null) {
+            open2Sound.dispose();
         }
         
         // Nettoyer la police de debug
@@ -1379,24 +1744,26 @@ public class QnaAnimationManager implements Disposable {
             y = centerY + radius * MathUtils.sinDeg(currentAngle);
         }
         
-        void draw(SpriteBatch batch) {
+        void draw(SpriteBatch batch, float alpha, float verticalOffset) {
             // Dessiner le slot-back
             if (slotBackTexture != null) {
+                batch.setColor(1, 1, 1, alpha);
                 float slotWidth = slotBackTexture.getWidth();
                 float slotHeight = slotBackTexture.getHeight();
-                batch.draw(slotBackTexture, x - slotWidth / 2, y - slotHeight / 2);
+                batch.draw(slotBackTexture, x - slotWidth / 2, y - slotHeight / 2 + verticalOffset);
             }
             
             // Dessiner la bille si présente
             if (ball != null && isOccupied) {
-                ball.draw(batch);
+                ball.draw(batch, alpha, verticalOffset);
             }
             
             // Dessiner le slot-front
             if (slotFrontTexture != null) {
+                batch.setColor(1, 1, 1, alpha);
                 float slotWidth = slotFrontTexture.getWidth();
                 float slotHeight = slotFrontTexture.getHeight();
-                batch.draw(slotFrontTexture, x - slotWidth / 2, y - slotHeight / 2);
+                batch.draw(slotFrontTexture, x - slotWidth / 2, y - slotHeight / 2 + verticalOffset);
             }
         }
         
@@ -1610,7 +1977,7 @@ public class QnaAnimationManager implements Disposable {
             }
         }
         
-        void draw(SpriteBatch batch) {
+        void draw(SpriteBatch batch, float alpha, float verticalOffset) {
             // Ne pas dessiner si dans état WAITING ou complètement transparent
             if (state == BallState.WAITING || alpha <= 0.0f) return;
             
@@ -1619,21 +1986,27 @@ public class QnaAnimationManager implements Disposable {
                 float ballWidth = texture.getWidth();
                 float ballHeight = texture.getHeight();
                 
-                // Appliquer l'alpha
-                batch.setColor(1, 1, 1, alpha);
+                // Appliquer l'alpha combiné (alpha de la bille * alpha de l'animation finale)
+                float combinedAlpha = this.alpha * alpha;
+                batch.setColor(1, 1, 1, combinedAlpha);
                 
                 // Dessiner avec scale (centré)
                 float scaledWidth = ballWidth * scale;
                 float scaledHeight = ballHeight * scale;
                 batch.draw(texture, 
                           x - scaledWidth / 2, 
-                          y - scaledHeight / 2,
+                          y - scaledHeight / 2 + verticalOffset,
                           scaledWidth, 
                           scaledHeight);
                 
                 // Réinitialiser la couleur
                 batch.setColor(1, 1, 1, 1);
             }
+        }
+        
+        void draw(SpriteBatch batch) {
+            // Méthode legacy pour compatibilité
+            draw(batch, 1.0f, 0f);
         }
         
         boolean isAnimating() {

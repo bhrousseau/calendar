@@ -83,6 +83,8 @@ public class QuestionAnswerGameScreen extends GameScreen {
     private int victoryThreshold;
     private boolean gameFinished;
     private boolean gameWon;
+    private boolean waitingForAnimation;            // Flag pour attendre la fin de l'animation avant question suivante
+    private boolean pendingQuestionTransition;      // Flag pour passage à la question suivante en attente
     
     // UI pour les questions
     private BottomInputBar inputBar;
@@ -162,6 +164,8 @@ public class QuestionAnswerGameScreen extends GameScreen {
         this.correctAnswers = 0;
         this.gameFinished = false;
         this.gameWon = false;
+        this.waitingForAnimation = false;
+        this.pendingQuestionTransition = false;
         
         // Charger les sons
         try {
@@ -325,9 +329,14 @@ public class QuestionAnswerGameScreen extends GameScreen {
                     
                     // Charger les alternatives
                     JsonValue alternativesJson = questionJson.get("alternatives");
-                    String[] alternatives = new String[alternativesJson.size];
-                    for (int i = 0; i < alternativesJson.size; i++) {
-                        alternatives[i] = alternativesJson.get(i).asString();
+                    String[] alternatives;
+                    if (alternativesJson != null && alternativesJson.isArray()) {
+                        alternatives = new String[alternativesJson.size];
+                        for (int i = 0; i < alternativesJson.size; i++) {
+                            alternatives[i] = alternativesJson.get(i).asString();
+                        }
+                    } else {
+                        alternatives = new String[0];
                     }
                     
                     QuestionData questionData = new QuestionData(id, question, answer, alternatives);
@@ -434,13 +443,22 @@ public class QuestionAnswerGameScreen extends GameScreen {
             return;
         }
         
+        // Ne pas traiter de réponse si une animation est en cours
+        if (waitingForAnimation) {
+            return;
+        }
+        
         QuestionData currentQuestion = currentQuestions.get(currentQuestionIndex);
         
         // Vérifier la réponse avec AnswerMatcher
         // Créer un tableau avec la réponse correcte et les alternatives
-        String[] allAnswers = new String[currentQuestion.alternatives.length + 1];
+        // Utiliser AnswerMatcher pour vérifier à la fois answer et toutes les alternatives
+        String[] alternatives = currentQuestion.alternatives != null ? currentQuestion.alternatives : new String[0];
+        String[] allAnswers = new String[alternatives.length + 1];
         allAnswers[0] = currentQuestion.answer;
-        System.arraycopy(currentQuestion.alternatives, 0, allAnswers, 1, currentQuestion.alternatives.length);
+        if (alternatives.length > 0) {
+            System.arraycopy(alternatives, 0, allAnswers, 1, alternatives.length);
+        }
         
         boolean isCorrect = AnswerMatcher.matchesAny(answer, allAnswers);
         
@@ -448,40 +466,107 @@ public class QuestionAnswerGameScreen extends GameScreen {
             correctAnswers++;
             Gdx.app.log("QuestionAnswerGameScreen", "Réponse correcte! (" + correctAnswers + "/" + currentQuestions.size + ")");
             
+            // Masquer l'input immédiatement après une bonne réponse
+            hideInput();
+            
+            // Vérifier si c'est le dernier slot (dernière bonne réponse requise)
+            boolean isLastSlot = (correctAnswers >= victoryThreshold);
+            
             // Déclencher l'animation de bonne réponse
             if (animationManager != null) {
                 animationManager.updateGameStats(correctAnswers, currentQuestionIndex);
                 animationManager.triggerEvent(QnaAnimationManager.AnimationEvent.CORRECT_ANSWER);
+                
+                // Si c'est le dernier slot, l'animation finale sera déclenchée automatiquement
+                // Sinon, on attendra la fin de l'animation pour passer à la question suivante
+                if (!isLastSlot) {
+                    waitingForAnimation = true;
+                    pendingQuestionTransition = true;
+                }
             }
             
             // Son de victoire pour une bonne réponse
             if (winSound != null) {
                 winSound.play(0.5f);
             }
+            
+            // Ne pas passer à la question suivante immédiatement
+            // Attendre la fin de l'animation (géré dans le callback)
         } else {
             Gdx.app.log("QuestionAnswerGameScreen", "Réponse incorrecte. Réponse attendue: " + currentQuestion.answer);
             
-            // Déclencher l'animation de mauvaise réponse
+            // Masquer l'input immédiatement après une mauvaise réponse
+            hideInput();
+            
+            // Vérifier si c'est la dernière bille (il n'y aura plus de billes après celle-ci)
+            // On compte les billes restantes AVANT de consommer la bille actuelle
+            boolean isLastBall = false;
             if (animationManager != null) {
-                animationManager.updateGameStats(correctAnswers, currentQuestionIndex);
-                animationManager.triggerEvent(QnaAnimationManager.AnimationEvent.WRONG_ANSWER);
+                // Compter les billes restantes dans le tube (y compris celle qui va être consommée)
+                int remainingBalls = animationManager.getRemainingBallsCount();
+                // Si il n'y a qu'une bille (celle qui va être consommée), c'est la dernière
+                isLastBall = (remainingBalls == 1);
+            }
+            boolean notEnoughCorrectAnswers = (correctAnswers < victoryThreshold);
+            
+            if (isLastBall && notEnoughCorrectAnswers) {
+                // C'est la dernière bille et on n'a pas résolu les slots : terminer le jeu après l'animation
+                Gdx.app.log("QuestionAnswerGameScreen", "Dernière bille sans avoir résolu les slots - fin du jeu après animation");
+                waitingForAnimation = true;
+                pendingQuestionTransition = false; // Ne pas passer à la question suivante
+                
+                // Déclencher l'animation de mauvaise réponse (c'est la dernière bille)
+                if (animationManager != null) {
+                    animationManager.updateGameStats(correctAnswers, currentQuestionIndex);
+                    animationManager.triggerEvent(QnaAnimationManager.AnimationEvent.WRONG_ANSWER);
+                }
+                
+                // Son d'erreur
+                if (wrongSound != null) {
+                    wrongSound.play(0.5f);
+                }
+            } else {
+                // Déclencher l'animation de mauvaise réponse
+                if (animationManager != null) {
+                    animationManager.updateGameStats(correctAnswers, currentQuestionIndex);
+                    animationManager.triggerEvent(QnaAnimationManager.AnimationEvent.WRONG_ANSWER);
+                    
+                    // Attendre la fin de l'animation pour passer à la question suivante
+                    waitingForAnimation = true;
+                    pendingQuestionTransition = true;
+                }
+                
+                // Son d'erreur
+                if (wrongSound != null) {
+                    wrongSound.play(0.5f);
+                }
             }
             
-            // Son d'erreur
-            if (wrongSound != null) {
-                wrongSound.play(0.5f);
-            }
+            // Ne pas passer à la question suivante immédiatement
+            // Attendre la fin de l'animation (géré dans le callback)
         }
+    }
+    
+    /**
+     * Passe à la question suivante (appelé après la fin de l'animation)
+     * Cette méthode est appelée uniquement si on a encore des billes et qu'une transition est prévue
+     */
+    private void proceedToNextQuestion() {
+        waitingForAnimation = false;
+        pendingQuestionTransition = false;
         
         // Passer à la question suivante
         currentQuestionIndex++;
         
         if (currentQuestionIndex >= currentQuestions.size) {
-            // Fin du jeu
+            // Fin du jeu (plus de questions)
             finishGame();
         } else {
             // Afficher la question suivante
             showCurrentQuestion();
+            
+            // Réafficher l'input pour la nouvelle question
+            showInput();
         }
     }
     
@@ -515,13 +600,8 @@ public class QuestionAnswerGameScreen extends GameScreen {
                 adventGame.setVisited(dayId, true);
             }
             
-            // Retourner au menu après l'animation de victoire
-            com.badlogic.gdx.utils.Timer.schedule(new com.badlogic.gdx.utils.Timer.Task() {
-                @Override
-                public void run() {
-                    returnToMainMenu();
-                }
-            }, 4.0f); // Délai plus long pour permettre l'animation de victoire
+            // Ne pas retourner automatiquement au menu : le retour sera géré par le clic pendant la phase finale
+            // L'animation finale se charge d'afficher la peinture et le clic retourne au calendrier
         } else {
             Gdx.app.log("QuestionAnswerGameScreen", "Échec! Seuil non atteint.");
             
@@ -536,7 +616,7 @@ public class QuestionAnswerGameScreen extends GameScreen {
                 public void run() {
                     returnToMainMenu();
                 }
-            }, 3.0f); // Délai pour permettre l'animation de défaite
+            }, 1.0f); // Délai pour permettre l'animation de défaite
         }
     }
     
@@ -579,24 +659,70 @@ public class QuestionAnswerGameScreen extends GameScreen {
         }
         
         // Dessiner l'interface de saisie (le Stage gère son propre batch)
+        // Masquer l'input si on est en phase finale
         if (inputStage != null) {
-            inputStage.act();
-            inputStage.draw();
+            boolean shouldShowInput = true;
+            if (animationManager != null) {
+                shouldShowInput = !animationManager.isInFinalPhase();
+            }
+            
+            if (shouldShowInput) {
+                inputStage.act();
+                inputStage.draw();
+            }
         }
     }
     
     
     private void drawInfoButton() {
         if (infoButtonTexture != null) {
-        batch.setColor(1f, 1f, 1f, 1f);
-            batch.draw(infoButtonTexture, infoButton.x, infoButton.y, infoButton.width, infoButton.height);
+            // Obtenir l'alpha et l'offset vertical pour l'animation finale
+            float alpha = 1.0f;
+            float verticalOffset = 0f;
+            if (animationManager != null) {
+                alpha = animationManager.getVictoryFadeAlpha();
+                verticalOffset = animationManager.getVictoryVerticalOffset() * viewport.getWorldHeight();
+            }
+            
+            batch.setColor(1f, 1f, 1f, alpha);
+            batch.draw(infoButtonTexture, infoButton.x, infoButton.y + verticalOffset, infoButton.width, infoButton.height);
+            batch.setColor(1f, 1f, 1f, 1f); // Réinitialiser
         }
     }
     
     private void drawCloseButton() {
         if (closeButtonTexture != null) {
-        batch.setColor(1f, 1f, 1f, 1f);
-            batch.draw(closeButtonTexture, closeButton.x, closeButton.y, closeButton.width, closeButton.height);
+            // Obtenir l'alpha et l'offset vertical pour l'animation finale
+            float alpha = 1.0f;
+            float verticalOffset = 0f;
+            if (animationManager != null) {
+                alpha = animationManager.getVictoryFadeAlpha();
+                verticalOffset = animationManager.getVictoryVerticalOffset() * viewport.getWorldHeight();
+            }
+            
+            batch.setColor(1f, 1f, 1f, alpha);
+            batch.draw(closeButtonTexture, closeButton.x, closeButton.y + verticalOffset, closeButton.width, closeButton.height);
+            batch.setColor(1f, 1f, 1f, 1f); // Réinitialiser
+        }
+    }
+    
+    /**
+     * Masque l'interface de saisie
+     */
+    private void hideInput() {
+        if (inputStage != null && rootTable != null) {
+            rootTable.setVisible(false);
+            Gdx.app.log("QuestionAnswerGameScreen", "Input masqué");
+        }
+    }
+    
+    /**
+     * Affiche l'interface de saisie
+     */
+    private void showInput() {
+        if (inputStage != null && rootTable != null) {
+            rootTable.setVisible(true);
+            Gdx.app.log("QuestionAnswerGameScreen", "Input affiché");
         }
     }
     
@@ -782,6 +908,12 @@ public class QuestionAnswerGameScreen extends GameScreen {
      * Gère les clics de souris/tactiles
      */
     private void handleClick(float worldX, float worldY) {
+        // Si on est en phase finale (peinture visible), n'importe quel clic retourne au calendrier
+        if (animationManager != null && animationManager.isInFinalPhase()) {
+            returnToMainMenu();
+            return;
+        }
+        
         // Si le panneau d'info est visible, n'importe quel clic le ferme
         if (showInfoPanel) {
             showInfoPanel = false;
@@ -824,8 +956,32 @@ public class QuestionAnswerGameScreen extends GameScreen {
     private void triggerVictoryPhase() {
         Gdx.app.log("QuestionAnswerGameScreen", "Déclenchement de la phase de victoire (mode test - touche N)");
         
-        // Utiliser la méthode solveGame() existante
-        solveGame();
+        // Marquer le jeu comme terminé et gagné
+        gameFinished = true;
+        gameWon = true;
+        
+        // Déclencher l'animation de victoire
+        if (animationManager != null) {
+            animationManager.triggerEvent(QnaAnimationManager.AnimationEvent.GAME_WON);
+        }
+        
+        // Jouer la musique de victoire
+        if (winSound != null) {
+            winSound.play(1.0f);
+        }
+        
+        // Déverrouiller la victoire
+        if (game instanceof AdventCalendarGame) {
+            AdventCalendarGame adventGame = (AdventCalendarGame) game;
+            adventGame.setScore(dayId, 100);
+            adventGame.setVisited(dayId, true);
+        }
+        
+        // Masquer l'input (l'animation finale se chargera de l'afficher)
+        hideInput();
+        
+        // Ne pas retourner automatiquement au menu : le retour sera géré par le clic pendant la phase finale
+        // L'animation finale se charge d'afficher la peinture et le clic retourne au calendrier
     }
     
     /**
@@ -937,14 +1093,32 @@ public class QuestionAnswerGameScreen extends GameScreen {
                     case BALL_APPEARING_IN_SLOT:
                     case SLOTS_ROTATING:
                     case TUBE_DESCENDING_CORRECT:
+                        // Animation de bonne réponse terminée : passer à la question suivante
                         Gdx.app.log("QuestionAnswerGameScreen", "Animation de bonne réponse terminée");
+                        proceedToNextQuestion();
                         break;
                     case BALL_DISAPPEARING_WRONG:
                     case TUBE_DESCENDING_WRONG:
+                        // Animation de mauvaise réponse terminée
                         Gdx.app.log("QuestionAnswerGameScreen", "Animation de mauvaise réponse terminée");
+                        
+                        // Vérifier si toutes les billes sont épuisées et qu'on n'a pas atteint le seuil de victoire
+                        boolean ballsExhausted = (animationManager != null && animationManager.areBallsExhausted());
+                        boolean notEnoughCorrectAnswers = (correctAnswers < victoryThreshold);
+                        
+                        if (ballsExhausted && notEnoughCorrectAnswers) {
+                            // Toutes les billes sont épuisées sans avoir résolu les slots : terminer le jeu
+                            Gdx.app.log("QuestionAnswerGameScreen", "Toutes les billes épuisées, fin du jeu");
+                            waitingForAnimation = false;
+                            finishGame();
+                        } else {
+                            // Passer à la question suivante seulement si on a encore des billes
+                            proceedToNextQuestion();
+                        }
                         break;
                     case VICTORY_ANIMATION:
                         Gdx.app.log("QuestionAnswerGameScreen", "Animation de victoire terminée");
+                        // Ne pas passer à la question suivante, on reste sur la peinture
                         break;
                     case DEFEAT_ANIMATION:
                         Gdx.app.log("QuestionAnswerGameScreen", "Animation de défaite terminée");
@@ -955,6 +1129,11 @@ public class QuestionAnswerGameScreen extends GameScreen {
             @Override
             public void onAnimationStarted(QnaAnimationManager.AnimationState startedState) {
                 Gdx.app.log("QuestionAnswerGameScreen", "Animation démarrée: " + startedState);
+                
+                // Masquer l'input au début de l'animation finale
+                if (startedState == QnaAnimationManager.AnimationState.VICTORY_ANIMATION) {
+                    hideInput();
+                }
             }
         });
         
@@ -963,6 +1142,11 @@ public class QuestionAnswerGameScreen extends GameScreen {
         
         // Charger les sons d'animation
         animationManager.loadSounds();
+        
+        // Charger la peinture depuis le thème
+        if (theme != null && theme.getFullImagePath() != null) {
+            animationManager.loadPaintingTexture(theme.getFullImagePath());
+        }
         
         // Calculer les dimensions du background
         animationManager.calculateBackgroundDimensions(DisplayConfig.WORLD_WIDTH, viewport.getWorldHeight());
