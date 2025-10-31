@@ -56,6 +56,7 @@ public class CrystalizeGuessGameScreen extends GameScreen {
     private final Texture whiteTexture;
     private Texture closeButtonTexture;
     private Texture infoButtonTexture;
+    private Texture helpImageTexture;
     private boolean showInfoPanel;
     
     // Nouveau système d'input
@@ -254,6 +255,9 @@ public class CrystalizeGuessGameScreen extends GameScreen {
         
         // Charger les sons
         loadSounds();
+        
+        // Charger l'image d'aide
+        loadHelpImage();
         
         // Initialiser l'état du jeu
         this.currentAttempt = 0;
@@ -760,6 +764,21 @@ public class CrystalizeGuessGameScreen extends GameScreen {
         }
     }
     
+    /**
+     * Charge l'image d'aide
+     */
+    private void loadHelpImage() {
+        try {
+            this.helpImageTexture = new Texture(Gdx.files.internal("images/games/cgg/help_cgg.png"));
+            // Appliquer un filtrage Linear pour l'antialiasing
+            helpImageTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+            Gdx.app.log("CrystalizeGuessGameScreen", "Image d'aide chargée: help_cgg.png");
+        } catch (Exception e) {
+            Gdx.app.error("CrystalizeGuessGameScreen", "Erreur lors du chargement de l'image d'aide: " + e.getMessage());
+            this.helpImageTexture = null;
+        }
+    }
+    
     private void createInputProcessor() {
         inputProcessor = new InputAdapter() {
             @Override
@@ -855,7 +874,7 @@ public class CrystalizeGuessGameScreen extends GameScreen {
     }
     
     private void handleClick(float x, float y) {
-        // Si le panneau d'info est visible, le fermer
+        // Si le panneau d'aide est visible, n'importe quel clic le ferme
         if (showInfoPanel) {
             showInfoPanel = false;
             return;
@@ -1339,62 +1358,36 @@ public class CrystalizeGuessGameScreen extends GameScreen {
     
     // Méthodes drawSubmitButton et drawUserInput supprimées - remplacées par BottomInputBar
     
+    /**
+     * Dessine l'image d'aide en overlay (suivant les dimensions du background)
+     */
     private void drawInfoPanel() {
+        if (helpImageTexture == null) return;
+        
+        // Utiliser les mêmes dimensions que le background (avec crop)
         float screenWidth = DisplayConfig.WORLD_WIDTH;
         float screenHeight = viewport.getWorldHeight();
+        float imageAspect = (float)helpImageTexture.getWidth() / helpImageTexture.getHeight();
+        float screenRatio = screenWidth / screenHeight;
         
-        // Fond semi-transparent
-        batch.setColor(0, 0, 0, 0.4f);
-        batch.draw(whiteTexture, 0, 0, screenWidth, screenHeight);
-        
-        // Panneau
-        float panelWidth = Math.min(600, screenWidth * 0.9f);
-        float panelHeight = Math.min(400, screenHeight * 0.7f);
-        float panelX = (screenWidth - panelWidth) / 2;
-        float panelY = (screenHeight - panelHeight) / 2;
-        
-        // Fond du panneau
-        batch.setColor(0.95f, 0.95f, 0.98f, 0.95f);
-        batch.draw(whiteTexture, panelX, panelY, panelWidth, panelHeight);
-        
-        // Bordure
-        batch.setColor(0.3f, 0.4f, 0.7f, 1);
-        float borderWidth = 2;
-        batch.draw(whiteTexture, panelX, panelY + panelHeight - borderWidth, panelWidth, borderWidth);
-        batch.draw(whiteTexture, panelX, panelY, panelWidth, borderWidth);
-        batch.draw(whiteTexture, panelX, panelY, borderWidth, panelHeight);
-        batch.draw(whiteTexture, panelX + panelWidth - borderWidth, panelY, borderWidth, panelHeight);
-        
-        // Contenu
-        CarlitoFontManager.getFont().setColor(0.2f, 0.3f, 0.8f, 1);
-        String title = "Devine l'Image";
-        layout.setText(CarlitoFontManager.getFont(), title);
-        CarlitoFontManager.drawText(batch, layout, 
-                 panelX + (panelWidth - layout.width) / 2,
-                 panelY + panelHeight - 30);
-        
-        CarlitoFontManager.getFont().setColor(0.1f, 0.1f, 0.2f, 1);
-        float textY = panelY + panelHeight - 80;
-        float lineHeight = 25;
-        
-        String[] rules = {
-            "Objectif : Deviner quelle image se cache",
-            "derrière l'effet de cristallisation.",
-            "",
-            "À chaque tentative, l'image devient",
-            "plus claire et les détails apparaissent.",
-            "",
-            "Vous avez " + maxAttempts + " tentatives pour",
-            "révéler complètement l'image.",
-            "",
-            "Cliquez n'importe où pour fermer."
-        };
-        
-        for (String rule : rules) {
-            layout.setText(CarlitoFontManager.getFont(), rule);
-            CarlitoFontManager.drawText(batch, layout, panelX + 20, textY);
-            textY -= lineHeight;
+        float bgX, bgY, bgWidth, bgHeight;
+        if (screenRatio > imageAspect) {
+            // Écran plus large : fitter en largeur, crop en hauteur
+            bgWidth = screenWidth;
+            bgHeight = bgWidth / imageAspect;
+            bgX = 0;
+            bgY = (screenHeight - bgHeight) / 2;
+        } else {
+            // Écran plus haut : fitter en hauteur, crop en largeur
+            bgHeight = screenHeight;
+            bgWidth = bgHeight * imageAspect;
+            bgX = (screenWidth - bgWidth) / 2;
+            bgY = 0;
         }
+        
+        // Dessiner l'image d'aide aux mêmes dimensions que le background
+        batch.setColor(1, 1, 1, 1);
+        batch.draw(helpImageTexture, bgX, bgY, bgWidth, bgHeight);
     }
     
     
@@ -1425,6 +1418,7 @@ public class CrystalizeGuessGameScreen extends GameScreen {
         if (closeButtonTexture != null) closeButtonTexture.dispose();
         if (infoButtonTexture != null) infoButtonTexture.dispose();
         if (backgroundTexture != null) backgroundTexture.dispose();
+        if (helpImageTexture != null) helpImageTexture.dispose();
         if (winSound != null) winSound.dispose();
         if (wrongSound != null) wrongSound.dispose();
         if (failedSound != null) failedSound.dispose();

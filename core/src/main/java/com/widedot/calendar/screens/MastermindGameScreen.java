@@ -52,6 +52,7 @@ public class MastermindGameScreen extends GameScreen {
     private Texture infoButtonTexture;
     private Texture closeButtonTexture;
     private Texture backgroundTexture;
+    private Texture helpImageTexture;
     private Theme theme;
     
     // Game data
@@ -628,6 +629,9 @@ public class MastermindGameScreen extends GameScreen {
         Gdx.app.log("MastermindGameScreen", "Chargement des sons...");
         loadSounds();
         Gdx.app.log("MastermindGameScreen", "Sons chargés");
+        
+        // Charger l'image d'aide
+        loadHelpImage();
         
         // Créer l'input processor pour les clics
         Gdx.app.log("MastermindGameScreen", "Création de l'input processor...");
@@ -2182,116 +2186,36 @@ public class MastermindGameScreen extends GameScreen {
         }
     }
     
-    private void drawInfoPanel() {
-        float screenWidth = DisplayConfig.WORLD_WIDTH;
-        float screenHeight = viewport.getWorldHeight();
-        
-        // Fond semi-transparent pour conserver la visibilité du jeu
-        batch.setColor(0, 0, 0, 0.4f);
-        batch.draw(whiteTexture, 0, 0, screenWidth, screenHeight);
-        
-        // Calculer la taille adaptative du panneau
-        float minPanelWidth = Math.max(400, screenWidth * 0.5f);
-        float maxPanelWidth = Math.min(600, screenWidth * 0.9f);
-        float panelWidth = Math.min(maxPanelWidth, minPanelWidth);
-        
-        float minPanelHeight = Math.max(300, screenHeight * 0.4f);
-        float maxPanelHeight = Math.min(500, screenHeight * 0.8f);
-        float panelHeight = Math.min(maxPanelHeight, minPanelHeight);
-        
-        float panelX = (screenWidth - panelWidth) / 2;
-        float panelY = (screenHeight - panelHeight) / 2;
-        
-        // Fond du panneau avec coins arrondis simulés
-        batch.setColor(0.95f, 0.95f, 0.98f, 0.95f);
-        batch.draw(whiteTexture, panelX, panelY, panelWidth, panelHeight);
-        
-        // Bordure du panneau avec effet d'ombre
-        float shadowOffset = 3;
-        batch.setColor(0, 0, 0, 0.3f);
-        batch.draw(whiteTexture, panelX + shadowOffset, panelY - shadowOffset, panelWidth, panelHeight);
-        
-        // Bordure principale
-        batch.setColor(0.3f, 0.4f, 0.7f, 1);
-        float borderWidth = 2;
-        // Haut
-        batch.draw(whiteTexture, panelX, panelY + panelHeight - borderWidth, panelWidth, borderWidth);
-        // Bas
-        batch.draw(whiteTexture, panelX, panelY, panelWidth, borderWidth);
-        // Gauche
-        batch.draw(whiteTexture, panelX, panelY, borderWidth, panelHeight);
-        // Droite
-        batch.draw(whiteTexture, panelX + panelWidth - borderWidth, panelY, borderWidth, panelHeight);
-        
-        // Adapter la taille de la police selon la taille du panneau
-        float scaleFactor = Math.min(panelWidth / 500f, panelHeight / 400f);
-        float titleScale = Math.max(1.0f, 1.5f * scaleFactor);
-        float textScale = Math.max(0.8f, 1.0f * scaleFactor);
-        
-        // Titre avec police adaptative
-        infoFont.getData().setScale(titleScale);
-        infoFont.setColor(0.2f, 0.3f, 0.8f, 1);
-        String title = "Règles du Mastermind";
-        layout.setText(infoFont, title);
-        CarlitoFontManager.drawText(batch, layout, 
-            panelX + (panelWidth - layout.width) / 2,
-            panelY + panelHeight - 30 * scaleFactor);
-        
-        // Contenu des règles avec police adaptative
-        infoFont.getData().setScale(textScale);
-        infoFont.setColor(0.1f, 0.1f, 0.2f, 1);
-        float textY = panelY + panelHeight - 70 * scaleFactor;
-        float lineHeight = 20 * scaleFactor;
-        float leftMargin = 15 * scaleFactor;
-        
-        String[] rules = {
-            "Objectif :",
-            "Deviner le code secret composé de " + codeLength + " symboles uniques.",
-            "",
-            "Comment jouer :",
-            "• Cliquez sur les symboles en bas pour sélectionner",
-            "• Cliquez sur votre tentative pour changer les symboles",
-            "• Cliquez sur le bouton d'envoi pour soumettre",
-            "",
-            "Feedback (à droite de chaque tentative) :",
-            "• Rond vert foncé = bon symbole, bonne position",
-            "• Cercle vert clair = bon symbole, mauvaise position",
-            "",
-            "Vous avez " + maxAttempts + " tentatives maximum.",
-            "",
-            "📱 Cliquez n'importe où pour fermer cette aide."
-        };
-        
-        for (String rule : rules) {
-            if (!rule.isEmpty()) {
-                // Gérer les titres en gras
-                if (rule.endsWith(":") && !rule.startsWith("•")) {
-                    infoFont.setColor(0.2f, 0.3f, 0.8f, 1);
-                    float tempScale = textScale * 1.1f;
-                    infoFont.getData().setScale(tempScale);
-                    layout.setText(infoFont, rule);
-                    CarlitoFontManager.drawText(batch, layout, panelX + leftMargin, textY);
-                    infoFont.getData().setScale(textScale);
-                    infoFont.setColor(0.1f, 0.1f, 0.2f, 1);
-                } else {
-                    layout.setText(infoFont, rule);
-                    CarlitoFontManager.drawText(batch, layout, panelX + leftMargin, textY);
-                }
-            }
-            textY -= lineHeight;
+    /**
+     * Charge l'image d'aide
+     */
+    private void loadHelpImage() {
+        try {
+            this.helpImageTexture = new Texture(Gdx.files.internal("images/games/mmd/help_mmd.png"));
+            // Appliquer un filtrage Linear pour l'antialiasing
+            helpImageTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+            Gdx.app.log("MastermindGameScreen", "Image d'aide chargée: help_mmd.png");
+        } catch (Exception e) {
+            Gdx.app.error("MastermindGameScreen", "Erreur lors du chargement de l'image d'aide: " + e.getMessage());
+            this.helpImageTexture = null;
         }
+    }
+    
+    /**
+     * Dessine l'image d'aide en overlay (suivant les dimensions du background)
+     */
+    private void drawInfoPanel() {
+        if (helpImageTexture == null) return;
         
-        // Indicateur de fermeture
-        infoFont.getData().setScale(textScale * 0.9f);
-        infoFont.setColor(0.5f, 0.5f, 0.6f, 1);
-        String closeHint = "Tapez pour fermer";
-        layout.setText(infoFont, closeHint);
-        CarlitoFontManager.drawText(batch, layout, 
-            panelX + panelWidth - layout.width - 10,
-            panelY + 15);
+        // Utiliser les mêmes dimensions que le background (avec crop)
+        float bgX = currentBgX;
+        float bgY = currentBgY;
+        float bgWidth = currentBgWidth;
+        float bgHeight = currentBgHeight;
         
-        // Remettre la police à sa taille normale
-        infoFont.getData().setScale(1.0f);
+        // Dessiner l'image d'aide aux mêmes dimensions que le background
+        batch.setColor(1, 1, 1, 1);
+        batch.draw(helpImageTexture, bgX, bgY, bgWidth, bgHeight);
     }
     
     @Override
@@ -2359,6 +2283,7 @@ public class MastermindGameScreen extends GameScreen {
         if (fullImageTexture != null) fullImageTexture.dispose();
         if (infoButtonTexture != null) infoButtonTexture.dispose();
         if (closeButtonTexture != null) closeButtonTexture.dispose();
+        if (helpImageTexture != null) helpImageTexture.dispose();
         if (backgroundTexture != null) backgroundTexture.dispose(); // Dispose the new texture
         if (winSound != null) winSound.dispose();
         if (wrongSound != null) wrongSound.dispose();

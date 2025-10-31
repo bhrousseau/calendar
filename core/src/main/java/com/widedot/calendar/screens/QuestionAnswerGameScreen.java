@@ -57,11 +57,11 @@ public class QuestionAnswerGameScreen extends GameScreen {
     private final GlyphLayout layout;
     private final Rectangle closeButton;
     private final Rectangle infoButton;
-    private final Color infoPanelColor;
     private boolean showInfoPanel;
     private final Texture whiteTexture;
     private Texture closeButtonTexture;
     private Texture infoButtonTexture;
+    private Texture helpImageTexture;
     private Color backgroundColor;
     private boolean isTestMode;
     
@@ -151,7 +151,6 @@ public class QuestionAnswerGameScreen extends GameScreen {
         // Initialiser les boutons (tailles seront définies dans updateButtonPositions)
         this.closeButton = new Rectangle(0, 0, 100, 100);
         this.infoButton = new Rectangle(0, 0, 100, 100);
-        this.infoPanelColor = new Color(0.3f, 0.3f, 0.3f, 0.8f);
         this.showInfoPanel = false;
         
         // Couleur de fond noire pour le jeu QNA
@@ -193,6 +192,9 @@ public class QuestionAnswerGameScreen extends GameScreen {
         // Charger les textures des boutons
         loadButtonTextures();
         
+        // Charger l'image d'aide
+        loadHelpImage();
+        
         // Créer l'input processor
         createInputProcessor();
         
@@ -220,6 +222,21 @@ public class QuestionAnswerGameScreen extends GameScreen {
         } catch (Exception e) {
             Gdx.app.error("QuestionAnswerGameScreen", "Erreur lors du chargement du bouton info: " + e.getMessage());
             this.infoButtonTexture = null;
+        }
+    }
+    
+    /**
+     * Charge l'image d'aide
+     */
+    private void loadHelpImage() {
+        try {
+            this.helpImageTexture = new Texture(Gdx.files.internal("images/games/qna/help_qna.png"));
+            // Appliquer un filtrage Linear pour l'antialiasing
+            helpImageTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+            Gdx.app.log("QuestionAnswerGameScreen", "Image d'aide chargée: help_qna.png");
+        } catch (Exception e) {
+            Gdx.app.error("QuestionAnswerGameScreen", "Erreur lors du chargement de l'image d'aide: " + e.getMessage());
+            this.helpImageTexture = null;
         }
     }
     
@@ -727,82 +744,48 @@ public class QuestionAnswerGameScreen extends GameScreen {
     }
     
     /**
-     * Dessine le panneau d'information (comme MastermindGameScreen)
+     * Dessine l'image d'aide en overlay (suivant les dimensions du background)
      */
     private void drawInfoPanel() {
-        float screenWidth = DisplayConfig.WORLD_WIDTH;
-        float screenHeight = viewport.getWorldHeight();
+        if (helpImageTexture == null) return;
         
-        // Fond semi-transparent pour conserver la visibilité du jeu
-        batch.setColor(0, 0, 0, 0.4f);
-        batch.draw(whiteTexture, 0, 0, screenWidth, screenHeight);
+        // Obtenir les dimensions du background depuis animationManager
+        float bgX, bgY, bgWidth, bgHeight;
+        if (animationManager != null) {
+            // Utiliser les dimensions du background de l'animation manager
+            // Note: animationManager a currentBgX/Y/Width/Height mais ils sont privés
+            // On doit calculer les mêmes dimensions ici
+            float screenWidth = DisplayConfig.WORLD_WIDTH;
+            float screenHeight = viewport.getWorldHeight();
+            float imageAspect = (float)helpImageTexture.getWidth() / helpImageTexture.getHeight();
+            float screenAspect = screenWidth / screenHeight;
+            
+            if (screenAspect > imageAspect) {
+                // Écran plus large : fitter en largeur
+                bgWidth = screenWidth;
+                bgHeight = bgWidth / imageAspect;
+                bgX = 0;
+                bgY = (screenHeight - bgHeight) / 2;
+            } else {
+                // Écran plus haut : fitter en hauteur
+                bgHeight = screenHeight;
+                bgWidth = bgHeight * imageAspect;
+                bgX = (screenWidth - bgWidth) / 2;
+                bgY = 0;
+            }
+        } else {
+            // Fallback si animationManager n'est pas disponible
+            float screenWidth = DisplayConfig.WORLD_WIDTH;
+            float screenHeight = viewport.getWorldHeight();
+            bgX = 0;
+            bgY = 0;
+            bgWidth = screenWidth;
+            bgHeight = screenHeight;
+        }
         
-        // Calculer la taille adaptative du panneau
-        float minPanelWidth = Math.max(400, screenWidth * 0.5f);
-        float maxPanelWidth = Math.min(600, screenWidth * 0.9f);
-        float panelWidth = Math.min(maxPanelWidth, minPanelWidth);
-        
-        float minPanelHeight = Math.max(300, screenHeight * 0.4f);
-        float maxPanelHeight = Math.min(500, screenHeight * 0.8f);
-        float panelHeight = Math.min(maxPanelHeight, minPanelHeight);
-        
-        float panelX = (screenWidth - panelWidth) / 2;
-        float panelY = (screenHeight - panelHeight) / 2;
-        
-        // Fond du panneau avec coins arrondis simulés
-        batch.setColor(0.95f, 0.95f, 0.98f, 0.95f);
-        batch.draw(whiteTexture, panelX, panelY, panelWidth, panelHeight);
-        
-        // Bordure du panneau avec effet d'ombre
-        float shadowOffset = 3;
-        batch.setColor(0, 0, 0, 0.3f);
-        batch.draw(whiteTexture, panelX + shadowOffset, panelY - shadowOffset, panelWidth, panelHeight);
-        
-        // Bordure principale
-        batch.setColor(0.3f, 0.4f, 0.7f, 1);
-        float borderWidth = 2;
-        // Haut
-        batch.draw(whiteTexture, panelX, panelY + panelHeight - borderWidth, panelWidth, borderWidth);
-        // Bas
-        batch.draw(whiteTexture, panelX, panelY, panelWidth, borderWidth);
-        // Gauche
-        batch.draw(whiteTexture, panelX, panelY, borderWidth, panelHeight);
-        // Droite
-        batch.draw(whiteTexture, panelX + panelWidth - borderWidth, panelY, borderWidth, panelHeight);
-        
-        // Dessiner les informations du thème avec shader Distance Field
-        float textMargin = 20;
-        float titleY = panelY + panelHeight - textMargin;
-        float artistY = titleY - 40;
-        float yearY = artistY - 40;
-        float descriptionY = yearY - 80;
-
-        font.setColor(0.2f, 0.3f, 0.8f, 1);
-        
-        // Titre
-        layout.setText(font, theme.getTitle(), Color.WHITE, panelWidth - 2 * textMargin, com.badlogic.gdx.utils.Align.center, false);
-        CarlitoFontManager.drawText(batch, layout, Math.round(panelX + textMargin), Math.round(titleY));
-
-        // Artiste
-        font.setColor(0.1f, 0.1f, 0.2f, 1);
-        layout.setText(font, theme.getArtist(), Color.WHITE, panelWidth - 2 * textMargin, com.badlogic.gdx.utils.Align.center, false);
-        CarlitoFontManager.drawText(batch, layout, Math.round(panelX + textMargin), Math.round(artistY));
-
-        // Année
-        layout.setText(font, String.valueOf(theme.getYear()), Color.WHITE, panelWidth - 2 * textMargin, com.badlogic.gdx.utils.Align.center, false);
-        CarlitoFontManager.drawText(batch, layout, Math.round(panelX + textMargin), Math.round(yearY));
-
-        // Description
-        layout.setText(font, theme.getDescription(), Color.WHITE, panelWidth - 2 * textMargin, com.badlogic.gdx.utils.Align.center, true);
-        CarlitoFontManager.drawText(batch, layout, Math.round(panelX + textMargin), Math.round(descriptionY));
-        
-        // Indicateur de fermeture
-        font.setColor(0.5f, 0.5f, 0.6f, 1);
-        String closeHint = "Tapez pour fermer";
-        layout.setText(font, closeHint);
-        CarlitoFontManager.drawText(batch, layout, 
-            panelX + panelWidth - layout.width - 10,
-            panelY + 15);
+        // Dessiner l'image d'aide aux mêmes dimensions que le background
+        batch.setColor(1, 1, 1, 1);
+        batch.draw(helpImageTexture, bgX, bgY, bgWidth, bgHeight);
     }
 
     /**
@@ -914,7 +897,7 @@ public class QuestionAnswerGameScreen extends GameScreen {
             return;
         }
         
-        // Si le panneau d'info est visible, n'importe quel clic le ferme
+        // Si le panneau d'aide est visible, n'importe quel clic le ferme
         if (showInfoPanel) {
             showInfoPanel = false;
             return;
@@ -1054,6 +1037,9 @@ public class QuestionAnswerGameScreen extends GameScreen {
         }
         if (infoButtonTexture != null) {
             infoButtonTexture.dispose();
+        }
+        if (helpImageTexture != null) {
+            helpImageTexture.dispose();
         }
         if (winSound != null) {
             winSound.dispose();
