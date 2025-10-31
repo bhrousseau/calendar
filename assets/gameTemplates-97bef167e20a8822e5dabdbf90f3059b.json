@@ -1,0 +1,140 @@
+{
+  "gameTemplates": {
+    "SPZ": {
+      "name": "slidingPuzzle",
+      "defaultParameters": {
+        "size": 4,
+        "bgColor": "0,0,0",
+        "shuffle": 10,
+        "animationSpeed": 10
+      },
+      "parameterTypes": {
+        "size": "int",
+        "bgColor": "string",
+        "shuffle": "int",
+        "animationSpeed": "float"
+      },
+      "presets": {
+        "easy": {
+          "shuffle": 10
+        },
+        "medium": {
+          "shuffle": 10
+        },
+        "hard": {
+          "shuffle": 10
+        },
+        "bgBlack": {
+          "bgColor": "0,0,0"
+        },
+        "bgWhite": {
+          "bgColor": "255,255,255"
+        }
+      }
+    },
+    "QNA": {
+      "name": "questionAnswer",
+      "defaultParameters": {
+        "questionsFile": "questions.json",
+        "caseSensitive": false,
+        "bgColor": "25,25,50",
+        "textColor": "255,255,255",
+        "totalQuestions": 10
+      },
+      "parameterTypes": {
+        "questionsFile": "string",
+        "caseSensitive": "boolean",
+        "bgColor": "string",
+        "textColor": "string",
+        "totalQuestions": "int"
+      },
+      "presets": {
+        "caseSensitive": {
+          "caseSensitive": true
+        },
+        "darkTheme": {
+          "bgColor": "10,10,20",
+          "textColor": "200,200,255"
+        },
+        "lightTheme": {
+          "bgColor": "240,240,250",
+          "textColor": "50,50,100"
+        }
+      }
+    },
+    "MMD": {
+      "name": "mastermind",
+      "defaultParameters": {
+        "codeLength": 4,
+        "numberOfSymbols": 6,
+        "bgColor": "0,0,0",
+        "textColor": "255,255,255"
+      },
+      "parameterTypes": {
+        "codeLength": "int",
+        "numberOfSymbols": "int",
+        "bgColor": "string",
+        "textColor": "string"
+      },
+      "presets": {
+        "easy": {
+          "codeLength": 4,
+          "numberOfSymbols": 4
+        },
+        "medium": {
+          "codeLength": 4,
+          "numberOfSymbols": 5
+        },
+        "hard": {
+          "codeLength": 4,
+          "numberOfSymbols": 6
+        },
+        "darkTheme": {
+          "bgColor": "0,0,0",
+          "textColor": "200,200,255"
+        },
+        "lightTheme": {
+          "bgColor": "240,240,250",
+          "textColor": "50,50,100"
+        }
+      }
+    },
+    "CGG": {
+      "name": "crystalizeGuess",
+      "defaultParameters": {
+        "maxAttempts": 5,
+        "initialCrystalSize": 320,
+        "bgColor": "0,0,0",
+        "randomness": 0.0,
+        "edgeThickness": 0,
+        "stretch": 1.0,
+        "edgeColor": "0,0,0,1",
+        "fadeEdges": false
+      },
+      "parameterTypes": {
+        "maxAttempts": "int",
+        "initialCrystalSize": "int",
+        "bgColor": "string",
+        "randomness": "float",
+        "edgeThickness": "float",
+        "stretch": "float",
+        "edgeColor": "string",
+        "fadeEdges": "boolean"
+      },
+      "presets": {
+        "easy": {
+          "initialCrystalSize": 200,  
+          "maxAttempts": 5
+        },
+        "medium": {
+          "initialCrystalSize": 250,
+          "maxAttempts": 10
+        },
+        "hard": {
+          "initialCrystalSize": 300,
+          "maxAttempts": 15
+        }
+      }
+    }
+  }
+} 

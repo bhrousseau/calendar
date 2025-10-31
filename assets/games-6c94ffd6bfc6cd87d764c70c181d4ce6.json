@@ -1,0 +1,277 @@
+{
+"games": [
+	{
+		"reference": "SPZ_numbers_constellations",
+		"gameTemplate": "SPZ",
+		"theme": "numbers_constellations"
+	},
+	{
+		"reference": "SPZ_wave",
+		"gameTemplate": "SPZ",
+		"theme": "wave",
+		"parameters": {
+			"size": 4,
+			"bgColor": "0,0,0",
+			"bgHue": 0.0,
+			"bgSaturation": 35.0,
+			"bgLightness": -45.0,
+			"shuffle": 100,
+			"animationSpeed": 10.0
+		}
+	},
+	{
+		"reference": "SPZ_marie_therese",
+		"gameTemplate": "SPZ",
+		"theme": "marie_therese",
+		"parameters": {
+			"size": 4,
+			"bgColor": "0,0,0",
+			"bgHue": 125.0,
+			"bgSaturation": 25.0,
+			"bgLightness": 35.0,
+			"shuffle": 100,
+			"animationSpeed": 10.0
+		}
+	},
+	{
+		"reference": "SPZ_tree_of_life",
+		"gameTemplate": "SPZ",
+		"theme": "tree_of_life",
+		"parameters": {
+			"size": 4,
+			"bgColor": "0,0,0",
+			"bgHue": 120.0,
+			"bgSaturation": 100.0,
+			"bgLightness": -70.0,
+			"shuffle": 100,
+			"animationSpeed": 10.0
+		}
+	},
+	{
+		"reference": "SPZ_grey_tree",
+		"gameTemplate": "SPZ",
+		"theme": "grey_tree"
+	},
+	{
+		"reference": "SPZ_on_white_ii",
+		"gameTemplate": "SPZ",
+		"theme": "on_white_ii"
+	},
+	{
+		"reference": "SPZ_composition_1916",
+		"gameTemplate": "SPZ",
+		"theme": "composition_1916",
+		"parameters": {
+			"size": 4,
+			"bgColor": "0,0,0",
+			"bgHue": 160.0,
+			"bgSaturation": 75.0,
+			"bgLightness": -50.0,
+			"shuffle": 100,
+			"animationSpeed": 10.0
+		}
+	},
+	{
+		"reference": "CGG_pearl",
+		"gameTemplate": "CGG",
+		"theme": "pearl",
+		"parameters": {
+			"maxAttempts": 4,
+			"initialCrystalSize": 500,
+			"randomness": 0.0,
+			"edgeThickness": 0.0,
+			"stretch": 1.0,
+			"fadeEdges": false,
+			"edgeColor": "0.0,0.0,0.0,1.0",
+			"bgHue": 31.0,
+			"bgSaturation": 57.0,
+			"bgLightness": -41.0
+		}
+	},
+	{
+		"reference": "CGG_son_of_man",
+		"gameTemplate": "CGG",
+		"theme": "son_of_man",
+		"parameters": {
+			"maxAttempts": 4,
+			"initialCrystalSize": 500,
+			"randomness": 0.0,
+			"edgeThickness": 0.0,
+			"stretch": 1.0,
+			"fadeEdges": false,
+			"edgeColor": "0.0,0.0,0.0,1.0",
+			"bgHue": 140.0,
+			"bgSaturation": 90.0,
+			"bgLightness": -65.0
+		}
+	},
+	{
+		"reference": "CGG_the_milkmaid",
+		"gameTemplate": "CGG",
+		"theme": "the_milkmaid",
+		"parameters": {
+			"maxAttempts": 4,
+			"initialCrystalSize": 500,
+			"randomness": 0.0,
+			"edgeThickness": 0.0,
+			"stretch": 1.0,
+			"fadeEdges": false,
+			"edgeColor": "0.0,0.0,0.0,1.0",
+			"bgHue": 42.0,
+			"bgSaturation": 100.0,
+			"bgLightness": -50.0
+		}
+	},
+	{
+		"reference": "CGG_tournesols",
+		"gameTemplate": "CGG",
+		"theme": "tournesols",
+		"parameters": {
+			"maxAttempts": 4,
+			"initialCrystalSize": 500,
+			"randomness": 0.0,
+			"edgeThickness": 0.0,
+			"stretch": 1.0,
+			"fadeEdges": false,
+			"edgeColor": "0.0,0.0,0.0,1.0",
+			"bgHue": 50.0,
+			"bgSaturation": 75.0,
+			"bgLightness": -84.0
+		}
+	},
+	{
+		"reference": "CGG_vertumnus",
+		"gameTemplate": "CGG",
+		"theme": "vertumnus",
+		"parameters": {
+			"maxAttempts": 4,
+			"initialCrystalSize": 500,
+			"randomness": 0.0,
+			"edgeThickness": 0.0,
+			"stretch": 1.0,
+			"fadeEdges": false,
+			"edgeColor": "0.0,0.0,0.0,1.0",
+			"bgHue": 235.0,
+			"bgSaturation": 95.0,
+			"bgLightness": -40.0
+		}
+	},
+	{
+		"reference": "CGG_card_players",
+		"gameTemplate": "CGG",
+		"theme": "card_players",
+		"parameters": {
+			"maxAttempts": 4,
+			"initialCrystalSize": 500,
+			"randomness": 0.0,
+			"edgeThickness": 0.0,
+			"stretch": 1.0,
+			"fadeEdges": false,
+			"edgeColor": "0.0,0.0,0.0,1.0",
+			"bgHue": 4.0,
+			"bgSaturation": 70.0,
+			"bgLightness": 0.0
+		}
+	},
+	{
+		"reference": "QNA_femmes_tahiti",
+		"gameTemplate": "QNA",
+		"theme": "femmes_tahiti",
+		"parameters": {
+			"questionsFile": "quizz_culturepop.json"
+		}
+	},
+	{
+		"reference": "QNA_le_desespere",
+		"gameTemplate": "QNA",
+		"theme": "le_desespere",
+		"parameters": {
+			"questionsFile": "quizz_cultureg.json"
+		}
+	},
+	{
+		"reference": "QNA_mona_lisa",
+		"gameTemplate": "QNA",
+		"theme": "mona_lisa",
+		"parameters": {
+			"questionsFile": "quizz_merveille.json",
+			"totalQuestions": 10,
+			"victoryThreshold": 5
+		}
+	},
+	{
+		"reference": "QNA_kiss",
+		"gameTemplate": "QNA",
+		"theme": "kiss",
+		"parameters": {
+			"questionsFile": "quizz_painting.json"
+		}
+	},
+	{
+		"reference": "QNA_scapigliata",
+		"gameTemplate": "QNA",
+		"theme": "scapigliata",
+		"parameters": {
+			"questionsFile": "quizz_merveille.json"
+		}
+	},
+	{
+		"reference": "QNA_starry_night",
+		"gameTemplate": "QNA",
+		"theme": "starry_night",
+		"parameters": {
+			"questionsFile": "quizz_gastro .json",
+			"totalQuestions": 10,
+			"victoryThreshold": 3
+		}
+	},
+	{
+		"reference": "MDD_yole",
+		"gameTemplate": "MMD",
+		"theme": "yole",
+		"presets": [
+			"easy"
+		]
+	},
+	{
+		"reference": "MDD_impression",
+		"gameTemplate": "MMD",
+		"theme": "impression",
+		"presets": [
+			"easy"
+		]
+	},
+	{
+		"reference": "MDD_nympheas",
+		"gameTemplate": "MMD",
+		"theme": "nympheas",
+		"presets": [
+			"medium"
+		]
+	},
+	{
+		"reference": "MDD_naissance_de_venus",
+		"gameTemplate": "MMD",
+		"theme": "naissance_de_venus",
+		"presets": [
+			"medium"
+		]
+	},
+	{
+		"reference": "MDD_excursionniste",
+		"gameTemplate": "MMD",
+		"theme": "excursionniste",
+		"presets": [
+			"medium"
+		]
+	},
+	{
+		"reference": "MDD_tour_de_babel",
+		"gameTemplate": "MMD",
+		"theme": "tour_de_babel",
+		"presets": [
+			"hard"
+		]
+	}
+]
+}

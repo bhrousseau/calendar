@@ -1,0 +1,244 @@
+{
+  "questions": [
+    {
+      "id": 1,
+      "question": "Quelle est la capitale du Canada ?",
+      "answer": "Ottawa",
+      "alternatives": ["Ottaoua", "Ottava", "Ottawa (Canada)"]
+    },
+    {
+      "id": 2,
+      "question": "Quel est le plus grand océan de la planète ?",
+      "answer": "Océan Pacifique",
+      "alternatives": ["Pacifique", "Océan du Pacifique", "Pacific Ocean"]
+    },
+    {
+      "id": 3,
+      "question": "Qui a peint la Joconde ?",
+      "answer": "Léonard de Vinci",
+      "alternatives": ["leonardo da vinci","Leonardo da Vinci","Léonardo da Vinci", "Leonard de Vinci", "Léonardo de Vinci","da vinci","vinci","da Vinci","Vinci","de vinci"]
+    },
+    {
+      "id": 4,
+      "question": "Quel est l'élément chimique dont le symbole est O ?",
+      "answer": "Oxygène",
+      "alternatives": ["Oxygen", "Oxygene", "Oxygène (gaz)"]
+    },
+    {
+      "id": 5,
+      "question": "Quel écrivain français est l'auteur des 'Misérables' ?",
+      "answer": "Victor Hugo",
+      "alternatives": ["V. Hugo", "Hugo Victor", "Victor-Marie Hugo","Hugo"]
+    },
+    {
+      "id": 6,
+      "question": "Quelle est la planète la plus proche du Soleil ?",
+      "answer": "Mercure",
+      "alternatives": ["Mercurius", "Mercurio", "Mercure (planète)"]
+    },
+    {
+      "id": 7,
+      "question": "En quelle année a eu lieu la Révolution française ?",
+      "answer": "1789",
+      "alternatives": ["l'an 1789", "année 1789", "1789 après J.-C.","en 1789"]
+    },
+    {
+      "id": 8,
+      "question": "Quel est le plus long fleuve du monde ?",
+      "answer": "Nil",
+      "alternatives": ["Le Nil", "Fleuve Nil", "Nile"]
+    },
+    {
+      "id": 9,
+      "question": "Quel pays a offert la Statue de la Liberté aux États-Unis ?",
+      "answer": "France",
+      "alternatives": ["République française", "La France", "France métropolitaine"]
+    },
+    {
+      "id": 10,
+      "question": "Quelle est la monnaie officielle du Japon ?",
+      "answer": "Yen",
+      "alternatives": ["¥", "En", "Yen japonais"]
+    },
+    {
+      "id": 11,
+      "question": "Combien y a-t-il de continents sur Terre ?",
+      "answer": "6",
+      "alternatives": ["six", "Six", "6 continents"]
+    },
+    {
+      "id": 12,
+      "question": "Quel scientifique a formulé la théorie de la relativité ?",
+      "answer": "Albert Einstein",
+      "alternatives": ["A. Einstein", "Einstein", "Albert-Einstein","einstein","Einstein","Einstein Albert","Einstein Albert-Einstein"]
+    },
+    {
+      "id": 13,
+      "question": "Quel est le plus grand désert du monde ?",
+      "answer": "Antarctique",
+      "alternatives": ["Désert Antarctique", "L'Antarctique", "Antarctica"]
+    },
+    {
+      "id": 14,
+      "question": "Quel pays est surnommé 'le pays du Soleil levant' ?",
+      "answer": "Japon",
+      "alternatives": ["Nippon", "Japan", "Nihon"]
+    },
+    {
+      "id": 15,
+      "question": "Quel est le plus grand animal terrestre ?",
+      "answer": "Éléphant d'Afrique",
+      "alternatives": ["Éléphant africain", "Loxodonta africana", "Elephant d'Afrique", "éléphant","elephant", "l'éléphant","l'Éléphant","l'éléphant africain","l'Éléphant africain"]
+    },
+    {
+      "id": 16,
+      "question": "Combien de côtés a un hexagone ?",
+      "answer": "6",
+      "alternatives": ["six", "Six", "six côtés"]
+    },
+    {
+      "id": 17,
+      "question": "Quel est l'instrument principal de Ludwig van Beethoven ?",
+      "answer": "Piano",
+      "alternatives": ["Pianoforte", "Clavier", "Piano-forte"]
+    },
+    {
+      "id": 18,
+      "question": "Quelle ville italienne est célèbre pour ses canaux ?",
+      "answer": "Venise",
+      "alternatives": ["Venezia", "Venice", "La Sérénissime"]
+    },
+    {
+      "id": 19,
+      "question": "Qui a écrit 'Le Petit Prince' ?",
+      "answer": "Antoine de Saint-Exupéry",
+      "alternatives": ["Saint-Exupéry", "Antoine Saint-Exupéry", "A. de Saint-Exupéry", "saint-exupéry Antoine","Saint-Exupery","saint exupéry","Saint Exupéry","Saint-exupéry","Antoine de Saint-Exupéry","Antoine Saint-Exupéry","A. de Saint-Exupéry"]
+    },
+    {
+      "id": 20,
+      "question": "Qui est l'inventeur de l'imprimerie à caractères mobiles en Europe ?",
+      "answer": "Johannes Gutenberg",
+      "alternatives": ["Gutenberg", "Johann Gutenberg", "Johannes Gensfleisch zur Laden zum Gutenberg","gutenberg","Gutenberg","Johann Gutenberg","Johannes Gensfleisch zur Laden zum Gutenberg", "Johannes Gensfleisch zur Laden zum Gutenberg Johannes Gutenberg"]
+    },
+    {
+      "id": 21,
+      "question": "Combien de jours compte une année bissextile ?",
+      "answer": "366",
+      "alternatives": ["trois cent soixante-six", "366 jours", "année de 366 jours"]
+    },
+    {
+      "id": 22,
+      "question": "Quel métal a pour symbole chimique Fe ?",
+      "answer": "Fer",
+      "alternatives": ["Iron", "le fer", "le Fer","le métal ferreux","Métal ferreux"]
+    },
+    {
+      "id": 23,
+      "question": "Quel est le plus grand pays du monde par superficie ?",
+      "answer": "Russie",
+      "alternatives": ["Fédération de Russie", "Russia", "Russie fédérale", "la russie","la Russie","la Russie fédérale"]
+    },
+    {
+      "id": 24,
+      "question": "Quel est le plus petit État du monde ?",
+      "answer": "Vatican",
+      "alternatives": ["Cité du Vatican", "État du Vatican", "Vatican City", "le Vatican", "le Vatican City"]
+    },
+    {
+      "id": 25,
+      "question": "Quelle est la capitale de l'Australie ?",
+      "answer": "Canberra",
+      "alternatives": ["Canberra", "Ville de Canberra", "canberra","Canberra","Canberra Australie"]
+    },
+    {
+      "id": 26,
+      "question": "Quel organe humain pompe le sang dans tout le corps ?",
+      "answer": "Cœur",
+      "alternatives": ["le coeur","Coeur", "Cœur humain", "Cœur cardiaque"]
+    },
+    {
+      "id": 27,
+      "question": "Quel écrivain a créé le personnage de Sherlock Holmes ?",
+      "answer": "Arthur Conan Doyle",
+      "alternatives": ["Sir Arthur Conan Doyle", "A. Conan Doyle", "Conan Doyle","Conan doyle arthur","arthur conan doyle","Arthur Conan Doyle","A. Conan Doyle","Conan Doyle","Arthur Conan Doyle Arthur Conan Doyle"]
+    },
+    {
+      "id": 28,
+      "question": "Quelle est la plus grande planète du système solaire ?",
+      "answer": "Jupiter",
+      "alternatives": ["la planète Jupiter", "Planète Jupiter", "Iuppiter", "Júpiter", "jupiter","Jupiter","júpiter"]
+    },
+    {
+      "id": 29,
+      "question": "Quel est le plus grand satellite naturel de la Terre ?",
+      "answer": "La Lune",
+      "alternatives": ["Lune", "Satellite lunaire", "Moon", "la lune", "lune"]
+    },
+    {
+      "id": 30,
+      "question": "Dans quelle ville se trouve la Tour Eiffel ?",
+      "answer": "Paris",
+      "alternatives": ["Paris, France", "Ville de Paris", "La capitale française", "à Paris", "paris", "à paris"]
+    },
+    {
+      "id": 31,
+      "question": "Quel est l'océan situé entre l'Afrique et l'Australie ?",
+      "answer": "Océan Indien",
+      "alternatives": ["Océan de l'Inde", "Indian Ocean", "l'océan indien","l'Océan Indien","l'océan indien","l'Océan Indien"]
+    },
+    {
+      "id": 32,
+      "question": "Quelle invention est attribuée à Thomas Edison ?",
+      "answer": "Ampoule électrique",
+      "alternatives": ["Ampoule à incandescence", "l'ampoule électrique","l'Ampoule électrique","l'ampoule à incandescence","l'Ampoule à incandescence","l'Lumière électrique","l'Lumière électrique"]
+    },
+    {
+      "id": 33,
+      "question": "Quel pays a pour capitale Canberra ?",
+      "answer": "Australie",
+      "alternatives": ["Australia", "Commonwealth d'Australie", "Pays australien", "l'Australie"]
+    },
+    {
+      "id": 34,
+      "question": "Quel célèbre physicien a découvert la gravitation universelle ?",
+      "answer": "Isaac Newton",
+      "alternatives": ["Newton", "Sir Isaac Newton", "Isaac-Newton", "Newton Isaac","Newton Isaac-Newton","Newton Isaac Newton"]
+    },
+    {
+      "id": 35,
+      "question": "Quel peintre espagnol est l'auteur de 'Guernica' ?",
+      "answer": "Pablo Picasso",
+      "alternatives": ["Picasso", "Pablo Ruiz Picasso", "Don Pablo Picasso", "picasso pablo","pablo picasso","pablo ruiz picasso","don pablo picasso"]
+    },
+    {
+      "id": 36,
+      "question": "Quelle mer borde la côte sud de la France ?",
+      "answer": "Mer Méditerranée",
+      "alternatives": ["Méditerranée", "Mer Méditerranéenne", "Mediterranee", "la mer méditerranée", "la mediterranee","la mer mediterranee","la mer mediterranée"]
+    },
+    {
+      "id": 37,
+      "question": "Quel animal est connu pour sa lenteur et sa carapace ?",
+      "answer": "Tortue",
+      "alternatives": ["Tortue terrestre", "Tortue marine", "Chelonia"]
+    },
+    {
+      "id": 38,
+      "question": "Quel pays a organisé les Jeux olympiques d'été en 2024 ?",
+      "answer": "France",
+      "alternatives": ["La france","La France"]
+    },
+    {
+      "id": 39,
+      "question": "Quel est le plus grand satellite naturel de Jupiter ?",
+      "answer": "Ganymède",
+      "alternatives": ["Ganymede", "Satellite ganymede"]
+    },
+    {
+      "id": 40,
+      "question": "Quel est le plus haut sommet du monde ?",
+      "answer": "Mont Everest",
+      "alternatives": ["Everest", "Chomolungma", "Qomolangma", "Sagarmatha","l'Everest","le Mont Everest","le mont everest"]
+    }
+  ]
+} 
